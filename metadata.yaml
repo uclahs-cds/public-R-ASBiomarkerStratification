@@ -1,0 +1,10 @@
+Category: "project"
+Description: "repository for Prostate Cancer Active Surveillance project"
+Maintainers: "alfonsolam@mednet.ucla.edu"
+Contributors: "Alfonso Lam"
+Languages: ["R"]
+Dependencies: "BPG"
+References: ""
+Collaborators: "Michael Liss"
+Cancer Type: "prostate"
+Purpose: ""
