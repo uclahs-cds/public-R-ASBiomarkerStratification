@@ -1,23 +1,26 @@
+library(ProstateCancer.ASBiomarkerSynergy);
 
-# Project: Prostate Active Surveillance Biomarker Sequentiality.  
+# Project: Prostate Active Surveillance Biomarker Sequentiality.
 
 ### get.correlation.R ###############################
 # This R script takes data and compute their
 # Spearman's Correlation between columns
 
-source('load.data.R');
+# Load Data:
+data <- default.load.data();
+attach(data);
 
-# variables to be used for heatmap: 
+# variables to be used for heatmap:
 variables <- c(
   'Age',
-  'Race',                   
+  'Race',
   'Ethnicity',
   'Weight',
-  'Height',                 
+  'Height',
   'BMI',
   'ProstateVolume',
   'MRIResult',
-  'MRILesions',             
+  'MRILesions',
   'HighestPIRADS',
   'BiopsyResult',
   'ADCnormalSignal',
@@ -44,20 +47,20 @@ variables <- c(
   'GSAPositives',
   'BRCAMutation',
   'Mutation1',
-  'Mutation.2' 
+  'Mutation.2'
   );
 
 
 real.names.set <- c(
   'Age',
-  'Race',                   
+  'Race',
   'Ethnicity',
   'Weight',
-  'Height',                 
+  'Height',
   'BMI',
   'Prostate Volume',
   'MRI Result',
-  'MRI Lesions',             
+  'MRI Lesions',
   'Highest PIRADS',
   'Biopsy Result',
   'ADC normal Signal',
@@ -84,7 +87,7 @@ real.names.set <- c(
   'GSA Positives',
   'BRCA Mutation',
   'Mutation 1',
-  'Mutation 2' 
+  'Mutation 2'
   );
 
 
@@ -95,7 +98,7 @@ biodb.added <- data.frame(
   PHIDensity = biodb$PHI/biodb$ProstateVolume
   );
 
-# Computing the Correlations for heatmap: 
+# Computing the Correlations for heatmap:
 heatmap.data <- vector(
   mode = "list",
   length = length(variables)
@@ -201,11 +204,11 @@ BoutrosLab.plotting.general::create.heatmap(
   xaxis.lab = real.names.set,
   xaxis.cex = 0.75,
   yaxis.lab = real.names.set,
-  yaxis.cex = 0.75,  
+  yaxis.cex = 0.75,
   filename = output.filename,
   colourkey.cex = 0.75,
   covariates = sample.covariate,
-  covariates.top = top.covariate,  
+  covariates.top = top.covariate,
   covariate.legend = sample.cov.legend,
   #xaxis.col = c(
   #  rep('black', 7),
@@ -237,4 +240,4 @@ BoutrosLab.plotting.general::create.heatmap(
   resolution = 300
   );
 
-
+detach(data);

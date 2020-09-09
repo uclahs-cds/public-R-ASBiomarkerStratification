@@ -5,7 +5,7 @@
 # Description: Computes the confusion matrix
 #
 # Variables
-# input.data  two columns data frame (actual and predicted) 
+# input.data  two columns data frame (actual and predicted)
 # thresholds.set Thresholds values to compute the confusion matrix
 #
 # Example:
@@ -16,10 +16,11 @@
 #    );
 #
 ######################################################
+#' @export
 data.frame.confusion.matrix <- function(
   input.data,
   threshold
-  ){    
+  ){
 
   common.size <- rep(NA, length(threshold));
   merit.data <- data.frame(
@@ -34,20 +35,11 @@ data.frame.confusion.matrix <- function(
     fp.positive.list = common.size,
     fp.positive.patients = common.size
   );
-    
-  
+
+
     data <- input.data;
     data$predicted[threshold <= data$predicted] <- 1;
     data$predicted[1 != data$predicted] <- 0;
 
     return(data)
 }
-
-### WRITE SESSION PROFILE TO FILE #####################     
-save.session.profile(
-  BoutrosLab.utilities::generate.filename(
-    Sys.Date(),
-    'data.frame.confusion.matrix',
-    'txt'
-    )
-  );

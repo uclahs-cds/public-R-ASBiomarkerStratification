@@ -1,0 +1,34 @@
+Package: ProstateCancer.ASBiomarkerSynergy
+Title: Prostate Cancer Active Surveillance
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Stefan",
+           family = "Eng",
+           role = c("aut", "cre"),
+           email = "stefaneng@mednet.ucla.edu",
+           comment = c(ORCID = "0000-0002-5245-6507"))
+Description: Prostate Cancer Active Surveillance
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Imports:
+    BoutrosLab.utilities,
+    BoutrosLab.plotting.general,
+    BoutrosLab.plotting.survival,
+    BoutrosLab.statistics.survival,
+    pROC,
+    xlsx,
+    here
+Exports:
+    compute.auc,
+    compute.auc.ci,
+    compute.merit.data,
+    confusion.matrix,
+    data.frame.confusion.matrix,
+    default.load.data,
+    forest.plot,
+    load.data.AS,
+    make.aucplot,
+    make.confusion.matrix,
+    plot.AUPRC
