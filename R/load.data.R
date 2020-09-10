@@ -13,13 +13,29 @@
 load.data.AS <- function(biomark.path = NULL,
                          biomark.key.path = NULL,
                          genetics.path = NULL) {
+  factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'MRILesions', 'HighestPIRADS',
+                   'BiopsyResult', 'PreviousGleason', 'PreviousISUP', 'Observation',
+                   'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory', 'GlobalScreeningArray',
+                   'GSAPositives', 'BRCAMutation', 'Mutation1', 'Mutation.2', 'RSIlesionPIRADS',
+                   'RSIlesionCancer', 'RSIlesionGleason', 'RSIlesionISUP', 'RSIlesionUpgraded',
+                   'RSIlesionObservation', 'ProgressedToTreatment', 'Prostatectomy',
+                   'UpgradedAndProgressed', 'NoUpgradeAndProgressed')
   # Open Raw data:
   biodb <- xlsx::read.xlsx(
     biomark.path,
     sheetIndex = 1,
     header = TRUE
   );
+
+  # Convert to factor
+  biodb[,factor.cols] <- lapply(biodb[,factor.cols], as.factor)
   biodb <- biodb[!apply(is.na(biodb), 2, all)];
+
+  # Update levels
+  levels(biodb$Race) <- c('White', 'African-American', 'Asian');
+  levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
+  levels(biodb$GeneticAncestry) <- c('European', 'African', 'East Asian', 'Native American');
+  levels(biodb$GeneticRiskCategory) <- c('Low', 'Normal', 'High');
 
   biokey <- xlsx::read.xlsx(
     biomark.key.path,

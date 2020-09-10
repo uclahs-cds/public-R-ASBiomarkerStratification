@@ -15,11 +15,13 @@ RoxygenNote: 7.1.1
 Imports:
     BoutrosLab.utilities,
     BoutrosLab.plotting.general,
-    BoutrosLab.plotting.survival,
-    BoutrosLab.statistics.survival,
     pROC,
     xlsx,
     here
+Suggests:
+    BoutrosLab.plotting.survival,
+    BoutrosLab.statistics.survival,
+    table1
 Exports:
     compute.auc,
     compute.auc.ci,
