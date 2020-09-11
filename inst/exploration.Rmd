@@ -1,0 +1,37 @@
+---
+title: "Data Exploration"
+author: "Stefan Eng"
+date: "9/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load the data analysis package and the data
+```{r}
+library(ProstateCancer.ASBiomarkerSynergy);
+
+data <- default.load.data();
+```
+
+One subject `M0003` has an incorrect value of 1561. Update this to 15.61.
+```{r}
+# Missing decimal place
+data$biodb[3, 'p2PSA'] <- data$biodb[3, 'p2PSA'] / 100;
+```
+
+```{r}
+psa.cols <- c('SOCPSA', 'p2PSA', 'freePSA', 'PSAHyb', 'PercentFreePSA', 'PHI');
+
+# Confirm PHI formula
+PHI.computed <- with(data$biodb, {
+    (p2PSA / freePSA) * sqrt(PSAHyb)
+    });
+
+cbind(data$biodb[, psa.cols], round(PHI.computed, 1));
+
+phi.abs.error <- abs(data$biodb$PHI - round(PHI.computed, 1))
+plot(phi.abs.error);
+```

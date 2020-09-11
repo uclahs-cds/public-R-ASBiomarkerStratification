@@ -10,9 +10,10 @@
 #' @param biomark.key.path path to the Biomarkers key xlsx file
 #' @param genetics path to the genetics xlsx file
 #' @export
-load.data.AS <- function(biomark.path = NULL,
-                         biomark.key.path = NULL,
-                         genetics.path = NULL) {
+load.data.AS <- function(biomark.path,
+                         biomark.key.path,
+                         genetics.path,
+                         biomark.categories.path) {
   factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'MRILesions', 'HighestPIRADS',
                    'BiopsyResult', 'PreviousGleason', 'PreviousISUP', 'Observation',
                    'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory', 'GlobalScreeningArray',
@@ -41,15 +42,21 @@ load.data.AS <- function(biomark.path = NULL,
     biomark.key.path,
     sheetIndex = 1,
     header = TRUE
-  );
-  biokey <- biokey[! apply(is.na(biokey), 2, all)];
+    );
 
   biokey.gen <- xlsx::read.xlsx(
     genetics.path,
     sheetIndex = 1,
     header = TRUE
-  );
-  biokey.gen <- biokey.gen[! apply(is.na(biokey.gen), 2, all)];
+    );
+
+  bio.categories <- xlsx::read.xlsx(
+    biomark.categories.path,
+    sheetIndex = 1,
+    header = TRUE
+    );
+
+  bio.categories$Category <- as.factor(bio.categories$Category);
 
   #######################################################
   # Sort data by Age, Race and Ethnicity:
@@ -62,8 +69,9 @@ load.data.AS <- function(biomark.path = NULL,
     biodb = biodb,
     biokey = biokey,
     biokey.gen = biokey.gen,
-    sorted.biodb = sorted.biodb
-    )
+    sorted.biodb = sorted.biodb,
+    bio.categories = bio.categories
+    );
   }
 
 #' Loads the data for analysis with default file names
@@ -72,7 +80,8 @@ default.load.data <- function() {
   file.names <- c(
     'MRI DOD Biomarkers Database_Boutros - 2020.04.20.xlsx',
     'MRI DOD Biomarkers Database_Boutros - Key.xlsx',
-    'MRI DOD Biomarkers Genetics_Boutros - 2019.11.12.xlsx'
+    'MRI DOD Biomarkers Genetics_Boutros - 2019.11.12.xlsx',
+    'MRI DOD Biomarkers Category_Boutros.xlsx'
     );
   file.paths <- here::here(paste0('data/', file.names));
   do.call('load.data.AS', as.list(file.paths));
