@@ -15,12 +15,13 @@ load.data.AS <- function(biomark.path,
                          genetics.path,
                          biomark.categories.path) {
   factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'MRILesions', 'HighestPIRADS',
-                   'BiopsyResult', 'PreviousGleason', 'PreviousISUP', 'Observation',
+                   'BiopsyResult', 'PreviousGleason', 'StudyHighestGleason', 'PreviousISUP', 'Observation',
                    'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory', 'GlobalScreeningArray',
                    'GSAPositives', 'BRCAMutation', 'Mutation1', 'Mutation.2', 'RSIlesionPIRADS',
                    'RSIlesionCancer', 'RSIlesionGleason', 'RSIlesionISUP', 'RSIlesionUpgraded',
                    'RSIlesionObservation', 'ProgressedToTreatment', 'Prostatectomy',
-                   'UpgradedAndProgressed', 'NoUpgradeAndProgressed')
+                   'UpgradedAndProgressed', 'NoUpgradeAndProgressed', 'StudyHighestISUP'
+                   );
   # Open Raw data:
   biodb <- xlsx::read.xlsx(
     biomark.path,
@@ -29,14 +30,22 @@ load.data.AS <- function(biomark.path,
   );
 
   # Convert to factor
-  biodb[,factor.cols] <- lapply(biodb[,factor.cols], as.factor)
-  biodb <- biodb[!apply(is.na(biodb), 2, all)];
+  biodb[,factor.cols] <- lapply(biodb[,factor.cols], as.factor);
+
+  # Add PSA and PHI Density
+  biodb$PSADensity <- biodb$freePSA / biodb$ProstateVolume;
+  biodb$PHIDensity = biodb$PHI / biodb$ProstateVolume;
 
   # Update levels
   levels(biodb$Race) <- c('White', 'African-American', 'Asian');
   levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
   levels(biodb$GeneticAncestry) <- c('European', 'African', 'East Asian', 'Native American');
   levels(biodb$GeneticRiskCategory) <- c('Low', 'Normal', 'High');
+  levels(biodb$MRIResult) <- c('No Legion noted MRI', 'Legion Found noted MRI');
+  levels(biodb$HighestPIRADS) <- c('No lesion', 'Very low', 'Low', 'Intermediate', 'High', 'Very high');
+  levels(biodb$BiopsyResult) <- c('Negative', 'Positive');
+
+  attr(biodb$ProstateVolume, 'label') <- "Prostate Volume (cm^3)"
 
   biokey <- xlsx::read.xlsx(
     biomark.key.path,
@@ -58,18 +67,11 @@ load.data.AS <- function(biomark.path,
 
   bio.categories$Category <- as.factor(bio.categories$Category);
 
-  #######################################################
-  # Sort data by Age, Race and Ethnicity:
-  #######################################################
-
-  sorted.biodb <- biodb[order(biodb$Age, biodb$Race, biodb$Ethnicity),]
-
   # Return the loaded objects
   list(
     biodb = biodb,
     biokey = biokey,
     biokey.gen = biokey.gen,
-    sorted.biodb = sorted.biodb,
     bio.categories = bio.categories
     );
   }

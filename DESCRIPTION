@@ -21,7 +21,8 @@ Imports:
 Suggests:
     BoutrosLab.plotting.survival,
     BoutrosLab.statistics.survival,
-    table1
+    table1,
+    testthat
 Exports:
     compute.auc,
     compute.auc.ci,

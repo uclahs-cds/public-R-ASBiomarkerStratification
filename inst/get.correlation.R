@@ -13,8 +13,6 @@ attach(data);
 # variables to be used for heatmap:
 variables <- c(
   'Age',
-  'Race',
-  'Ethnicity',
   'Weight',
   'Height',
   'BMI',
@@ -40,7 +38,6 @@ variables <- c(
   'PHIDensity',
   'SOCPSA',
   'TNFaAverage',
-  'GeneticAncestry',
   'GeneticRiskScore',
   'GeneticRiskCategory',
   'GlobalScreeningArray',
@@ -53,8 +50,6 @@ variables <- c(
 
 real.names.set <- c(
   'Age',
-  'Race',
-  'Ethnicity',
   'Weight',
   'Height',
   'BMI',
@@ -80,7 +75,6 @@ real.names.set <- c(
   'PHI Density',
   'SOCPSA',
   'TNFa Average',
-  'Genetic Ancestry',
   'Genetic Risk Score',
   'Genetic Risk Category',
   'Global Screening Array',
@@ -106,8 +100,8 @@ heatmap.data <- vector(
 
 for (i in 1:length(variables) ){
   for (j in 1:length(variables)  ){
-    biodbA <- biodb.added[, variables[i] ];
-    biodbB <- biodb.added[, variables[j] ];
+    biodbA <- as.numeric(biodb.added[, variables[i] ]);
+    biodbB <- as.numeric(biodb.added[, variables[j] ]);
     heatmap.data[[i]] <- c(
       heatmap.data[[i]],
       cor(
@@ -233,7 +227,8 @@ BoutrosLab.plotting.general::create.heatmap(
   colourkey.labels.at = seq(-1, 1, 0.2),
   at = key.scale,
   axis.xlab.padding = 4,
-  clustering.method = 'none',
+#  clustering.method = 'none',
+  plot.dendrograms = 'right',
   height = 9,
   width = 9,
   left.padding = 4,

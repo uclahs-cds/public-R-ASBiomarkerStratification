@@ -16,6 +16,35 @@ library(ProstateCancer.ASBiomarkerSynergy);
 data <- default.load.data();
 ```
 
+## Cohort Characteristics
+```{r}
+table1::label(data$biodb$Height) <- "Height (cm)";
+table1::label(data$biodb$Weight) <- "Weight (kg)";
+table1::table1(~ Age + Weight + Height + BMI | Race, data = data$biodb);
+```
+
+## Scoring Variables
+```{r}
+factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'HighestPIRADS',
+                   'BiopsyResult', 'PreviousGleason', 'StudyHighestGleason', 'PreviousISUP', 'Observation',
+                   'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory', 'GlobalScreeningArray',
+                   'GSAPositives', 'BRCAMutation', 'Mutation1', 'Mutation.2', 'RSIlesionPIRADS',
+                   'RSIlesionCancer', 'RSIlesionGleason', 'RSIlesionISUP', 'RSIlesionUpgraded',
+                   'RSIlesionObservation', 'ProgressedToTreatment', 'Prostatectomy',
+                   'UpgradedAndProgressed', 'NoUpgradeAndProgressed')
+
+score.cols <- c('MRIResult', 'MRILesions', 'BiopsyResult', 'PreviousGleason','PreviousISUP','StudyHighestGleason','StudyHighestISUP', 'RSIlesionPIRADS', 'HighestPIRADS')
+
+
+# Something like this...
+# str.match(score.cols, '([A-Z]+)([A-Z][a-z]+)([A-Z]*)')
+
+score.formula <- as.formula(paste('~', paste0(score.cols, collapse = ' + '), '| ProgressedToTreatment'));
+
+levels(data$biodb$ProgressedToTreatment) <- c('No progression to Treatment', 'Progressed to Treatment');
+table1::table1(score.formula, data = data$biodb);
+```
+
 One subject `M0003` has an incorrect value of 1561. Update this to 15.61.
 ```{r}
 # Missing decimal place
@@ -23,15 +52,97 @@ data$biodb[3, 'p2PSA'] <- data$biodb[3, 'p2PSA'] / 100;
 ```
 
 ```{r}
-psa.cols <- c('SOCPSA', 'p2PSA', 'freePSA', 'PSAHyb', 'PercentFreePSA', 'PHI');
+psa.cols <- c('SOCPSA', 'PSAHyb', 'p2PSA', 'freePSA', 'PercentFreePSA', 'ProstateVolume', 'PSADensity', 'PHIDensity', 'PHI');
 
 # Confirm PHI formula
 PHI.computed <- with(data$biodb, {
     (p2PSA / freePSA) * sqrt(PSAHyb)
     });
 
-cbind(data$biodb[, psa.cols], round(PHI.computed, 1));
+psa.data <- cbind(data$biodb[, psa.cols], PHI.computed);
 
 phi.abs.error <- abs(data$biodb$PHI - round(PHI.computed, 1))
 plot(phi.abs.error);
+```
+Find the large error points
+```{r}
+large.errors <- phi.abs.error > 1 & ! is.na(phi.abs.error)
+psa.data[large.errors,]
+
+data$biodb[large.errors,]
+```
+
+```{r}
+table1::table1(~ . , data = psa.data, topclass="Rtable1-grid");
+```
+
+## Progression data
+Some basic data validation on the ProgressedToTreatment and Days[BD]xToProgression
+```{r}
+progression.data <- data$biodb[, grepl("progress|review", colnames(data$biodb), ignore.case = TRUE)]
+biopsy.result <- data$biodb$BiopsyResult
+
+progression.missing.dx <- progression.data$ProgressedToTreatment != as.numeric(! is.na(progression.data$DaysDxToProgression))
+progression.missing.bx <- progression.data$ProgressedToTreatment != as.numeric(! is.na(progression.data$DaysBxToProgression))
+if(! all(! progression.missing.dx)) {
+    print('Subjects that progressed to treatment but missing DaysDxToProgression');
+    progression.data[progression.missing.dx,]
+    } else {
+    print('No subjects that progressed to treatment are missing DaysDxToProgression')
+    }
+if(! all(! progression.missing.bx)) {
+    print('Subjects that progressed to treatment but missing DaysBxToProgression');
+    progression.data[progression.missing.bx,];
+    } else {
+    print('No subjects that progressed to treatment are missing DaysBxToProgression')
+    }
+
+# Check missingness of biopsy result with days to last review
+stopifnot(
+    all(is.na(biopsy.result) == is.na(progression.data$DaysBxToLastReview))
+    );
+```
+
+## Upgrade data
+```{r}
+upgrade.data <- data$biodb[, grepl("upgrade|review", colnames(data$biodb), ignore.case = TRUE)];
+
+# Missing BiopsyUpgraded means that we won't have the days from biopsy to last review
+stopifnot(
+    all(is.na(upgrade.data$BiopsyUpgraded) == is.na(progression.data$DaysBxToLastReview))
+    );
+
+# Testing that the events return match if the biopsy was actually upgraded
+stopifnot(
+    all(is.na(surv.format(progression.data$DaysBxToProgression, progression.data$DaysBxToLastReview)$event) == is.na(upgrade.data$BiopsyUpgraded))
+    );
+```
+
+
+## Overall Days to Progression from Biopsy/Diagnosis
+```{r}
+# Create a Surv object from survival package
+progression.surv.bx <- do.call(
+    what = survival::Surv,
+    args = surv.format(progression.data$DaysBxToProgression, progression.data$DaysBxToLastReview)
+    );
+
+progression.surv.dx <- do.call(
+    what = survival::Surv,
+    args = surv.format(progression.data$DaysDxToProgression, progression.data$DaysDxToLastReview)
+    );
+
+plot(progression.surv.bx, main = 'Days to Progression from Biopsy');
+plot(progression.surv.dx, main = 'Days to Progression from Diagnosis');
+```
+
+## Overall Time-to-Upgrade from Diagnosis
+```{r}
+# Create a Surv object from survival package
+upgrade.surv <- do.call(
+    what = survival::Surv,
+    args = surv.format(upgrade.data$DaysDxToUpgrade, upgrade.data$DaysDxToLastReview)
+    );
+
+plot(upgrade.surv);
 ```
