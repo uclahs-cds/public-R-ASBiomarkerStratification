@@ -2,7 +2,9 @@
 title: "Data Exploration"
 author: "Stefan Eng"
 date: "9/11/2020"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -41,7 +43,8 @@ score.cols <- c('MRIResult', 'MRILesions', 'BiopsyResult', 'PreviousGleason','Pr
 
 score.formula <- as.formula(paste('~', paste0(score.cols, collapse = ' + '), '| ProgressedToTreatment'));
 
-levels(data$biodb$ProgressedToTreatment) <- c('No progression to Treatment', 'Progressed to Treatment');
+data$biodb$ProgressedFactor <- data$biodb$ProgressedToTreatment
+levels(data$biodb$ProgressedFactor) <- c('No progression to Treatment', 'Progressed to Treatment');
 table1::table1(score.formula, data = data$biodb);
 ```
 

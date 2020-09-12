@@ -1,3 +1,15 @@
+#' Converts event times and end of study times into survival::Surv format
+#'
+#' @param event.times The times of the events. Expects NA if event did not occur.
+#' @param end.times The last follow up time.
+#'
+#' @return a list with keys `time` and `event`
+#' @export
+#'
+#' @examples
+#' x <- c(NA, 1, NA, 2)
+#' y <- c(3, 4, 4.5, 7)
+#' do.call(survival::Surv, surv.format(x, y))
 surv.format <- function(event.times, end.times) {
     time <- event.times
     censored <- is.na(event.times)

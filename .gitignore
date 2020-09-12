@@ -3,6 +3,9 @@ data/
 *.txt
 *.Rproj
 
+*.pdf
+*.html
+
 # History files
 .Rhistory
 .Rapp.history
