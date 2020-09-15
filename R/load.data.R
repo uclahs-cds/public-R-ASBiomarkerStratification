@@ -1,10 +1,26 @@
 factor.ISUP <- function(x) {
   factor(x, levels = 0:5, ordered = TRUE)
-}
+  }
 
 factor.Gleason <- function(x) {
   factor(x, levels = c("0+0", "3+3", "3+4", "4+3", "4+4", "5+5"), ordered = TRUE)
-}
+  }
+
+mutation.dummy <- function(x) {
+  mutation1 <- as.integer(x["Mutation1"]);
+  mutation2 <- as.integer(x["Mutation.2"]);
+  if(is.na(mutation1) && is.na(mutation2)) {
+    # Missing value, make all dummy variables missing as well
+    res <- list(Mutation.BRCA1 = NA, Mutation.BRCA2 = NA, Mutation.ATM = NA, Mutation.MLH1 = NA, Mutation.PMS2 = NA);
+  }
+  else {
+    res <- list(Mutation.BRCA1 = 0, Mutation.BRCA2 = 0, Mutation.ATM = 0, Mutation.MLH1 = 0, Mutation.PMS2 = 0);
+    # What happens when we do res[0] <- 1? Doesn't seem to do anything
+    if(mutation1 > 0) res[mutation1] <- 1
+    if(mutation2 > 0) res[mutation2] <- 1
+    }
+  res
+  }
 
 # Project: Prostate Cancer Active Surveillance
 
@@ -35,6 +51,8 @@ load.data.AS <- function(biomark.path,
   ISUP.cols <- c('PreviousISUP',  'RSIlesionISUP', 'StudyHighestISUP');
   Gleason.cols <- c('PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason');
 
+  mutation.cols <- c("Mutation1", "Mutation.2");
+
   # Open Raw data:
   biodb <- xlsx::read.xlsx(
     biomark.path,
@@ -42,6 +60,16 @@ load.data.AS <- function(biomark.path,
     header = TRUE,
     stringsAsFactors = FALSE
   );
+
+  # Create dummy variables from the 2 mutation columns
+  mutation.dummy.vars <- do.call(rbind.data.frame,
+                                 apply(biodb[, mutation.cols], 1, mutation.dummy)
+                                 );
+
+  biodb <- cbind.data.frame(biodb, mutation.dummy.vars);
+
+  # Remove the old mutation columns
+  biodb[, mutation.cols] <- NULL
 
   # Convert to factor
   biodb[,factor.cols] <- lapply(biodb[,factor.cols], as.factor);

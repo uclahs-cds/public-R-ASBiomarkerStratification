@@ -108,7 +108,7 @@ psa.data[large.errors,c('Record.ID', 'p2PSA', 'freePSA', 'PSAHyb', 'SOCPSA', 'PH
 
 ## PSA Summary Statistics
 ```{r}
-table1::table1(~ . , data = psa.data, topclass="Rtable1-grid");
+table1::table1(~ p2PSA +  freePSA + PSAHyb + SOCPSA + PHI + PHI.computed, data = psa.data, topclass="Rtable1-grid");
 ```
 
 ## Progression data
