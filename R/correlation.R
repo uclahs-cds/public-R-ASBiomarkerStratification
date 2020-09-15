@@ -40,9 +40,7 @@ create.heatmap.AS <- function(biodb, ...) {
         'GeneticRiskCategory',
         'GlobalScreeningArray',
         'GSAPositives',
-        'BRCAMutation',
-        'Mutation1',
-        'Mutation.2'
+        'BRCAMutation'
     );
 
 
@@ -77,9 +75,7 @@ create.heatmap.AS <- function(biodb, ...) {
         'Genetic Risk Category',
         'Global Screening Array',
         'GSA Positives',
-        'BRCA Mutation',
-        'Mutation 1',
-        'Mutation 2'
+        'BRCA Mutation'
     );
 
 

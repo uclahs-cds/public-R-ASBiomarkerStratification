@@ -48,7 +48,7 @@ data$biodb[which.max(data$biodb$Weight), ]
 factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'HighestPIRADS',
                    'BiopsyResult', 'PreviousGleason', 'StudyHighestGleason', 'PreviousISUP', 'Observation',
                    'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory', 'GlobalScreeningArray',
-                   'GSAPositives', 'BRCAMutation', 'Mutation1', 'Mutation.2', 'RSIlesionPIRADS',
+                   'GSAPositives', 'BRCAMutation', 'RSIlesionPIRADS',
                    'RSIlesionCancer', 'RSIlesionGleason', 'RSIlesionISUP', 'RSIlesionUpgraded',
                    'RSIlesionObservation', 'ProgressedToTreatment', 'Prostatectomy',
                    'UpgradedAndProgressed', 'NoUpgradeAndProgressed')
@@ -141,7 +141,7 @@ stopifnot(
 ## Check global screening array
 ```{r}
 GSA <- data$biodb$GlobalScreeningArray
-GSA.vars <- data$biodb[, c('GSAPositives', 'BRCAMutation', 'Mutation1', 'Mutation.2')]
+GSA.vars <- data$biodb[, c('GSAPositives', colnames(data$biodb)[grepl("Mutation", colnames(data$biodb))])]
 # GSA.vars.num <- as.data.frame(lapply(GSA.vars, function(x) as.numeric(as.character(x))))
 
 stopifnot({
@@ -223,9 +223,7 @@ cor.variables <- c(
         'GeneticRiskCategory',
         'GlobalScreeningArray',
         'GSAPositives',
-        'BRCAMutation',
-        'Mutation1',
-        'Mutation.2'
+        'BRCAMutation'
     );
 
 # cor(as.data.frame(lapply(data$biodb[, cor.variables], as.numeric)), use = "complete.obs", method = "spearman")
@@ -313,7 +311,9 @@ biokey.variables <- c("Age", "Race", "Ethnicity", "Weight", "Height",
 "TNFaAverage", "TNFaSTD", # Tumor necrosis factor?
 #"GeneticRiskCategory", Don't need since genetic risk score is continuous version of this
 # "GlobalScreeningArray", This is just an indicator if any of the follow are > 0
-"GSAPositives", "BRCAMutation", "Mutation1", "Mutation 2", "RSInormalSignal", 
+"GSAPositives", "BRCAMutation",
+"Mutation.BRCA1", "Mutation.BRCA2", "Mutation.ATM", "Mutation.MLH1", "Mutation.PMS2",
+"RSInormalSignal", 
 "RSIlesionSignal", "ADCnormalSignal", "ADClesionSignal", "RSIlesionPIRADS", 
 "RSIlesionCancer",  "RSIlesionUpgraded", 
 "RSIlesionObservation", "PSADensity", "PHIDensity")
@@ -332,8 +332,28 @@ progression.surv.dx <- do.call(
     args = surv.format(progression.data$DaysDxToProgression, progression.data$DaysDxToLastReview)
     );
 
-plot(progression.surv.bx, main = 'Days to Progression from Biopsy');
-plot(progression.surv.dx, main = 'Days to Progression from Diagnosis');
+# plot(progression.surv.bx, main = 'Days to Progression from Biopsy');
+# plot(progression.surv.dx, main = 'Days to Progression from Diagnosis');
+
+BoutrosLab.plotting.survival::create.km.plot(
+  survival.object = progression.surv.bx,
+  xaxis.cex = 1.4,
+  yaxis.cex = 1.4,
+  xlab.label = 'Time to progression from biopsy (Days)',
+  xlab.cex = 1.5,
+  ylab.label = 'Estimated survival probability',
+  ylab.cex = 1.5
+);
+
+BoutrosLab.plotting.survival::create.km.plot(
+  survival.object = progression.surv.dx,
+  xaxis.cex = 1.4,
+  yaxis.cex = 1.4,
+  xlab.label = 'Time to progression from diagnosis (Days)',
+  xlab.cex = 1.5,
+  ylab.label = 'Estimated survival probability',
+  ylab.cex = 1.5
+);
 ```
 
 ## Overall Time-to-Upgrade from Diagnosis
@@ -344,5 +364,13 @@ upgrade.surv <- do.call(
     args = surv.format(upgrade.data$DaysDxToUpgrade, upgrade.data$DaysDxToLastReview)
     );
 
-plot(upgrade.surv);
+BoutrosLab.plotting.survival::create.km.plot(
+  survival.object = upgrade.surv,
+  xaxis.cex = 1.4,
+  yaxis.cex = 1.4,
+  xlab.label = 'Time to upgrade since diagnosis (Days)',
+  xlab.cex = 1.5,
+  ylab.label = 'Estimated survival probability',
+  ylab.cex = 1.5
+);
 ```
