@@ -1,7 +1,16 @@
-# Private Notes
+# Notes
 
 - Look at the load data file here:
 /data/users/alfonsolam/projects/ProstateCancer-ASBiomarkerSynergy/analysis
+
+## Project
+
+There is a clinical need to predict *before* surgery if a man has aggressive disease so that we can decide if they need surgery at all.  The quality of life benefits are thus huge (avoiding therapy entirely!).  The problem is that because it’s pre-surgery, we do not have the full cancer to study.  Instead we use biopsies (spatially-restricted samples of the cancer), radiology (imaging like MRI) and minimally-invasive biomarkers (e.g. blood or urine tests).  It's unclear which of those different strategies is best, and how those strategies should be sequenced or ordered.  A collaborator at UTHSCSA (University of Texas Health Sciences Center San Antonio, I think) Dr. Michael Liss is a surgeon who is thinking hard about these problems.  He's put together a really nice cohort of ~100 patients where basically every possible biomarker has been generated and we want to figure out 'what is the optimal biomarker we can make using all tests'.  That will put an upper-bound to accuracy which we can go investigate in a prospective clinical trial.  We can then go backwards to start figuring out if there are ways to simplify/cheapen that test.
+
+  - To revisit the initial descriptive analysis (feel free to keep any/all code you find useful, but no requirement for that)
+  - Do some careful CV to identify the optimal model and operating point (probably F1 for the latter)
+  - Take a look at full and truncated time-to-event for that final operating point
+
 
 ## Questions
   - Predicting `BiopsyUpgraded` and `ProgressedToTreatment`?

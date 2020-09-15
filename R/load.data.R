@@ -1,3 +1,11 @@
+factor.ISUP <- function(x) {
+  factor(x, levels = 0:5, ordered = TRUE)
+}
+
+factor.Gleason <- function(x) {
+  factor(x, levels = c("0+0", "3+3", "3+4", "4+3", "4+4", "5+5"), ordered = TRUE)
+}
+
 # Project: Prostate Cancer Active Surveillance
 
 #######################################################
@@ -14,23 +22,33 @@ load.data.AS <- function(biomark.path,
                          biomark.key.path,
                          genetics.path,
                          biomark.categories.path) {
-  factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'MRILesions', 'HighestPIRADS',
-                   'BiopsyResult', 'PreviousGleason', 'StudyHighestGleason', 'PreviousISUP', 'Observation',
-                   'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory', 'GlobalScreeningArray',
-                   'GSAPositives', 'BRCAMutation', 'Mutation1', 'Mutation.2', 'RSIlesionPIRADS',
-                   'RSIlesionCancer', 'RSIlesionGleason', 'RSIlesionISUP', 'RSIlesionUpgraded',
+  factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'HighestPIRADS',
+                   'BiopsyResult','Observation',
+                   'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory',
+                   # 'Mutation1', 'Mutation.2', 'GlobalScreeningArray', 'BRCAMutation',
+                   'RSIlesionPIRADS',
+                   'RSIlesionCancer',  'RSIlesionUpgraded',
                    'RSIlesionObservation', 'ProgressedToTreatment', 'Prostatectomy',
-                   'UpgradedAndProgressed', 'NoUpgradeAndProgressed', 'StudyHighestISUP'
+                   'UpgradedAndProgressed', 'NoUpgradeAndProgressed'
                    );
+
+  ISUP.cols <- c('PreviousISUP',  'RSIlesionISUP', 'StudyHighestISUP');
+  Gleason.cols <- c('PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason');
+
   # Open Raw data:
   biodb <- xlsx::read.xlsx(
     biomark.path,
     sheetIndex = 1,
-    header = TRUE
+    header = TRUE,
+    stringsAsFactors = FALSE
   );
 
   # Convert to factor
   biodb[,factor.cols] <- lapply(biodb[,factor.cols], as.factor);
+
+  # Convert ISUP and Gleason to factors with pre-specified levels
+  biodb[,ISUP.cols] <-  lapply(biodb[, ISUP.cols], factor.ISUP);
+  biodb[,Gleason.cols] <-  lapply(biodb[, Gleason.cols], factor.Gleason);
 
   # Add PSA and PHI Density
   biodb$PSADensity <- biodb$freePSA / biodb$ProstateVolume;
@@ -41,28 +59,33 @@ load.data.AS <- function(biomark.path,
   levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
   levels(biodb$GeneticAncestry) <- c('European', 'African', 'East Asian', 'Native American');
   levels(biodb$GeneticRiskCategory) <- c('Low', 'Normal', 'High');
-  levels(biodb$MRIResult) <- c('No Legion noted MRI', 'Legion Found noted MRI');
+  levels(biodb$MRIResult) <- c('No Legion', 'Legion Found');
   levels(biodb$HighestPIRADS) <- c('No lesion', 'Very low', 'Low', 'Intermediate', 'High', 'Very high');
   levels(biodb$BiopsyResult) <- c('Negative', 'Positive');
+  levels(biodb$Observation) <- c('MRI Positive/Biopsy Positive', 'MRI Positive/Biopsy Negative',
+                                 'MRI Negative/Biopsy Positive', 'MRI Negative/Biopsy Negative');
 
   attr(biodb$ProstateVolume, 'label') <- "Prostate Volume (cm^3)"
 
   biokey <- xlsx::read.xlsx(
     biomark.key.path,
     sheetIndex = 1,
-    header = TRUE
+    header = TRUE,
+    stringsAsFactors = FALSE
     );
 
   biokey.gen <- xlsx::read.xlsx(
     genetics.path,
     sheetIndex = 1,
-    header = TRUE
+    header = TRUE,
+    stringsAsFactors = FALSE
     );
 
   bio.categories <- xlsx::read.xlsx(
     biomark.categories.path,
     sheetIndex = 1,
-    header = TRUE
+    header = TRUE,
+    stringsAsFactors = FALSE
     );
 
   bio.categories$Category <- as.factor(bio.categories$Category);
