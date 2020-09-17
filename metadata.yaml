@@ -1,7 +1,8 @@
+---
 Category: "project"
 Description: "repository for Prostate Cancer Active Surveillance project"
-Maintainers: "alfonsolam@mednet.ucla.edu"
-Contributors: "Alfonso Lam"
+Maintainers: "stefaneng@mednet.ucla.edu"
+Contributors: ["Stefan Eng", "Alfonso Lam"]
 Languages: ["R"]
 Dependencies: "BPG"
 References: ""
