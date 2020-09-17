@@ -26,5 +26,3 @@ jobs:
         uses: docker://blcdsdockerregistry/cicd-base:stefan
         env:
           VALIDATE_R: false
-          VALIDATE_YAML: false
-
