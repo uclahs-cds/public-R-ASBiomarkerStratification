@@ -24,3 +24,5 @@ jobs:
       # Run CICD-base
       - name: CICD-base
         uses: docker://blcdsdockerregistry/cicd-base:stefan
+        env:
+          VALIDATE_R: false
