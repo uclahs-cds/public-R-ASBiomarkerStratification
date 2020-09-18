@@ -33,11 +33,13 @@ mutation.dummy <- function(x) {
 #' @param biomark.pathBiomarkers xlsx file
 #' @param biomark.key.path path to the Biomarkers key xlsx file
 #' @param genetics path to the genetics xlsx file
+#' @param onlyBiodb boolean indicating if we should only return the biodb (main data)
 #' @export
 load.data.AS <- function(biomark.path,
                          biomark.key.path,
                          genetics.path,
-                         biomark.categories.path) {
+                         biomark.categories.path,
+                         onlyBiodb = FALSE) {
   factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'HighestPIRADS',
                    'BiopsyResult','Observation',
                    'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory',
@@ -118,18 +120,22 @@ load.data.AS <- function(biomark.path,
 
   bio.categories$Category <- as.factor(bio.categories$Category);
 
-  # Return the loaded objects
-  list(
-    biodb = biodb,
-    biokey = biokey,
-    biokey.gen = biokey.gen,
-    bio.categories = bio.categories
-    );
+  if(onlyBiodb) {
+    biodb
+    } else {
+    list(
+      biodb = biodb,
+      biokey = biokey,
+      biokey.gen = biokey.gen,
+      bio.categories = bio.categories
+      );
+    }
   }
 
 #' Loads the data for analysis with default file names
+#' @param onlyBiodb boolean indicating if we should only return the biodb (main data)
 #' @export
-default.load.data <- function() {
+default.load.data <- function(onlyBiodb = FALSE) {
   file.names <- c(
     'MRI DOD Biomarkers Database_Boutros - 2020.04.20.xlsx',
     'MRI DOD Biomarkers Database_Boutros - Key.xlsx',
@@ -137,7 +143,7 @@ default.load.data <- function() {
     'MRI DOD Biomarkers Category_Boutros.xlsx'
     );
   file.paths <- here::here(paste0('data/', file.names));
-  do.call('load.data.AS', as.list(file.paths));
+  do.call('load.data.AS', c(as.list(file.paths), onlyBiodb));
   }
 
 
