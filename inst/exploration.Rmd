@@ -284,6 +284,19 @@ biokey.variables <- c('Age', 'Race', 'Ethnicity', 'Weight', 'Height',
     );
 ```
 
+Check how many of each mutation we have
+```{r}
+colSums(data$biodb[, c('Mutation.BRCA1', 'Mutation.BRCA2', 'Mutation.ATM', 'Mutation.MLH1', 'Mutation.PMS2')], na.rm = TRUE)
+
+with(data$biodb, {
+  print(table(ProgressedToTreatment, Mutation.BRCA1))
+  print(table(ProgressedToTreatment, Mutation.BRCA2))
+  print(table(ProgressedToTreatment, Mutation.ATM))
+  print(table(ProgressedToTreatment, Mutation.MLH1))
+  print(table(ProgressedToTreatment, Mutation.PMS2))
+})
+```
+
 ## Overall Days to Progression from Biopsy/Diagnosis
 ```{r}
 # Create a Surv object from survival package
