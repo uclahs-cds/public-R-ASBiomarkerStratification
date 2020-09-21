@@ -21,43 +21,28 @@ train.control <- trainControl(
 
 prog.mod <- AS.models(biodb, train.control);
 
-saveRDS(prog.mod, here('data/progressed_models.Rds'));
-
-# https://topepo.github.io/caret/subsampling-for-class-imbalances.html
-sampling = "up";
-train.control.up <- train.control;
-train.control.up$sampling <- "up";
-
-prog.mod.up <- AS.models(biodb, train.control.up);
-
-saveRDS(prog.mod.up, here('data/progressed_models_upsampled2.Rds'));
+saveRDS(prog.mod, here('data/progressed_models_acc.Rds'));
 
 ### Compare rpart, C5.0, and GBM
-resamps.joined <- resamples(list(GBM = prog.mod$gbm.fit,
-                          C5.0 = prog.mod$c50.fit,
-                          rpart = prog.mod$rpart.fit,
-                          GBM.up = prog.mod.up$gbm.fit,
-                          C5.0.up = prog.mod.up$c50.fit,
-                          rpart.up = prog.mod.up$rpart.fit))
-
 resamps <- resamples(list(GBM = prog.mod$gbm.fit,
                              C5.0 = prog.mod$c50.fit,
                              rpart = prog.mod$rpart.fit))
 
-resamps.up <- resamples(list(GBM.up = prog.mod.up$gbm.fit,
-                          C5.0.up = prog.mod.up$c50.fit,
-                          rpart.up = prog.mod.up$rpart.fit))
-
 (sum.resamps <- summary(resamps))
 
-(sum.resamps.up <- summary(resamps.up))
+prog.mod.F <- AS.models(biodb, train.control, metric = 'F');
 
-(sum.resamps.joined <- summary(resamps.joined))
+saveRDS(prog.mod.F, here('data/progressed_models_F.Rds'));
+
+### Compare rpart, C5.0, and GBM
+resamps.F <- resamples(list(F.GBM = prog.mod.F$gbm.fit,
+                          F.C5.0 = prog.mod.F$c50.fit,
+                          F.rpart = prog.mod.F$rpart.fit))
+
+(sum.resamps.F <- summary(resamps.F))
 
 trellis.par.set(caretTheme())
 dotplot(resamps, metric = c("F", "Sens", "Spec", "Accuracy"))
-dotplot(resamps.up, metric = c("F", "Sens", "Spec", "Accuracy"))
-dotplot(resamps.joined, metric = c("F", "Sens", "Spec", "Accuracy"))
 
 diff.resamps <- diff(resamps)
 bwplot(diff.resamps, layout = c(3, 1))
@@ -69,4 +54,11 @@ plot(prog.mod$c50.bestfit)
 lapply(list(prog.mod$rpart.fit, prog.mod$c50.fit, prog.mod$gbm.fit), varImp)
 # do.call(cbind, lapply(list(rpart.fit, c50.fit, gbm.fit.progress), function(x) varImp(x)$importance))
 
-
+summary(
+    resamples(list(GBM = prog.mod$gbm.fit,
+                   C5.0 = prog.mod$c50.fit,
+                   rpart = prog.mod$rpart.fit,
+                   F.GBM = prog.mod.F$gbm.fit,
+                   F.C5.0 = prog.mod.F$c50.fit,
+                   F.rpart = prog.mod.F$rpart.fit))
+)
