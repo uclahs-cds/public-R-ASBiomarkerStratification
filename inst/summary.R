@@ -1,16 +1,15 @@
+library(ProstateCancer.ASBiomarkerSynergy);
 
 ### pair.testing.loop.R ###################################
 # The following R code take a set tests with their
 # respective thresholds and perfoms a serial test
 
-# Cleaning Environment:
-rm(list=ls());
-
-# Loading Data:
-source('load.data.R');
+# Load Data:
+data <- default.load.data();
+attach(data);
 
 #############################################
-# Create data frame.       
+# Create data frame.
 #############################################
 data.set <- data.frame(
   ID = as.character(biodb$Record.ID),
@@ -93,7 +92,7 @@ variables.by.type <- c(
   'GSAPositives',
   'BRCAMutation',
   'Mutation1',
-  'Mutation2' 
+  'Mutation2'
   );
 
 real.names.set <- c(
@@ -119,10 +118,10 @@ real.names.set <- c(
   'GSA Positives',
   'BRCA Mutation',
   'Mutation 1',
-  'Mutation 2' 
+  'Mutation 2'
   );
 
-#  Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#  Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's
 
 common.size <- rep(NA, length(variables.set));
 summary.data <- data.frame(
@@ -140,17 +139,17 @@ for (i in 1:length(variables.set)){
   deliver <- paste('Processing Test ', i , ' : ', real.names.set[i], sep = ' ');
   print(deliver);
   summary.data$test.name[i] = real.names.set[i];
-  summary.data$min.value[i] = round(summary(data.set[, variables.set[i]])[1],2); 
+  summary.data$min.value[i] = round(summary(data.set[, variables.set[i]])[1],2);
   summary.data$first.quarter[i] = round(summary(data.set[, variables.set[i]])[2],2);
   summary.data$median[i] = round(summary(data.set[, variables.set[i]])[3],2);
   summary.data$mean[i] = round(summary(data.set[, variables.set[i]])[4],2);
   summary.data$third.quarter[i] = round(summary(data.set[, variables.set[i]])[5],2);
   summary.data$max.values[i] = round(summary(data.set[, variables.set[i]])[6],2);
-  summary.data$na.values[i] = round(summary(data.set[, variables.set[i]])[7],2); 
+  summary.data$na.values[i] = round(summary(data.set[, variables.set[i]])[7],2);
   };
 
 ### WRITE SESSION PROFILE TO FILE #####################
-save.session.profile(
+BoutrosLab.utilities::save.session.profile(
   BoutrosLab.utilities::generate.filename(
     Sys.Date(),
     'pair.testing.loop',
@@ -158,3 +157,4 @@ save.session.profile(
     )
   );
 
+detach(data);

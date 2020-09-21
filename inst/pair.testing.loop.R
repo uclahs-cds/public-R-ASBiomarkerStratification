@@ -1,35 +1,31 @@
+library(ProstateCancer.ASBiomarkerSynergy);
 
 ### pair.testing.loop.R ###################################
 # The following R code take a set tests with their
 # respective thresholds and perfoms a serial test
 
-# Cleaning Environment:
-rm(list=ls());
-
-# Loading Data:
-source('load.data.R');
-
-# Loading Confusion Matrix Function:
-source('confusion.matrix.R');
+# Load Data:
+data <- default.load.data();
+attach(data);
 
 ### generate.legend ###################################
-# Description:                                                 
+# Description:
 # Function to generate scale used in hexbin plot
 #
-# Input variables:                                             
-# legend.colours  color scale to be used               
+# Input variables:
+# legend.colours  color scale to be used
 # legend.labels   give label to each color
-# legend.title    title of the scale                           
-# legend.output   output filename                                   
+# legend.title    title of the scale
+# legend.output   output filename
 # legend.boolean  continous (TRUE or FALSE)
 #
-# Example:       
+# Example:
 # sample.names.legend  <- generate.legend( LinGray(11, beg=1, end=92),
 #   rev(c('1', '16', '31', '46', '61', '76', '90', '105', '120', '135', '150')),
 #   expression(bold('Counts')),
 #   'FALSE'
 #   );
-#######################################################                                    
+#######################################################
 generate.legend <- function(
   legend.colours,
   legend.labels,
@@ -54,7 +50,7 @@ generate.legend <- function(
   }
 
 #############################################
-# Create data frame.       
+# Create data frame.
 #############################################
 data.set <- data.frame(
   ID = as.character(biodb$Record.ID),
@@ -148,7 +144,7 @@ variables.by.type <- c(
   'GSAPositives',
   'BRCAMutation',
   'Mutation1',
-  'Mutation2' 
+  'Mutation2'
   );
 
 real.names.set <- c(
@@ -176,7 +172,7 @@ real.names.set <- c(
   'GSA Positives',
   'BRCA Mutation',
   'Mutation 1',
-  'Mutation 2' 
+  'Mutation 2'
   );
 
 # Optimal Set:
@@ -185,7 +181,7 @@ load(optimal.set.file);
 biomarker.tests <- optimal.set$test;
 biomarker.thresholds <- optimal.set$threshold;
 
-# Making a data frame to pair the tests with their respective thresholds:  
+# Making a data frame to pair the tests with their respective thresholds:
 common.size <- rep(NA, length(biomarker.tests)*(length(biomarker.tests)));
 pair.tests.names <- data.frame(
   testA = common.size,
@@ -271,12 +267,12 @@ rownames(pair.tests.specificity) <- variables.set;
 for (i in 1:dim(pair.tests.names)[1]){
   testA <- pair.tests.names$testA[i];
   testB <- pair.tests.names$testB[i];
-  
+
   print(paste('Processing ', testA, ' - ', testB, sep = ''));
   testA.threshold <- pair.tests.names$testA.threshold[i];
   testB.threshold <- pair.tests.names$testB.threshold[i];
-  
-  working.data <- data.set[,c('ID', 'BiopsyUpgraded', testA, testB)] 
+
+  working.data <- data.set[,c('ID', 'BiopsyUpgraded', testA, testB)]
   working.data <- working.data[complete.cases(working.data),];
 
   testA.set <- working.data[,c('ID', 'BiopsyUpgraded', testA)];
@@ -289,7 +285,7 @@ for (i in 1:dim(pair.tests.names)[1]){
 
   # Computing Confusion Matrix for Tests A and B:
   testA.matrix = confusion.matrix(testA.set, testA.threshold);
-  testB.matrix = confusion.matrix(testB.set, testB.threshold);  
+  testB.matrix = confusion.matrix(testB.set, testB.threshold);
 
   if (!is.na(testA.matrix$tp.positive.patients)){
     tp.patients <- unlist(strsplit(testA.matrix$tp.positive.patients, ','));
@@ -305,7 +301,7 @@ for (i in 1:dim(pair.tests.names)[1]){
     testA.matrix$tp <- 0;
     testA.matrix$fp <- 0;
     }
-  
+
   # Computing Sensitivity, Specificity for test A and test B:
   sensitivityA <- testA.matrix$tp/(testA.matrix$tp + testA.matrix$fn);
   specificityA <- testA.matrix$tn/(testA.matrix$tn + testA.matrix$fp);
@@ -327,16 +323,16 @@ for (i in 1:dim(pair.tests.names)[1]){
     else {
       specificityB.tree  <- testB.matrix.fpA$tn/(testB.matrix.fpA$tn + testB.matrix.fpA$fp);
     }
-   
+
   print(specificityA);
   print(specificityB.tree);
-  
+
   overall.sensitivity <- sensitivityA*sensitivityB.tree;
   overall.specificity <- specificityA + (1-specificityA)*specificityB.tree;
 
   #overall.accuracy <-
   #(testB.matrix.tpA$tp + testB.matrix.tpA$tn)/(testB.matrix.tpA$tp + testB.matrix.tpA$tn+testB.matrix.tpA$fn+testA.matrix$fn)
-    
+
   #print(sensitivityA)
   #print(specificityA)
 
@@ -346,14 +342,14 @@ for (i in 1:dim(pair.tests.names)[1]){
   #print(overall.sensitivity)
   #print(overall.specificity)
 
-  #pair.tests.sensitivity[];  
+  #pair.tests.sensitivity[];
   #pair.tests.sensitivity[testA, testA] <- sensitivityA;
   pair.tests.sensitivity[testB, testA] <- overall.sensitivity
   pair.tests.specificity[testB, testA] <- overall.specificity
 
   }
 
-# Scaling the colors:              
+# Scaling the colors:
 key.min = 0;
 key.max = 1;
 key.colour.interval.num = 100;
@@ -398,7 +394,7 @@ sample.covariate <- list(
 pair.tests.sensitivity <- pair.tests.sensitivity[,c(variables.by.type)];
 pair.tests.sensitivity <- pair.tests.sensitivity[c(variables.by.type),];
 
-# Reordering by test type: 
+# Reordering by test type:
 pair.tests.specificity <- pair.tests.specificity[,c(variables.by.type)];
 pair.tests.specificity <- pair.tests.specificity[c(variables.by.type),];
 
@@ -416,7 +412,7 @@ specificity.plot <- BoutrosLab.plotting.general::create.heatmap(
   colourkey.labels.at = seq(0, 1, 0.2),
   at = key.scale,
   covariates = sample.covariate,
-  covariates.top = top.covariate,  
+  covariates.top = top.covariate,
   #xaxis.col = c(rep('dodgerblue',4), rep('gold',2), rep('firebrick3', 9), rep('darkgreen', 8)),
   #yaxis.col = c(rep('dodgerblue',4), rep('gold',2), rep('firebrick3', 9), rep('darkgreen', 8)),
   clustering.method = 'none',
@@ -435,7 +431,7 @@ sensitivity.plot <- BoutrosLab.plotting.general::create.heatmap(
   colourkey.cex = 0.75,
   colourkey.labels.at = seq(0, 1, 0.2),
   at = key.scale,
-  covariates.top = top.covariate,  
+  covariates.top = top.covariate,
   #xaxis.col = c(rep('dodgerblue',4), rep('gold',2), rep('firebrick3', 9), rep('darkgreen', 8)),
   #yaxis.col = c(rep('dodgerblue',4), rep('gold',2), rep('firebrick3', 9), rep('darkgreen', 8)),
   clustering.method = 'none',
@@ -443,12 +439,12 @@ sensitivity.plot <- BoutrosLab.plotting.general::create.heatmap(
   resolution = 300
   );
 
-test.legend  <- generate.legend(        
-  legend.colours = c('dodgerblue','gold','firebrick3', 'darkgreen'),  
-  legend.labels = c('Imaging', 'Urine', 'Blood/Urine', 'Genetics'),         
-  legend.title = expression(bold('Test')),                    
-  legend.boolean = 'FALSE'              
-  );                
+test.legend  <- generate.legend(
+  legend.colours = c('dodgerblue','gold','firebrick3', 'darkgreen'),
+  legend.labels = c('Imaging', 'Urine', 'Blood/Urine', 'Genetics'),
+  legend.title = expression(bold('Test')),
+  legend.boolean = 'FALSE'
+  );
 
 heatmap.legend  <- generate.legend(
   legend.colours = c('red', 'white', 'blue'),
@@ -483,7 +479,7 @@ BoutrosLab.plotting.general::create.multipanelplot(
   );
 
 ### WRITE SESSION PROFILE TO FILE #####################
-save.session.profile(
+BoutrosLab.utilities::save.session.profile(
   BoutrosLab.utilities::generate.filename(
     Sys.Date(),
     'pair.testing.loop',
@@ -491,3 +487,4 @@ save.session.profile(
     )
   );
 
+detach(data);
