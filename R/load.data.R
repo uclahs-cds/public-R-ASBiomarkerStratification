@@ -137,7 +137,7 @@ load.data.AS <- function(biomark.path,
 #' @export
 default.load.data <- function(onlyBiodb = FALSE) {
   file.names <- c(
-    'MRI DOD Biomarkers Database_Boutros - 2020.04.20.xlsx',
+    'MRI DOD Biomarkers Database_Boutros - 2020.09.21.xlsx',
     'MRI DOD Biomarkers Database_Boutros - Key.xlsx',
     'MRI DOD Biomarkers Genetics_Boutros - 2019.11.12.xlsx',
     'MRI DOD Biomarkers Category_Boutros.xlsx'

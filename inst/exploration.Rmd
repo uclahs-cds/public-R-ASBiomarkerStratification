@@ -36,6 +36,8 @@ table1::label(data$biodb$Weight) <- 'Weight (kg)';
 
 cohort.table <- table1::table1(~ Age + Weight + Height + BMI | Race, data = data$biodb);
 cohort.table;
+
+table1::table1(~ Age + Weight + Height + BMI + Race | ProgressedToTreatment, data = data$biodb);
 ```
 
 One person has 225 kg and no height... could be lbs instead?
@@ -69,7 +71,7 @@ table1::table1(score.formula, data = data$biodb);
 One subject `M0003` has an `p2PSA` value of 1561. Update this to 15.61.
 ```{r}
 # Missing decimal place
-data$biodb[3, 'p2PSA'] <- data$biodb[3, 'p2PSA'] / 100;
+# data$biodb[3, 'p2PSA'] <- data$biodb[3, 'p2PSA'] / 100;
 ```
 
 ## Compute PHI

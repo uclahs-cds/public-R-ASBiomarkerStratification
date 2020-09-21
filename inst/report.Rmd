@@ -1,0 +1,59 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(ProstateCancer.ASBiomarkerSynergy);
+knitr::opts_chunk$set(echo = FALSE)
+
+biodb <- default.load.data(onlyBiodb = TRUE);
+```
+
+## Introduction
+
+There is a clinical need to predict *before* surgery if a man has aggressive disease so that we can decide if they need surgery at all.  The quality of life benefits are thus huge (avoiding therapy entirely!).  The problem is that because it’s pre-surgery, we do not have the full cancer to study.  Instead we use biopsies (spatially-restricted samples of the cancer), radiology (imaging like MRI) and minimally-invasive biomarkers (e.g. blood or urine tests).  It's unclear which of those different strategies is best, and how those strategies should be sequenced or ordered.  A collaborator at UTHSCSA (University of Texas Health Sciences Center San Antonio) Dr. Michael Liss is a surgeon who is thinking hard about these problems.  He's put together a really nice cohort of ~100 patients where basically every possible biomarker has been generated and we want to figure out 'what is the optimal biomarker we can make using all tests'.  That will put an upper-bound to accuracy which we can go investigate in a prospective clinical trial.  We can then go backwards to start figuring out if there are ways to simplify/cheapen that test.
+
+## Background
+
+  - The Prostate Health Index (PHI): a new test for the detection of prostate cancer https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3943368
+    - In multiple prospective international trials, this composite measurement has been shown to outperform conventional PSA and free PSA measurements.
+    - Unlike PCA3 and TMPRSS2:ERG, PHI is also consistently associated with Gleason score and upgrading during active surveillance.
+
+The Prostate Health Index (PHI) is computed as
+$$
+\text{PHI} = ([-2]\text{proPSA}/\text{free PSA}) \times \sqrt{\text{PSA}}
+$$
+
+In the data set this corresponds to `(p2PSA / freePSA) * sqrt(PSAHyb)`
+    
+## Data
+In this cohort there are $N = `r nrow(biodb)`$ subjects.
+In this cohort there are two variables that are of interest to predict.
+The first, `BiopsyUpgraded`, is whether the subject's research study biopsy increased cancer grade from the most recent biopsy results ().
+The second, `ProgressedToTreatment`, is whether the subject progressed to treatment.
+
+### Biopsy data
+There were `r sum(is.na(biodb$BiopsyResult))` subjects that did not have a biopsy.
+
+### Time-to-event data
+
+```{r}
+stopifnot(
+    all(!is.na(biodb$DaysDxToLastClinicalAppt))
+    );
+stopifnot(
+    all(!is.na(biodb$DaysDxToLastReview))
+    );
+stopifnot(
+    all(is.na(biodb$BiopsyResult) == is.na(biodb$DaysBxToLastReview))
+    );
+stopifnot(
+    all(is.na(biodb$BiopsyResult) == is.na(biodb$DaysBxToLastClinicalAppt))
+    );
+```
+All subjects have values for the days from diagnosis to the last clinical appointment `DaysDxToLastClinicalAppt` and last review `DaysDxToLastReview`.
+The subjects that had a biopsy have values for variables `DaysBxToLastClinicalAppt` and `DaysBxToLastReview`.
+If a subject progressed to treatment, then the days from diagnosis are in `DaysDxToProgression`.
+If they had a biopsy and progressed to treatment then `DaysDxToProgression` will contain the days between the biopsy and progression.
+

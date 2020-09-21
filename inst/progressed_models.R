@@ -32,8 +32,6 @@ prog.mod.up <- AS.models(biodb, train.control.up);
 
 saveRDS(prog.mod.up, here('data/progressed_models_upsampled2.Rds'));
 
-
-
 ### Compare rpart, C5.0, and GBM
 resamps.joined <- resamples(list(GBM = prog.mod$gbm.fit,
                           C5.0 = prog.mod$c50.fit,

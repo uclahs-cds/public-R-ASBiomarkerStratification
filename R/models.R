@@ -3,13 +3,25 @@
 #' @param biodb
 #' @param train.control
 #' @param target
+#' @param metric
 #'
 #' @return
 #' @export
 #'
 #' @examples
-AS.models <- function(biodb, train.control = NULL, target = c('ProgressedToTreatment', 'BiopsyUpgraded')) {
+AS.models <- function(
+    biodb,
+    train.control = NULL,
+    target = c('ProgressedToTreatment', 'BiopsyUpgraded'),
+    metric = c('Accuracy', 'AUC', 'F', 'Kappa', 'Precision', 'Recall', 'ROC',
+               'Sens', 'Spec'),
+    exclude.vars = NULL) {
     target <- match.arg(target);
+    metric <- match.arg(target);
+
+    if('BiopsyUpgraded' == target) {
+        exclude.vars <- c(exclude.vars, 'BiopsyResult');
+        }
 
     biokey.variables <- c('Age',
                           'Race',
@@ -17,7 +29,7 @@ AS.models <- function(biodb, train.control = NULL, target = c('ProgressedToTreat
                           'Weight',
                           'Height',
                           'BMI', 'MRIResult', 'MRILesions',
-                          # 'BiopsyResult',
+                          'BiopsyResult',
                           'ProstateVolume',
                           # 'Observation',
                           'PCA3',
@@ -37,6 +49,8 @@ AS.models <- function(biodb, train.control = NULL, target = c('ProgressedToTreat
                           'ADCnormalSignal', 'ADClesionSignal',
                           # 'RSIlesionPIRADS', 'RSIlesionCancer',  'RSIlesionUpgraded', 'RSIlesionISUP',
                           'PSADensity', 'PHIDensity');
+
+    biokey.variables <- setdiff(biokey.variables, exclude.vars)
 
     missing.target <- is.na(biodb[, target])
     # Variable we want to predict
@@ -60,13 +74,14 @@ AS.models <- function(biodb, train.control = NULL, target = c('ProgressedToTreat
 
     if(is.null(train.control)) {
         train.control <- trainControl(
-            method = "repeatedcv",
+            method = 'repeatedcv',
             number = 10,
             repeats = 5,
             classProbs = TRUE,
-            summaryFunction = custom.summary,
+            summaryFunction = custom.summary
             # https://topepo.github.io/caret/subsampling-for-class-imbalances.html
-            sampling = "up"
+            # Don't seem to be enough of a class imbalance to make a difference
+            # sampling = 'up'
             )
         } else {
             train.control$classProbs <- TRUE
@@ -74,13 +89,13 @@ AS.models <- function(biodb, train.control = NULL, target = c('ProgressedToTreat
         }
 
     y <- y.target
-    levels(y) <- c("no", "yes");
+    levels(y) <- c('no', 'yes');
 
     rpart.fit <- train(
         X,
         y,
-        method = "rpart",
-        metric = "F",
+        method = 'rpart',
+        metric = metric,
         trControl = train.control,
         tuneLength = 30
     )
@@ -94,8 +109,8 @@ AS.models <- function(biodb, train.control = NULL, target = c('ProgressedToTreat
     c50.fit <- train(
         X,
         y,
-        method = "C5.0",
-        metric = "F",
+        method = 'C5.0',
+        metric = metric,
         trControl = train.control,
         tuneGrid = c50.grid
     )
@@ -109,8 +124,8 @@ AS.models <- function(biodb, train.control = NULL, target = c('ProgressedToTreat
     gbm.fit <- train(
         X,
         y,
-        method = "gbm",
-        metric = "F",
+        method = 'gbm',
+        metric = metric,
         trControl = train.control,
         tuneGrid = gbmGrid,
         verbose = FALSE
