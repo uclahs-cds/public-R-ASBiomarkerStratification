@@ -5,6 +5,7 @@ output: html_notebook
 
 ```{r setup, include=FALSE}
 library(ProstateCancer.ASBiomarkerSynergy);
+library(printr)
 knitr::opts_chunk$set(echo = FALSE)
 
 biodb <- default.load.data(onlyBiodb = TRUE);
@@ -14,7 +15,7 @@ biodb <- default.load.data(onlyBiodb = TRUE);
 
 There is a clinical need to predict *before* surgery if a man has aggressive disease so that we can decide if they need surgery at all.  The quality of life benefits are thus huge (avoiding therapy entirely!).  The problem is that because it’s pre-surgery, we do not have the full cancer to study.  Instead we use biopsies (spatially-restricted samples of the cancer), radiology (imaging like MRI) and minimally-invasive biomarkers (e.g. blood or urine tests).  It's unclear which of those different strategies is best, and how those strategies should be sequenced or ordered.  A collaborator at UTHSCSA (University of Texas Health Sciences Center San Antonio) Dr. Michael Liss is a surgeon who is thinking hard about these problems.  He's put together a really nice cohort of ~100 patients where basically every possible biomarker has been generated and we want to figure out 'what is the optimal biomarker we can make using all tests'.  That will put an upper-bound to accuracy which we can go investigate in a prospective clinical trial.  We can then go backwards to start figuring out if there are ways to simplify/cheapen that test.
 
-## Background
+### Background
 
   - The Prostate Health Index (PHI): a new test for the detection of prostate cancer https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3943368
     - In multiple prospective international trials, this composite measurement has been shown to outperform conventional PSA and free PSA measurements.
@@ -26,15 +27,41 @@ $$
 $$
 
 In the data set this corresponds to `(p2PSA / freePSA) * sqrt(PSAHyb)`
-    
+
 ## Data
 In this cohort there are $N = `r nrow(biodb)`$ subjects.
-In this cohort there are two variables that are of interest to predict.
-The first, `BiopsyUpgraded`, is whether the subject's research study biopsy increased cancer grade from the most recent biopsy results ().
+There are two variables that are of interest to predict.
+The first, `BiopsyUpgraded`, is whether the subject's research study biopsy increased cancer grade from the most recent biopsy results.
 The second, `ProgressedToTreatment`, is whether the subject progressed to treatment.
 
 ### Biopsy data
 There were `r sum(is.na(biodb$BiopsyResult))` subjects that did not have a biopsy.
+
+### Target Variables
+```{r, results = 'asis'}
+library(pander)
+# print(xtable::xtable(table(data.frame(`Biopsy Upgraded` = biodb$BiopsyUpgraded, `Progressed To Treatment` = biodb$ProgressedToTreatment))), type = "html")
+
+with(biodb, {
+  ft <- ftable(data.frame(BiopsyUpgraded, ProgressedToTreatment))
+  #stargazer(format(ft, quote = FALSE, justify = "right"), type = "html")
+  pandoc.table(ft, style = 'simple')
+})
+```
+
+### Demographics
+
+#### Biopsy Upgraded
+```{r, results= 'hide'}
+demographic.vars <- c("Age", "Weight", "Height", "BMI");
+lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = "BiopsyUpgraded", cond = "Race");
+```
+
+#### Progressed to Treatment
+```{r, results= 'hide'}
+demographic.vars <- c("Age", "Weight", "Height", "BMI");
+lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = "ProgressedToTreatment", cond = "Race");
+```
 
 ### Time-to-event data
 
@@ -57,3 +84,61 @@ The subjects that had a biopsy have values for variables `DaysBxToLastClinicalAp
 If a subject progressed to treatment, then the days from diagnosis are in `DaysDxToProgression`.
 If they had a biopsy and progressed to treatment then `DaysDxToProgression` will contain the days between the biopsy and progression.
 
+#### Overall Days to Progression from Biopsy/Diagnosis
+```{r}
+# Create a Surv object from survival package
+progression.surv.bx <- do.call(
+    what = survival::Surv,
+    args = surv.format(biodb$DaysBxToProgression, biodb$DaysBxToLastReview)
+    );
+
+progression.surv.dx <- do.call(
+    what = survival::Surv,
+    args = surv.format(biodb$DaysDxToProgression, biodb$DaysDxToLastReview)
+    );
+
+BoutrosLab.plotting.survival::create.km.plot(
+    survival.object = progression.surv.bx,
+    xaxis.cex = 1.4,
+    yaxis.cex = 1.4,
+    main.cex = 1.4,
+    main = 'Overall Days-to-Progression from Biopsy',    
+    xlab.label = 'Time to progression from biopsy (Days)',
+    xlab.cex = 1.5,
+    ylab.label = 'Estimated survival probability',
+    ylab.cex = 1.5
+    );
+
+BoutrosLab.plotting.survival::create.km.plot(
+    survival.object = progression.surv.dx,
+    xaxis.cex = 1.4,
+    yaxis.cex = 1.4,
+    main.cex = 1.4,
+    main = 'Overall Days-to-Progression from Diagnosis',
+    xlab.label = 'Time to progression from diagnosis (Days)',
+    xlab.cex = 1.5,
+    ylab.label = 'Estimated survival probability',
+    ylab.cex = 1.5
+    );
+```
+
+#### Overall Time-to-Upgrade from Diagnosis
+```{r}
+# Create a Surv object from survival package
+upgrade.surv <- do.call(
+    what = survival::Surv,
+    args = surv.format(biodb$DaysDxToUpgrade, biodb$DaysDxToLastReview)
+    );
+
+BoutrosLab.plotting.survival::create.km.plot(
+    survival.object = upgrade.surv,
+    xaxis.cex = 1.4,
+    yaxis.cex = 1.4,
+    main.cex = 1.4,
+    main = 'Overall Days-to-Upgrade from Diagnosis',
+    xlab.label = 'Time to upgrade since diagnosis (Days)',
+    xlab.cex = 1.5,
+    ylab.label = 'Estimated survival probability',
+    ylab.cex = 1.5
+    );
+```

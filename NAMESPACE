@@ -3,5 +3,6 @@
 export(AS.models)
 export(create.heatmap.AS)
 export(default.load.data)
+export(demographics.boxplot)
 export(load.data.AS)
 export(surv.format)

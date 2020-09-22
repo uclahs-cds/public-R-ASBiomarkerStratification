@@ -45,7 +45,9 @@ trellis.par.set(caretTheme())
 dotplot(resamps, metric = c("F", "Sens", "Spec", "Accuracy"))
 
 diff.resamps <- diff(resamps)
-bwplot(diff.resamps, layout = c(3, 1))
+diff.resamps.F <- diff(resamps.F)
+bwplot(resamps)
+bwplot(resamps.F, layout = c(3, 1))
 
 rpart.plot(prog.mod$rpart.fit$finalModel);
 plot(prog.mod$c50.bestfit)

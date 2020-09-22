@@ -95,6 +95,8 @@ load.data.AS <- function(biomark.path,
   levels(biodb$Observation) <- c('MRI Positive/Biopsy Positive', 'MRI Positive/Biopsy Negative',
                                  'MRI Negative/Biopsy Positive', 'MRI Negative/Biopsy Negative');
 
+  attr(biodb$Weight, 'label') <- "Weight (kg)"
+  attr(biodb$Height, 'label') <- "Height (cm)"
   attr(biodb$ProstateVolume, 'label') <- "Prostate Volume (cm^3)"
 
   biokey <- xlsx::read.xlsx(
