@@ -8,13 +8,14 @@ output:
 ```{r setup, include=FALSE}
 library(ProstateCancer.ASBiomarkerSynergy);
 library(BoutrosLab.plotting.general);
+library(kableExtra);
 library(gridExtra);
 library(magrittr);
 
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '50%')
 
-axis.cex <- 1
-lab.cex <- 1.2
+axis.cex <- .7
+lab.cex <- .8
 strip.cex <- 0.45
 
 biodb <- default.load.data(onlyBiodb = TRUE);
@@ -39,25 +40,32 @@ In the data set this corresponds to `(p2PSA / freePSA) * sqrt(PSAHyb)`
 
 ## Data
 In this cohort there are $N = `r nrow(biodb)`$ subjects.
-There are two variables that are of interest to predict.
+There are three variables that are of interest to predict.
 The first, `BiopsyUpgraded`, is whether the subject's research study biopsy increased cancer grade from the most recent biopsy results.
 The second, `ProgressedToTreatment`, is whether the subject progressed to treatment.
+Finally we have `Prostatectomy` which indicates whether the subject had a prostatectomy.
 
-### Biopsy data
-There were `r sum(is.na(biodb$BiopsyResult))` subjects that did not have a biopsy.
+```{r}
+pred.vars.xtabs <- xtabs(~ BiopsyUpgraded + ProgressedToTreatment + Prostatectomy, data = biodb, addNA = TRUE)
+pred.vars.df <- as.data.frame(ftable(pred.vars.xtabs))
 
-### Target Variables
-```{r, results = 'asis'}
-library(pander)
-# print(xtable::xtable(table(data.frame(`Biopsy Upgraded` = biodb$BiopsyUpgraded, `Progressed To Treatment` = biodb$ProgressedToTreatment))), type = "html")
+pred.table <- reshape(pred.vars.df, idvar = c('BiopsyUpgraded', 'ProgressedToTreatment'), timevar = 'Prostatectomy', direction = 'wide')
 
-with(biodb, {
-  ft <- ftable(data.frame(BiopsyUpgraded, ProgressedToTreatment))
-  #stargazer(format(ft, quote = FALSE, justify = "right"), type = "html")
-#  kab
-  pandoc.table(ft, style = 'simple')
-  #kable(ft)
-})
+row.order <- with(pred.table, order(BiopsyUpgraded, ProgressedToTreatment))
+prostatectomy.cols <- paste0(0:1, " (N=", table(biodb$Prostatectomy), ")")
+overall.col <- paste0('Overall (N=', nrow(biodb), ')')
+
+pred.table$Overall <- rowSums(pred.table[row.order, c(3,4)])
+
+pred.table[row.order, ] %>%
+  kable(row.names = FALSE,
+    booktabs = TRUE,
+    align =  c('c', 'c', 'c', 'c'),
+    col.names = c('Biopsy Upgraded', 'Progressed To Treatment', prostatectomy.cols, overall.col),
+    caption = "Comparision of prediction variables of interest") %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1) %>%
+  add_header_above(c(" " = 2, "Prostatectomy" = 2, " " = 1), align = 'c')
 ```
 
 ### Demographics
@@ -88,6 +96,11 @@ table1.to.kable(t1) %>%
 t1.bx <- table1::table1(~ p2PSA +  freePSA + PSAHyb + SOCPSA + PHI | BiopsyUpgraded, data = biodb);
 table1.to.kable(t1.bx) %>%
   add_header_above(c(" " = 1, "Biopsy Upgraded" = 2, " " = 1))
+```
+
+### Correlation Heatmap
+```{r, out.width = "100%"}
+create.heatmap.AS(biodb);
 ```
 
 ### Time-to-event data

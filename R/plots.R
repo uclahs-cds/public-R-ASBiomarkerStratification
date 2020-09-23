@@ -26,7 +26,7 @@ demographics.boxplot <- function(biodb, y, x, cond = NULL, ...) {
         add.stripplot = TRUE,
         xlab.label = camel.to.spaces(x),
         ylab.label = ylab.label,
-        ylimits = c(0, max(biodb[, y] + 10)),
+        # ylimits = c(0, max(biodb[, y] + 10)),
         ...
     );
 }

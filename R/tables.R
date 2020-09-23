@@ -15,7 +15,7 @@ table1.to.kable <- function(tb1, group) {
     # Remove the group rows
     rt.nogroup <- rt[-group.index, ];
 
-    k1 <- kable(rt.nogroup, align = c('l', 'c', 'c', 'c'), row.names = FALSE);
+    k1 <- kable(rt.nogroup, align = c('l', 'c', 'c', 'c'), row.names = FALSE, booktabs = T);
 
     group.index.aligned <- group.index - seq(0,length(group.index) - 1)
     group.index.end <- c(group.index.aligned, nrow(rt.nogroup))
