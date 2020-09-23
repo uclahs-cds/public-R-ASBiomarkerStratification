@@ -22,7 +22,9 @@ Suggests:
     BoutrosLab.plotting.survival,
     BoutrosLab.statistics.survival,
     table1,
-    testthat
+    testthat,
+    rvest,
+    xml2
 Exports:
     compute.auc,
     compute.auc.ci,

@@ -1,12 +1,21 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 ```{r setup, include=FALSE}
 library(ProstateCancer.ASBiomarkerSynergy);
-library(printr)
-knitr::opts_chunk$set(echo = FALSE)
+library(BoutrosLab.plotting.general);
+library(gridExtra);
+library(magrittr);
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '50%')
+
+axis.cex <- 1
+lab.cex <- 1.2
+strip.cex <- 0.45
 
 biodb <- default.load.data(onlyBiodb = TRUE);
 ```
@@ -45,22 +54,40 @@ library(pander)
 with(biodb, {
   ft <- ftable(data.frame(BiopsyUpgraded, ProgressedToTreatment))
   #stargazer(format(ft, quote = FALSE, justify = "right"), type = "html")
+#  kab
   pandoc.table(ft, style = 'simple')
+  #kable(ft)
 })
 ```
 
 ### Demographics
 
 #### Biopsy Upgraded
-```{r, results= 'hide'}
+```{r, results= 'hide', out.width='90%'}
 demographic.vars <- c("Age", "Weight", "Height", "BMI");
-lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = "BiopsyUpgraded", cond = "Race");
+bx.plots <- lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = "BiopsyUpgraded", cond = "Race", yaxis.cex = axis.cex, xaxis.cex = axis.cex, ylab.cex = lab.cex, xlab.cex = lab.cex, strip.cex = strip.cex);
+do.call(gridExtra::grid.arrange, bx.plots);
 ```
 
 #### Progressed to Treatment
-```{r, results= 'hide'}
+```{r, results= 'hide', out.width='90%'}
 demographic.vars <- c("Age", "Weight", "Height", "BMI");
-lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = "ProgressedToTreatment", cond = "Race");
+prog.plots <- lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = "ProgressedToTreatment", cond = "Race", yaxis.cex = axis.cex, xaxis.cex = axis.cex, ylab.cex = lab.cex, xlab.cex = lab.cex, strip.cex = strip.cex);
+do.call(gridExtra::grid.arrange, prog.plots);
+```
+
+### Table Summaries
+```{r}
+# TODO: Update render.default to always include missing?
+t1 <- table1::table1(~ p2PSA +  freePSA + PSAHyb + SOCPSA + PHI | ProgressedToTreatment, data = biodb);
+table1.to.kable(t1) %>%
+  add_header_above(c(" " = 1, "Progressed To Treatment" = 2, " " = 1))
+```
+
+```{r}
+t1.bx <- table1::table1(~ p2PSA +  freePSA + PSAHyb + SOCPSA + PHI | BiopsyUpgraded, data = biodb);
+table1.to.kable(t1.bx) %>%
+  add_header_above(c(" " = 1, "Biopsy Upgraded" = 2, " " = 1))
 ```
 
 ### Time-to-event data
@@ -99,26 +126,26 @@ progression.surv.dx <- do.call(
 
 BoutrosLab.plotting.survival::create.km.plot(
     survival.object = progression.surv.bx,
-    xaxis.cex = 1.4,
-    yaxis.cex = 1.4,
+    xaxis.cex = axis.cex,
+    yaxis.cex = axis.cex,
     main.cex = 1.4,
     main = 'Overall Days-to-Progression from Biopsy',    
     xlab.label = 'Time to progression from biopsy (Days)',
-    xlab.cex = 1.5,
+    xlab.cex = lab.cex,
     ylab.label = 'Estimated survival probability',
-    ylab.cex = 1.5
+    ylab.cex = lab.cex
     );
 
 BoutrosLab.plotting.survival::create.km.plot(
     survival.object = progression.surv.dx,
-    xaxis.cex = 1.4,
-    yaxis.cex = 1.4,
+    xaxis.cex = axis.cex,
+    yaxis.cex = axis.cex,
     main.cex = 1.4,
     main = 'Overall Days-to-Progression from Diagnosis',
     xlab.label = 'Time to progression from diagnosis (Days)',
-    xlab.cex = 1.5,
+    xlab.cex = lab.cex,
     ylab.label = 'Estimated survival probability',
-    ylab.cex = 1.5
+    ylab.cex = lab.cex
     );
 ```
 
@@ -132,13 +159,13 @@ upgrade.surv <- do.call(
 
 BoutrosLab.plotting.survival::create.km.plot(
     survival.object = upgrade.surv,
-    xaxis.cex = 1.4,
-    yaxis.cex = 1.4,
+    xaxis.cex = axis.cex,
+    yaxis.cex = axis.cex,
     main.cex = 1.4,
     main = 'Overall Days-to-Upgrade from Diagnosis',
     xlab.label = 'Time to upgrade since diagnosis (Days)',
-    xlab.cex = 1.5,
+    xlab.cex = lab.cex,
     ylab.label = 'Estimated survival probability',
-    ylab.cex = 1.5
+    ylab.cex = lab.cex
     );
 ```

@@ -13,6 +13,7 @@ str.match <- function(x, pattern) {
 #' @param x
 #'
 #' @return
+#' @export
 #'
 #' @examples
 #' camel.to.spaces(c("BiopsyUpgraded", "ProgressedToTreatment"))

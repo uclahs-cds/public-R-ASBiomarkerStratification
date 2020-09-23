@@ -42,11 +42,13 @@ load.data.AS <- function(biomark.path,
                          onlyBiodb = FALSE) {
   factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'HighestPIRADS',
                    'BiopsyResult','Observation',
-                   'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory',
+                   'GeneticAncestry', 'GeneticRiskCategory',
                    # 'Mutation1', 'Mutation.2', 'GlobalScreeningArray', 'BRCAMutation',
                    'RSIlesionPIRADS',
                    'RSIlesionCancer',  'RSIlesionUpgraded',
-                   'RSIlesionObservation', 'ProgressedToTreatment', 'Prostatectomy',
+                   'RSIlesionObservation',
+                   'ProgressedToTreatment', 'BiopsyUpgraded',
+                   'Prostatectomy',
                    'UpgradedAndProgressed', 'NoUpgradeAndProgressed'
                    );
 
@@ -84,6 +86,10 @@ load.data.AS <- function(biomark.path,
   biodb$PSADensity <- biodb$freePSA / biodb$ProstateVolume;
   biodb$PHIDensity = biodb$PHI / biodb$ProstateVolume;
 
+  # TODO: Add all other binary variables as logical
+  # biodb$ProgressedToTreatment <- as.logical(biodb$ProgressedToTreatment)
+  # biodb$BiopsyUpgraded <- as.logical(biodb$BiopsyUpgraded)
+
   # Update levels
   levels(biodb$Race) <- c('White', 'African-American', 'Asian');
   levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
@@ -95,9 +101,15 @@ load.data.AS <- function(biomark.path,
   levels(biodb$Observation) <- c('MRI Positive/Biopsy Positive', 'MRI Positive/Biopsy Negative',
                                  'MRI Negative/Biopsy Positive', 'MRI Negative/Biopsy Negative');
 
-  attr(biodb$Weight, 'label') <- "Weight (kg)"
-  attr(biodb$Height, 'label') <- "Height (cm)"
-  attr(biodb$ProstateVolume, 'label') <- "Prostate Volume (cm^3)"
+  attr(biodb$Weight, 'label') <- "Weight (kg)";
+  attr(biodb$Height, 'label') <- "Height (cm)";
+  attr(biodb$ProstateVolume, 'label') <- "Prostate Volume (cm^3)";
+  attr(biodb$p2PSA, 'label') <- "[-2]proPSA";
+  attr(biodb$freePSA, 'label') <- "free PSA";
+
+  biodb$PHI.computed <- with(biodb, {
+    (p2PSA / freePSA) * sqrt(PSAHyb)
+  });
 
   biokey <- xlsx::read.xlsx(
     biomark.key.path,
