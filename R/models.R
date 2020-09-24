@@ -12,16 +12,12 @@
 AS.models <- function(
     biodb,
     train.control = NULL,
-    target = c('ProgressedToTreatment', 'BiopsyUpgraded'),
+    target = c('ProgressedToTreatment', 'BiopsyUpgraded', 'Prostatectomy'),
     metric = c('Accuracy', 'AUC', 'F', 'Kappa', 'Precision', 'Recall', 'ROC',
                'Sens', 'Spec'),
     exclude.vars = NULL) {
     target <- match.arg(target);
-    metric <- match.arg(target);
-
-    if('BiopsyUpgraded' == target) {
-        exclude.vars <- c(exclude.vars, 'BiopsyResult');
-        }
+    metric <- match.arg(metric);
 
     biokey.variables <- c('Age',
                           'Race',
@@ -49,6 +45,10 @@ AS.models <- function(
                           'ADCnormalSignal', 'ADClesionSignal',
                           # 'RSIlesionPIRADS', 'RSIlesionCancer',  'RSIlesionUpgraded', 'RSIlesionISUP',
                           'PSADensity', 'PHIDensity');
+
+    if('BiopsyUpgraded' == target) {
+        exclude.vars <- c(exclude.vars, 'BiopsyResult');
+    }
 
     biokey.variables <- setdiff(biokey.variables, exclude.vars)
 

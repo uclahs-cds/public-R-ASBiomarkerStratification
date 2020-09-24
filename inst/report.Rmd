@@ -68,6 +68,27 @@ pred.table[row.order, ] %>%
   add_header_above(c(" " = 2, "Prostatectomy" = 2, " " = 1), align = 'c')
 ```
 
+The severity of the prostate cancers were measured on the Gleason scale.
+The variable `PreviousGleason` is the most recent prostate cancer Gleason score rating prior to research biopsy.
+The Gleason score is computed again in the variable `StudyHighestGleason` after the research MRI.
+We compare the progression of the cancers by the Gleason grades.
+```{r}
+progressed <- rep(NA, length(biodb$PreviousGleason))
+progressed[biodb$PreviousGleason < biodb$StudyHighestGleason] <- "Increased";
+progressed[biodb$PreviousGleason > biodb$StudyHighestGleason] <- "Decreased";
+progressed[biodb$PreviousGleason == biodb$StudyHighestGleason] <- "No Change";
+
+kable(t(table(progressed)), caption = "Comparision of pre-research biopsy Gleason score to post research MRI Gleason score");
+
+with(biodb, {
+  table(PreviousGleason, StudyHighestGleason, useNA='ifany') %>%
+  kable(booktabs = TRUE,
+    align =  'c') %>%
+  kable_styling() %>%
+  add_header_above(c(" " = 1, "Study Highest Gleason" = length(levels(StudyHighestGleason)) + 1), align = 'c')
+})
+```
+The severi
 ### Demographics
 
 #### Biopsy Upgraded
@@ -181,4 +202,61 @@ BoutrosLab.plotting.survival::create.km.plot(
     ylab.label = 'Estimated survival probability',
     ylab.cex = lab.cex
     );
+```
+
+### Prediction Results
+
+#### Biopsy Upgraded
+```{r}
+bx.acc.model <- readRDS(here('models/BiopsyUpgraded_Accuracy_model.RDS'));
+bx.F.model <- readRDS(here('models/BiopsyUpgraded_F_model.RDS'));
+
+bx.resamps <- resamples(
+  list(GBM.Acc = bx.acc.model$gbm.fit,
+       C5.0.Acc = bx.acc.model$c50.fit,
+       rpart.Acc = bx.acc.model$rpart.fit,
+       GBM.F = bx.F.model$gbm.fit,
+       C5.0.F = bx.F.model$c50.fit,
+       rpart.F = bx.F.model$rpart.fit))
+
+trellis.par.set(caretTheme())
+dotplot(resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Biopsy Upgraded Model Comparision")
+```
+
+#### Progressed To Treatment
+```{r}
+prog.acc.model <- readRDS(here('models/ProgressedToTreatment_Accuracy_model.RDS'));
+prog.F.model <- readRDS(here('models/ProgressedToTreatment_F_model.RDS'));
+
+prog.resamps <- resamples(
+  list(GBM.Acc = prog.acc.model$gbm.fit,
+       C5.0.Acc = prog.acc.model$c50.fit,
+       rpart.Acc = prog.acc.model$rpart.fit,
+       GBM.F = prog.F.model$gbm.fit,
+       C5.0.F = prog.F.model$c50.fit,
+       rpart.F = prog.F.model$rpart.fit))
+
+trellis.par.set(caretTheme())
+dotplot(resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Progressed To Treatment Model Comparision")
+```
+
+#### Progressed To Treatment
+```{r}
+prostate.acc.model <- readRDS(here('models/Prostatectomy_Accuracy_model.RDS'));
+prostate.F.model <- readRDS(here('models/Prostatectomy_F_model.RDS'));
+
+prostate.resamps <- resamples(
+  list(GBM.Acc = prostate.acc.model$gbm.fit,
+       C5.0.Acc = prostate.acc.model$c50.fit,
+       rpart.Acc = prostate.acc.model$rpart.fit,
+       GBM.F = prostate.F.model$gbm.fit,
+       C5.0.F = prostate.F.model$c50.fit,
+       rpart.F = prostate.F.model$rpart.fit))
+
+trellis.par.set(caretTheme())
+dotplot(resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Prostatectomy Model Comparision")
+
+predict(prostate.F.model$c50.bestfit, newdata = biodb)
+
+
 ```

@@ -23,6 +23,7 @@ prog.mod <- AS.models(biodb, train.control);
 
 saveRDS(prog.mod, here('data/progressed_models_acc.Rds'));
 
+# prog.mod <- readRDS(here('data/progressed_models_acc.Rds'));
 ### Compare rpart, C5.0, and GBM
 resamps <- resamples(list(GBM = prog.mod$gbm.fit,
                              C5.0 = prog.mod$c50.fit,
@@ -31,6 +32,8 @@ resamps <- resamples(list(GBM = prog.mod$gbm.fit,
 (sum.resamps <- summary(resamps))
 
 prog.mod.F <- AS.models(biodb, train.control, metric = 'F');
+
+# prog.mod <- readRDS(here('data/progressed_models_acc.Rds'));
 
 saveRDS(prog.mod.F, here('data/progressed_models_F.Rds'));
 
