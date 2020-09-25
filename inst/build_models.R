@@ -4,20 +4,18 @@ biodb <- default.load.data(onlyBiodb = TRUE);
 
 train.control <- trainControl(
     method = "repeatedcv",
-    number = 2,
-    repeats = 2
+    number = 10,
+    repeats = 10
     );
 
 metrics <- c('F');
 targets <- c(
-    'ProgressedToTreatment',
     'BiopsyUpgraded', # This needs some work... do we want to predict the missing values as well?
-    'Prostatectomy');
-
-targets <- 'ProgressedToTreatment'
+    'Prostatectomy',
+    'ProgressedToTreatment');
 
 results <- lapply(targets, function(tg) {
-    res <- lapply(metrics, AS.models, biodb = biodb, target = tg, train.control = train.control, predict.missing = FALSE, seed = 10101);
+    res <- lapply(metrics, AS.models, biodb = biodb, target = tg, train.control = train.control, predict.missing = FALSE, seed = 1010);
     names(res) <- metrics;
     res;
 });

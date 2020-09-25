@@ -222,11 +222,13 @@ do.call(
 ## Predictive Analysis
 ```{r}
 seed <- 1313
-prog.xgb.F.model <- readRDS(here('models/xgb_ProgressedToTreatment_F_model.RDS'));
-prog.rpart.F.model <- readRDS(here('models/rpart_ProgressedToTreatment_F_model.RDS'));
-prog.gbm.F.model <- readRDS(here('models/gbm_ProgressedToTreatment_F_model.RDS'));
-
 model.names <- c('xgb', 'rpart', 'gbm')
+
+model.file.names <- paste0('models/', model.names, '_ProgressedToTreatment_F_', seed, '_model.RDS')
+prog.xgb.F.model <- readRDS(here(model.file.names[1]));
+prog.rpart.F.model <- readRDS(here(model.file.names[2]));
+prog.gbm.F.model <- readRDS(here(model.file.names[3]));
+
 model.file.names <- paste0('models/', model.names, '_BiopsyUpgraded_F_', seed, '_model.RDS')
 bx.xgb.F.model <- readRDS(here(model.file.names[1]));
 bx.rpart.F.model <- readRDS(here(model.file.names[2]));
@@ -258,7 +260,7 @@ bx.resamps <- resamples(
        rpart.F = bx.rpart.F.model));
 
 trellis.par.set(caretTheme())
-dotplot(bx.resamps, metric = c("F", "ROC", "AUC", "Accuracy"), main = "Biopsy Upgraded Model Comparision")
+dotplot(bx.resamps, metric = c("F", "AUC-ROC", "AUPRC", "Accuracy", "Sens", "Spec"), main = "Biopsy Upgraded Model Comparision")
 
 rpart.plot::rpart.plot(bx.rpart.F.model$finalModel)
 ```
@@ -270,7 +272,7 @@ prog.resamps <- resamples(
        GBM.F = prog.gbm.F.model,
        rpart.F = prog.rpart.F.model));
 
-dotplot(prog.resamps, metric = c("F", "ROC", "AUC", "Accuracy"), main = "Progressed To Treatment Model Comparision")
+dotplot(prog.resamps, metric = c("F", "AUC-ROC", "AUPRC", "Accuracy", "Sens", "Spec"), main = "Progressed To Treatment Model Comparision")
 rpart.plot::rpart.plot(prog.rpart.F.model$finalModel)
 ```
 
@@ -281,7 +283,7 @@ prostate.resamps <- resamples(
        GBM.F = prostate.gbm.F.model,
        rpart.F = prostate.rpart.F.model));
 
-dotplot(prostate.resamps, metric = c("F", "ROC", "AUC", "Accuracy"), main = "Prostatectom Model Comparision")
+dotplot(prostate.resamps, metric = c("F", "AUC-ROC", "AUPRC", "Accuracy", "Sens", "Spec"), main = "Prostatectom Model Comparision")
 
 rpart.plot::rpart.plot(prostate.rpart.F.model$finalModel)
 ```
@@ -352,5 +354,5 @@ plot(varImp(prostate.xgb.F.model), top = 25, main = "Variable Importance Prostat
 prog.model.list <- list(prog.xgb.F.model, prog.gbm.F.model, prog.rpart.F.model)
 names(prog.model.list) <- c('xgb', 'gbm', 'rpart')
 
-compare.var.imp(prog.model.list)
+View(compare.var.imp(prog.model.list, include.ranks = TRUE)[, -1])
 ```

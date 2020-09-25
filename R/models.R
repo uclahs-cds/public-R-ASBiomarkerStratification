@@ -13,10 +13,10 @@ AS.models <- function(
     biodb,
     train.control = NULL,
     target = c('ProgressedToTreatment', 'BiopsyUpgraded', 'Prostatectomy'),
-    metric = c('F', 'Accuracy', 'AUC', 'Kappa', 'Precision', 'Recall', 'ROC',
+    metric = c('F', 'Accuracy', 'AUPRC', 'Kappa', 'Precision', 'Recall', 'AUC-ROC',
                'Sens', 'Spec'),
     exclude.vars = NULL,
-    predict.missing = TRUE,
+    predict.missing = FALSE,
     seed = NULL) {
     target <- match.arg(target);
     metric <- match.arg(metric);
@@ -143,6 +143,8 @@ AS.models <- function(
     dummy.formula <- paste0("~ ", paste0(biokey.variables, collapse = " + "))
     X.dummy.ints <- predict(dummyVars(dummy.formula, data = X.ints, fullRank = TRUE), newdata = X.ints)
 
+    print(paste("Fitting models for:", target, "optimizing", metric));
+
     if(!is.null(seed)) set.seed(seed);
 
     print("Fitting XGB model...");
@@ -158,6 +160,7 @@ AS.models <- function(
     print("Completed fitting XGB model...");
 
     model.file <- paste('xgb', target, metric, seed, 'model.RDS', sep = "_");
+    # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
     saveRDS(object = xgb.fit, file = here::here(paste0('models/', model.file)));
 
     # Add up-sampling for rpart
@@ -178,11 +181,12 @@ AS.models <- function(
     print("Completed fitting rpart model...");
 
     model.file <- paste('rpart', target, metric, seed, 'model.RDS', sep = "_");
+    # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
     saveRDS(object = rpart.fit, file = here::here(paste0('models/', model.file)));
 
     if(!is.null(seed)) set.seed(seed);
 
-    print("Fitting gbm Model...");
+    print("Fitting gbm model");
     gbm.fit <- train(
         X,
         y,
@@ -195,6 +199,7 @@ AS.models <- function(
     print("Completed fitting gbm model...");
 
     model.file <- paste('gbm', target, metric, seed, 'model.RDS', sep = "_");
+    # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
     saveRDS(object = gbm.fit, file = here::here(paste0('models/', model.file)));
 
     list(
@@ -247,12 +252,11 @@ var.imp <- function(x, squash = TRUE) {
 #' @export
 #'
 #' @examples
-compare.var.imp <- function(x, ranks = FALSE) {
+compare.var.imp <- function(x, include.ranks = FALSE) {
     model.varImp <- lapply(x, function(x) var.imp(x)$importance)
     if(is.null(names(x))) {
         names(x) <- unlist(lapply(x, `[[`, "method"));
         }
-
 
     all.varnames <- unlist(lapply(model.varImp, rownames));
     all.varnames <- unique(gsub("(.*)\\.1", "\\1", all.varnames));
@@ -262,6 +266,11 @@ compare.var.imp <- function(x, ranks = FALSE) {
         imp.df <- model.varImp[[model.name]];
         var.importance[[model.name]] <- NA;
         var.importance[rownames(imp.df), model.name] <- imp.df$Overall;
+        }
+    if(include.ranks) {
+        ranks <- lapply(var.importance[, -1] * -1, rank);
+        names(ranks) <- paste0(names(ranks), ".rank");
+        var.importance <- cbind.data.frame(var.importance, ranks);
         }
     var.importance;
 }
