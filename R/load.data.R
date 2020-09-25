@@ -40,7 +40,7 @@ load.data.AS <- function(biomark.path,
                          genetics.path,
                          biomark.categories.path,
                          onlyBiodb = FALSE) {
-  factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'HighestPIRADS',
+  factor.cols <- c('Race', 'MRIResult', 'HighestPIRADS',
                    'BiopsyResult','Observation',
                    'GeneticAncestry', 'GeneticRiskCategory',
                    # 'Mutation1', 'Mutation.2', 'GlobalScreeningArray', 'BRCAMutation',
@@ -92,14 +92,19 @@ load.data.AS <- function(biomark.path,
 
   # Update levels
   levels(biodb$Race) <- c('White', 'African-American', 'Asian');
-  levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
+  # levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
   levels(biodb$GeneticAncestry) <- c('European', 'African', 'East Asian', 'Native American');
   levels(biodb$GeneticRiskCategory) <- c('Low', 'Normal', 'High');
-  levels(biodb$MRIResult) <- c('No Legion', 'Legion Found');
+  # levels(biodb$MRIResult) <- c('No Legion', 'Legion Found');
   levels(biodb$HighestPIRADS) <- c('No lesion', 'Very low', 'Low', 'Intermediate', 'High', 'Very high');
-  levels(biodb$BiopsyResult) <- c('Negative', 'Positive');
+  # levels(biodb$BiopsyResult) <- c('Negative', 'Positive');
   levels(biodb$Observation) <- c('MRI Positive/Biopsy Positive', 'MRI Positive/Biopsy Negative',
                                  'MRI Negative/Biopsy Positive', 'MRI Negative/Biopsy Negative');
+
+  # Rename Ethnicity to Hispanic
+  biodb$Hispanic <- biodb$Ethnicity
+  # Remove old Ethnicity column
+  biodb$Ethnicity <- NULL
 
   attr(biodb$Weight, 'label') <- "Weight (kg)";
   attr(biodb$Height, 'label') <- "Height (cm)";

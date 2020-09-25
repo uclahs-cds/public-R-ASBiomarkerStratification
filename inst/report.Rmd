@@ -11,6 +11,8 @@ library(BoutrosLab.plotting.general);
 library(kableExtra);
 library(gridExtra);
 library(magrittr);
+library(here);
+library(caret);
 
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '50%')
 
@@ -208,55 +210,57 @@ BoutrosLab.plotting.survival::create.km.plot(
 
 #### Biopsy Upgraded
 ```{r}
-bx.acc.model <- readRDS(here('models/BiopsyUpgraded_Accuracy_model.RDS'));
-bx.F.model <- readRDS(here('models/BiopsyUpgraded_F_model.RDS'));
+seed <- 1313
+model.names <- c('xgb', 'rpart', 'gbm')
+model.file.names <- paste0('models/', model.names, '_BiopsyUpgraded_F_', seed, '_model.RDS')
+bx.xgb.F.model <- readRDS(here(model.file.names[1]));
+bx.rpart.F.model <- readRDS(here(model.file.names[2]));
+bx.gbm.F.model <- readRDS(here(model.file.names[3]));
 
 bx.resamps <- resamples(
-  list(GBM.Acc = bx.acc.model$gbm.fit,
-       C5.0.Acc = bx.acc.model$c50.fit,
-       rpart.Acc = bx.acc.model$rpart.fit,
-       GBM.F = bx.F.model$gbm.fit,
-       C5.0.F = bx.F.model$c50.fit,
-       rpart.F = bx.F.model$rpart.fit))
+  list(XGB.F = bx.xgb.F.model,
+       GBM.F = bx.gbm.F.model,
+       rpart.F = bx.rpart.F.model));
 
 trellis.par.set(caretTheme())
-dotplot(resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Biopsy Upgraded Model Comparision")
+dotplot(bx.resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Biopsy Upgraded Model Comparision")
+
+rpart.plot::rpart.plot(bx.rpart.F.model$finalModel)
 ```
 
 #### Progressed To Treatment
 ```{r}
-prog.acc.model <- readRDS(here('models/ProgressedToTreatment_Accuracy_model.RDS'));
-prog.F.model <- readRDS(here('models/ProgressedToTreatment_F_model.RDS'));
+xgb.F.model <- readRDS(here('models/xgb_ProgressedToTreatment_F_model.RDS'));
+rpart.F.model <- readRDS(here('models/rpart_ProgressedToTreatment_F_model.RDS'));
+gbm.F.model <- readRDS(here('models/gbm_ProgressedToTreatment_F_model.RDS'));
 
 prog.resamps <- resamples(
-  list(GBM.Acc = prog.acc.model$gbm.fit,
-       C5.0.Acc = prog.acc.model$c50.fit,
-       rpart.Acc = prog.acc.model$rpart.fit,
-       GBM.F = prog.F.model$gbm.fit,
-       C5.0.F = prog.F.model$c50.fit,
-       rpart.F = prog.F.model$rpart.fit))
+  list(XGB.F = xgb.F.model,
+       GBM.F = gbm.F.model,
+       rpart.F = rpart.F.model));
 
-trellis.par.set(caretTheme())
-dotplot(resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Progressed To Treatment Model Comparision")
+dotplot(prog.resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Progressed To Treatment Model Comparision")
+
+rpart.plot::rpart.plot(rpart.F.model$finalModel)
+
+plot(xgb.F.model)
 ```
 
-#### Progressed To Treatment
+#### Prostatectomy
 ```{r}
-prostate.acc.model <- readRDS(here('models/Prostatectomy_Accuracy_model.RDS'));
-prostate.F.model <- readRDS(here('models/Prostatectomy_F_model.RDS'));
+seed <- 1313
+model.names <- c('xgb', 'rpart', 'gbm')
+model.file.names <- paste0('models/', model.names, '_Prostatectomy_F_', seed, '_model.RDS')
+prostate.xgb.F.model <- readRDS(here(model.file.names[1]));
+prostate.rpart.F.model <- readRDS(here(model.file.names[2]));
+prostate.gbm.F.model <- readRDS(here(model.file.names[3]));
 
 prostate.resamps <- resamples(
-  list(GBM.Acc = prostate.acc.model$gbm.fit,
-       C5.0.Acc = prostate.acc.model$c50.fit,
-       rpart.Acc = prostate.acc.model$rpart.fit,
-       GBM.F = prostate.F.model$gbm.fit,
-       C5.0.F = prostate.F.model$c50.fit,
-       rpart.F = prostate.F.model$rpart.fit))
+  list(XGB.F = prostate.xgb.F.model,
+       GBM.F = prostate.gbm.F.model,
+       rpart.F = prostate.rpart.F.model));
 
-trellis.par.set(caretTheme())
-dotplot(resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Prostatectomy Model Comparision")
+dotplot(prostate.resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Prostatectom Model Comparision")
 
-predict(prostate.F.model$c50.bestfit, newdata = biodb)
-
-
+rpart.plot::rpart.plot(prostate.rpart.F.model$finalModel)
 ```

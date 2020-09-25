@@ -8,33 +8,12 @@ train.control <- trainControl(
     repeats = 10
     );
 
-metrics <- c('F', 'Accuracy');
-target <- c('ProgressedToTreatment', 'BiopsyUpgraded', 'Prostatectomy');
+metrics <- c('F');
+target <- c(
+#    'ProgressedToTreatment',
+     'BiopsyUpgraded', # This needs some work... do we want to predict the missing values as well?
+    'Prostatectomy');
 
-results <- lapply(target, eval.models, biodb = biodb, train.control = train.control, metrics = metrics);
-length(results)
-results[[1]]$resamples
+results <- lapply(target, eval.models, biodb = biodb, train.control = train.control, metrics = metrics, predict.missing = FALSE, seed = 1313);
 
-models <- results[[1]]$models
 
-model.resamples <- lapply(seq_along(metrics), function(i) {
-    metric <- metrics[i]
-    model <- models[[i]]
-    model.list <- list(model$gbm.fit, model$c50.fit, model$rpart.fit)
-    names(model.list) <- paste0(c('GBM', 'C5.0', 'rpart'), '.', metric)
-    resamples(model.list)
-})
-
-results[[1]]$resamples <- model.resamples
-
-models <- results[[3]]$models
-
-model.resamples <- lapply(seq_along(metrics), function(i) {
-    metric <- metrics[i]
-    model <- models[[i]]
-    model.list <- list(model$gbm.fit, model$c50.fit, model$rpart.fit)
-    names(model.list) <- paste0(c('GBM', 'C5.0', 'rpart'), '.', metric)
-    resamples(model.list)
-})
-
-results[[3]]$resamples <- model.resamples

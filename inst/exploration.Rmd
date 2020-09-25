@@ -47,7 +47,7 @@ data$biodb[which.max(data$biodb$Weight), ]
 
 ## Scoring Variables
 ```{r}
-factor.cols <- c('Race', 'Ethnicity', 'MRIResult', 'HighestPIRADS',
+factor.cols <- c('Race', 'Hispanic', 'MRIResult', 'HighestPIRADS',
                    'BiopsyResult', 'PreviousGleason', 'StudyHighestGleason', 'PreviousISUP', 'Observation',
                    'BiopsyUpgraded', 'GeneticAncestry', 'GeneticRiskCategory', 'GlobalScreeningArray',
                    'GSAPositives', 'BRCAMutation', 'RSIlesionPIRADS',
@@ -247,7 +247,7 @@ data$biodb[! observation.df$matches & ! is.na(observation.df$matches), ];
 
 ## Keeping Variables
 ```{r}
-all.variables <- c('Record.ID', 'Age', 'Race', 'Ethnicity', 'Weight', 'Height', 
+all.variables <- c('Record.ID', 'Age', 'Race', 'Hispanic', 'Weight', 'Height', 
     'BMI', 'SOCPSA', 'MRIResult', 'MRILesions', 'HighestPIRADS', 
     'BiopsyResult', 'ProstateVolume', 'PreviousGleason', 'PreviousISUP', 
     'StudyHighestGleason', 'StudyHighestISUP', 'Observation', 'BiopsyUpgraded', 
@@ -265,7 +265,7 @@ all.variables <- c('Record.ID', 'Age', 'Race', 'Ethnicity', 'Weight', 'Height',
     'PHIDensity'
     );
 
-biokey.variables <- c('Age', 'Race', 'Ethnicity', 'Weight', 'Height', 
+biokey.variables <- c('Age', 'Race', 'Hispanic', 'Weight', 'Height', 
     'BMI', 'MRIResult', 'MRILesions', 'HighestPIRADS', 'BiopsyResult', 
     'ProstateVolume',  
      'Observation', 'BiopsyUpgraded', 'PCA3', 
