@@ -20,6 +20,19 @@ axis.cex <- .7
 lab.cex <- .8
 strip.cex <- 0.45
 
+km.arguments <- list(
+  xaxis.cex = axis.cex,
+  yaxis.cex = axis.cex,
+  main.cex = 1.4,
+  xlab.cex = lab.cex,
+  ylab.label = 'Estimated survival probability',
+  ylab.cex = lab.cex,
+  risktable.fontsize = 14,
+  key.groups.cex = 1,
+  key.stats.cex = 1,
+  key.stats.y.pos = 0.5
+  );
+
 biodb <- default.load.data(onlyBiodb = TRUE);
 ```
 
@@ -160,29 +173,29 @@ progression.surv.dx <- do.call(
     args = surv.format(biodb$DaysDxToProgression, biodb$DaysDxToLastReview)
     );
 
-BoutrosLab.plotting.survival::create.km.plot(
-    survival.object = progression.surv.bx,
-    xaxis.cex = axis.cex,
-    yaxis.cex = axis.cex,
-    main.cex = 1.4,
-    main = 'Overall Days-to-Progression from Biopsy',    
-    xlab.label = 'Time to progression from biopsy (Days)',
-    xlab.cex = lab.cex,
-    ylab.label = 'Estimated survival probability',
-    ylab.cex = lab.cex
-    );
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      survival.object = progression.surv.bx,
+      main = 'Overall Days-to-Progression from Biopsy',    
+      xlab.label = 'Time to progression from biopsy (Days)'
+      )
+    )
+  )
 
-BoutrosLab.plotting.survival::create.km.plot(
-    survival.object = progression.surv.dx,
-    xaxis.cex = axis.cex,
-    yaxis.cex = axis.cex,
-    main.cex = 1.4,
-    main = 'Overall Days-to-Progression from Diagnosis',
-    xlab.label = 'Time to progression from diagnosis (Days)',
-    xlab.cex = lab.cex,
-    ylab.label = 'Estimated survival probability',
-    ylab.cex = lab.cex
-    );
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      survival.object = progression.surv.dx,
+      main = 'Overall Days-to-Progression from Diagnosis',
+      xlab.label = 'Time to progression from diagnosis (Days)'
+      )
+    )
+  )
 ```
 
 #### Overall Time-to-Upgrade from Diagnosis
@@ -193,30 +206,52 @@ upgrade.surv <- do.call(
     args = surv.format(biodb$DaysDxToUpgrade, biodb$DaysDxToLastReview)
     );
 
-BoutrosLab.plotting.survival::create.km.plot(
-    survival.object = upgrade.surv,
-    xaxis.cex = axis.cex,
-    yaxis.cex = axis.cex,
-    main.cex = 1.4,
-    main = 'Overall Days-to-Upgrade from Diagnosis',
-    xlab.label = 'Time to upgrade since diagnosis (Days)',
-    xlab.cex = lab.cex,
-    ylab.label = 'Estimated survival probability',
-    ylab.cex = lab.cex
-    );
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      survival.object = upgrade.surv,
+      main = 'Overall Days-to-Upgrade from Diagnosis',
+      xlab.label = 'Time to upgrade since diagnosis (Days)'
+      )
+    )
+  )
 ```
 
-### Prediction Results
-
-#### Biopsy Upgraded
+## Predictive Analysis
 ```{r}
 seed <- 1313
+prog.xgb.F.model <- readRDS(here('models/xgb_ProgressedToTreatment_F_model.RDS'));
+prog.rpart.F.model <- readRDS(here('models/rpart_ProgressedToTreatment_F_model.RDS'));
+prog.gbm.F.model <- readRDS(here('models/gbm_ProgressedToTreatment_F_model.RDS'));
+
 model.names <- c('xgb', 'rpart', 'gbm')
 model.file.names <- paste0('models/', model.names, '_BiopsyUpgraded_F_', seed, '_model.RDS')
 bx.xgb.F.model <- readRDS(here(model.file.names[1]));
 bx.rpart.F.model <- readRDS(here(model.file.names[2]));
 bx.gbm.F.model <- readRDS(here(model.file.names[3]));
 
+model.file.names <- paste0('models/', model.names, '_Prostatectomy_F_', seed, '_model.RDS')
+prostate.xgb.F.model <- readRDS(here(model.file.names[1]));
+prostate.rpart.F.model <- readRDS(here(model.file.names[2]));
+prostate.gbm.F.model <- readRDS(here(model.file.names[3]));
+```
+
+We predict the three variables: `ProgressedToTreatment`, `BiopsyUpgraded`, `Prostatectomy`.
+For each of these variable we compare the results from three models: a regression tree (`rpart`), gradient boosting machine (`gbm`), and eXtreme Gradient Boosting (`xgboost`).
+The regression tree model is the most interpretable as it produces a single decision tree.
+The other models produce better accuracy as well as $F_1$ scores but require more work to interpret.
+
+The following variables were used as the initial set of variables for `ProgressedToTreatment` and `Prostatectomy`. In the case of `BiopsyUpgraded`, the variable `BiopsyResult` was removed from the predictor variables.
+```{r}
+kable(prog.gbm.F.model$finalModel$var.names, col.names = "Variable")
+```
+
+### Prediction Results
+
+#### Biopsy Upgraded
+```{r}
 bx.resamps <- resamples(
   list(XGB.F = bx.xgb.F.model,
        GBM.F = bx.gbm.F.model,
@@ -230,29 +265,17 @@ rpart.plot::rpart.plot(bx.rpart.F.model$finalModel)
 
 #### Progressed To Treatment
 ```{r}
-prog.xgb.F.model <- readRDS(here('models/xgb_ProgressedToTreatment_F_model.RDS'));
-prog.rpart.F.model <- readRDS(here('models/rpart_ProgressedToTreatment_F_model.RDS'));
-prog.gbm.F.model <- readRDS(here('models/gbm_ProgressedToTreatment_F_model.RDS'));
-
 prog.resamps <- resamples(
   list(XGB.F = prog.xgb.F.model,
        GBM.F = prog.gbm.F.model,
        rpart.F = prog.rpart.F.model));
 
 dotplot(prog.resamps, metric = c("F", "ROC", "AUC", "Accuracy"), main = "Progressed To Treatment Model Comparision")
-
 rpart.plot::rpart.plot(prog.rpart.F.model$finalModel)
 ```
 
 #### Prostatectomy
 ```{r}
-seed <- 1313
-model.names <- c('xgb', 'rpart', 'gbm')
-model.file.names <- paste0('models/', model.names, '_Prostatectomy_F_', seed, '_model.RDS')
-prostate.xgb.F.model <- readRDS(here(model.file.names[1]));
-prostate.rpart.F.model <- readRDS(here(model.file.names[2]));
-prostate.gbm.F.model <- readRDS(here(model.file.names[3]));
-
 prostate.resamps <- resamples(
   list(XGB.F = prostate.xgb.F.model,
        GBM.F = prostate.gbm.F.model,
@@ -271,31 +294,31 @@ rpart.plot::rpart.plot(prostate.rpart.F.model$finalModel)
 prog.gbm.preds <- as.factor(predict(prog.gbm.F.model))
 levels(prog.gbm.preds) <- c('0', '1')
 
-BoutrosLab.plotting.survival::create.km.plot(
-    survival.object = progression.surv.bx,
-    patient.groups = prog.gbm.preds,
-    xaxis.cex = axis.cex,
-    yaxis.cex = axis.cex,
-    main.cex = 1.4,
-    main = 'Overall Days-to-Progression from Biopsy',    
-    xlab.label = 'Time to progression from biopsy (Days)',
-    xlab.cex = lab.cex,
-    ylab.label = 'Estimated survival probability',
-    ylab.cex = lab.cex
-    );
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      survival.object = progression.surv.bx,
+      patient.groups = prog.gbm.preds,
+      main = 'Overall Days-to-Progression from Biopsy',
+      xlab.label = 'Time to upgrade since biopsy (Days)'
+      )
+    )
+  )
 
-BoutrosLab.plotting.survival::create.km.plot(
-    survival.object = progression.surv.dx,
-    patient.groups = prog.gbm.preds,
-    xaxis.cex = axis.cex,
-    yaxis.cex = axis.cex,
-    main.cex = 1.4,
-    main = 'Overall Days-to-Progression from Diagnosis',
-    xlab.label = 'Time to progression from diagnosis (Days)',
-    xlab.cex = lab.cex,
-    ylab.label = 'Estimated survival probability',
-    ylab.cex = lab.cex
-    );
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      survival.object = progression.surv.dx,
+      patient.groups = prog.gbm.preds,
+      main = 'Overall Days-to-Progression from Diagnosis',
+      xlab.label = 'Time to progression from diagnosis (Days)'
+      )
+    )
+  )
 ```
 
 ### Days to Upgrade from Diagnosis
@@ -305,16 +328,29 @@ bx.gbm.preds[!is.na(biodb$BiopsyUpgraded)] <- predict(bx.gbm.F.model)
 bx.gbm.preds <- as.factor(bx.gbm.preds)
 levels(bx.gbm.preds) <- c('0', '1')
 
-BoutrosLab.plotting.survival::create.km.plot(
-    survival.object = upgrade.surv,
-    patient.groups = bx.gbm.preds,
-    xaxis.cex = axis.cex,
-    yaxis.cex = axis.cex,
-    main.cex = 1.4,
-    main = 'Overall Days-to-Upgrade from Diagnosis',
-    xlab.label = 'Time to upgrade since diagnosis (Days)',
-    xlab.cex = lab.cex,
-    ylab.label = 'Estimated survival probability',
-    ylab.cex = lab.cex
-    );
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      survival.object = upgrade.surv,
+      patient.groups = bx.gbm.preds,
+      main = 'Overall Days-to-Upgrade from Diagnosis',
+      xlab.label = 'Time to upgrade since diagnosis (Days)'
+      )
+    )
+  )
+```
+
+
+## Variable Importance
+```{r}
+plot(varImp(prog.xgb.F.model), top = 25, main = "Variable Importance Progressed-to-Treatment XGB")
+plot(varImp(bx.xgb.F.model), top = 25, main = "Variable Importance Biopsy Upgraded XGB")
+plot(varImp(prostate.xgb.F.model), top = 25, main = "Variable Importance Prostatectomy XGB")
+
+prog.model.list <- list(prog.xgb.F.model, prog.gbm.F.model, prog.rpart.F.model)
+names(prog.model.list) <- c('xgb', 'gbm', 'rpart')
+
+compare.var.imp(prog.model.list)
 ```

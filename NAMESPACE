@@ -2,10 +2,10 @@
 
 export(AS.models)
 export(camel.to.spaces)
+export(compare.var.imp)
 export(create.heatmap.AS)
 export(default.load.data)
 export(demographics.boxplot)
-export(eval.models)
 export(load.data.AS)
 export(surv.format)
 export(table1.to.kable)

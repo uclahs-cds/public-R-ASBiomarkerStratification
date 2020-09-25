@@ -41,7 +41,7 @@ create.heatmap.AS <- function(biodb, ...) {
         'GlobalScreeningArray',
         'GSAPositives',
         'BRCAMutation',
-        "Mutation.BRCA1", "Mutation.BRCA2", "Mutation.ATM", "Mutation.MLH1", "Mutation.PMS2"
+        "Mutation_BRCA1", "Mutation_BRCA2", "Mutation_ATM", "Mutation_MLH1", "Mutation_PMS2"
     );
 
 

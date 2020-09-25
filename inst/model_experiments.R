@@ -15,7 +15,7 @@ biokey.variables <- c('Age',
                       # 'Observation',
                       'PCA3',
                       'T2ERG', 'MiPSCancerRisk', 'MiPSHighGradeCancerRisk', 'PSAHyb',
-                      'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI', 'GeneticAncestry',
+                      'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI', # 'GeneticAncestry',
                       # 'PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason', # Only use the ISUP grade group over Gleason
                       # 'StudyHighestISUP', 'HighestPIRADS',
                       'PreviousISUP',
@@ -24,7 +24,7 @@ biokey.variables <- c('Age',
                       #'GeneticRiskCategory', Don't need since genetic risk score is continuous version of this
                       'GlobalScreeningArray', # This is just an indicator if any of the follow are > 0
                       'GSAPositives', 'BRCAMutation',
-                      'Mutation.BRCA1', 'Mutation.BRCA2', 'Mutation.ATM', # 'Mutation.MLH1', 'Mutation.PMS2', Not enough data
+                      'Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', # 'Mutation_MLH1', 'Mutation_PMS2', Not enough data
                       'RSInormalSignal',
                       'RSIlesionSignal',
                       'ADCnormalSignal', 'ADClesionSignal',

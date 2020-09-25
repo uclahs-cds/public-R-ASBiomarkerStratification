@@ -21,10 +21,8 @@ AS.models <- function(
     target <- match.arg(target);
     metric <- match.arg(metric);
 
-    if(!is.null(seed)) set.seed(seed);
-
     biokey.variables <- c('Age',
-                          'Race',
+                          'Race', # 'GeneticAncestry',
                           'Hispanic',
                           'Weight',
                           'Height',
@@ -34,7 +32,7 @@ AS.models <- function(
                           # 'Observation',
                           'PCA3',
                           'T2ERG', 'MiPSCancerRisk', 'MiPSHighGradeCancerRisk', 'PSAHyb',
-                          'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI', 'GeneticAncestry',
+                          'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI',
                           # 'PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason', # Only use the ISUP grade group over Gleason
                           # 'StudyHighestISUP', 'HighestPIRADS',
                           'PreviousISUP',
@@ -43,7 +41,7 @@ AS.models <- function(
                           #'GeneticRiskCategory', Don't need since genetic risk score is continuous version of this
                           'GlobalScreeningArray', # This is just an indicator if any of the follow are > 0
                           'GSAPositives', 'BRCAMutation',
-                          'Mutation.BRCA1', 'Mutation.BRCA2', 'Mutation.ATM', # 'Mutation.MLH1', 'Mutation.PMS2', Not enough data
+                          'Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', # 'Mutation_MLH1', 'Mutation_PMS2', Not enough data
                           'RSInormalSignal',
                           'RSIlesionSignal',
                           'ADCnormalSignal', 'ADClesionSignal',
@@ -99,10 +97,14 @@ AS.models <- function(
 
     custom.summary <- function (data, lev = NULL, model = NULL) {
         if(length(levels(y)) == 2) {
+            two.class.sum <- twoClassSummary(data, lev, model);
+            names(two.class.sum) <- c('AUC-ROC', 'Sens', 'Spec');
+            pr.summary <- prSummary(data, lev, model);
+            names(pr.summary) <- c('AUPRC', 'Precision', 'Recall', 'F');
             c(
                 defaultSummary(data, lev, model),
-                twoClassSummary(data, lev, model),
-                prSummary(data, lev, model)
+                two.class.sum,
+                pr.summary
                 )
         } else if(length(levels(y)) > 2) {
             c(
@@ -139,7 +141,9 @@ AS.models <- function(
 
     # Convert to dummy variables
     dummy.formula <- paste0("~ ", paste0(biokey.variables, collapse = " + "))
-    X.dummy.ints <- predict(dummyVars(dummy.formula, data = X.ints, fullRank = TRUE), newdata = X)
+    X.dummy.ints <- predict(dummyVars(dummy.formula, data = X.ints, fullRank = TRUE), newdata = X.ints)
+
+    if(!is.null(seed)) set.seed(seed);
 
     print("Fitting XGB model...");
     xgb.fit <- train(
@@ -160,6 +164,7 @@ AS.models <- function(
     train.control.up <- train.control;
     train.control.up$sampling <- "up";
 
+    if(!is.null(seed)) set.seed(seed);
 
     print("Fitting rpart Model...");
     rpart.fit <- train(
@@ -174,6 +179,8 @@ AS.models <- function(
 
     model.file <- paste('rpart', target, metric, seed, 'model.RDS', sep = "_");
     saveRDS(object = rpart.fit, file = here::here(paste0('models/', model.file)));
+
+    if(!is.null(seed)) set.seed(seed);
 
     print("Fitting gbm Model...");
     gbm.fit <- train(
@@ -196,3 +203,65 @@ AS.models <- function(
         gbm.fit = gbm.fit
         )
     }
+
+#' Combines the importance score of dummy variables into one
+squash.importance <- function(importance, FUN = 'sum') {
+    df <- importance
+    df$row.names <- row.names(df)
+    df$row.names <- gsub("(.*)\\..*", "\\1", df$row.names)
+
+    agg.df <- aggregate(df$Overall, by = list(vars = df$row.names), FUN=FUN)
+    res <-data.frame(Overall = agg.df[, 2])
+    rownames(res) <- agg.df[, 1]
+    res
+}
+
+#' Fixes caret::varImp for gbm
+var.imp <- function(x, squash = TRUE) {
+    stopifnot('train' == class(x));
+    if('gbm' == x$method) {
+        gbm.sum <- summary(x$finalModel, plotit = FALSE);
+        res <- list(
+            model = 'gbm',
+            calledFrom = 'summary.gbm',
+            importance = data.frame(Overall = gbm.sum[,2], row.names = gbm.sum[,1])
+            );
+        class(res) <- 'varImp.train';
+        res
+    } else {
+        res <- varImp(x);
+    }
+    row.names(res$importance) <- gsub("(.*)\\.1", "\\1", row.names(res$importance));
+    if(squash) {
+        res$importance <- squash.importance(res$importance)
+    }
+    res
+}
+
+#' Compare variable importance across multiple models
+#'
+#' @param x
+#' @param ranks
+#'
+#' @return
+#' @export
+#'
+#' @examples
+compare.var.imp <- function(x, ranks = FALSE) {
+    model.varImp <- lapply(x, function(x) var.imp(x)$importance)
+    if(is.null(names(x))) {
+        names(x) <- unlist(lapply(x, `[[`, "method"));
+        }
+
+
+    all.varnames <- unlist(lapply(model.varImp, rownames));
+    all.varnames <- unique(gsub("(.*)\\.1", "\\1", all.varnames));
+    var.importance <- data.frame(variable = all.varnames);
+    rownames(var.importance) <- all.varnames;
+    for(model.name in names(model.varImp)) {
+        imp.df <- model.varImp[[model.name]];
+        var.importance[[model.name]] <- NA;
+        var.importance[rownames(imp.df), model.name] <- imp.df$Overall;
+        }
+    var.importance;
+}

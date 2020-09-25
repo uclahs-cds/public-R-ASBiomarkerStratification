@@ -11,10 +11,10 @@ mutation.dummy <- function(x) {
   mutation2 <- as.integer(x["Mutation.2"]);
   if(is.na(mutation1) && is.na(mutation2)) {
     # Missing value, make all dummy variables missing as well
-    res <- list(Mutation.BRCA1 = NA, Mutation.BRCA2 = NA, Mutation.ATM = NA, Mutation.MLH1 = NA, Mutation.PMS2 = NA);
+    res <- list(Mutation_BRCA1 = NA, Mutation_BRCA2 = NA, Mutation_ATM = NA, Mutation_MLH1 = NA, Mutation_PMS2 = NA);
   }
   else {
-    res <- list(Mutation.BRCA1 = 0, Mutation.BRCA2 = 0, Mutation.ATM = 0, Mutation.MLH1 = 0, Mutation.PMS2 = 0);
+    res <- list(Mutation_BRCA1 = 0, Mutation_BRCA2 = 0, Mutation_ATM = 0, Mutation_MLH1 = 0, Mutation_PMS2 = 0);
     # What happens when we do res[0] <- 1? Doesn't seem to do anything
     if(mutation1 > 0) res[mutation1] <- 1
     if(mutation2 > 0) res[mutation2] <- 1

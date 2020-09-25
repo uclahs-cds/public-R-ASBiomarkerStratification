@@ -278,7 +278,7 @@ biokey.variables <- c('Age', 'Race', 'Hispanic', 'Weight', 'Height',
     #'GeneticRiskCategory', Don't need since genetic risk score is continuous version of this
     # 'GlobalScreeningArray', This is just an indicator if any of the follow are > 0
     'GSAPositives', 'BRCAMutation',
-    'Mutation.BRCA1', 'Mutation.BRCA2', 'Mutation.ATM', 'Mutation.MLH1', 'Mutation.PMS2',
+    'Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', 'Mutation_MLH1', 'Mutation_PMS2',
     'RSInormalSignal', 
     'RSIlesionSignal', 'ADCnormalSignal', 'ADClesionSignal', 'RSIlesionPIRADS', 
     'RSIlesionCancer',  'RSIlesionUpgraded', 
@@ -288,14 +288,14 @@ biokey.variables <- c('Age', 'Race', 'Hispanic', 'Weight', 'Height',
 
 Check how many of each mutation we have
 ```{r}
-colSums(data$biodb[, c('Mutation.BRCA1', 'Mutation.BRCA2', 'Mutation.ATM', 'Mutation.MLH1', 'Mutation.PMS2')], na.rm = TRUE)
+colSums(data$biodb[, c('Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', 'Mutation_MLH1', 'Mutation_PMS2')], na.rm = TRUE)
 
 with(data$biodb, {
-  print(table(ProgressedToTreatment, Mutation.BRCA1))
-  print(table(ProgressedToTreatment, Mutation.BRCA2))
-  print(table(ProgressedToTreatment, Mutation.ATM))
-  print(table(ProgressedToTreatment, Mutation.MLH1))
-  print(table(ProgressedToTreatment, Mutation.PMS2))
+  print(table(ProgressedToTreatment, Mutation_BRCA1))
+  print(table(ProgressedToTreatment, Mutation_BRCA2))
+  print(table(ProgressedToTreatment, Mutation_ATM))
+  print(table(ProgressedToTreatment, Mutation_MLH1))
+  print(table(ProgressedToTreatment, Mutation_PMS2))
 })
 ```
 
