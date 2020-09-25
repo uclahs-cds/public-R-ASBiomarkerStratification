@@ -90,7 +90,7 @@ with(biodb, {
   add_header_above(c(" " = 1, "Study Highest Gleason" = length(levels(StudyHighestGleason)) + 1), align = 'c')
 })
 ```
-The severi
+
 ### Demographics
 
 #### Biopsy Upgraded
@@ -223,27 +223,25 @@ bx.resamps <- resamples(
        rpart.F = bx.rpart.F.model));
 
 trellis.par.set(caretTheme())
-dotplot(bx.resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Biopsy Upgraded Model Comparision")
+dotplot(bx.resamps, metric = c("F", "ROC", "AUC", "Accuracy"), main = "Biopsy Upgraded Model Comparision")
 
 rpart.plot::rpart.plot(bx.rpart.F.model$finalModel)
 ```
 
 #### Progressed To Treatment
 ```{r}
-xgb.F.model <- readRDS(here('models/xgb_ProgressedToTreatment_F_model.RDS'));
-rpart.F.model <- readRDS(here('models/rpart_ProgressedToTreatment_F_model.RDS'));
-gbm.F.model <- readRDS(here('models/gbm_ProgressedToTreatment_F_model.RDS'));
+prog.xgb.F.model <- readRDS(here('models/xgb_ProgressedToTreatment_F_model.RDS'));
+prog.rpart.F.model <- readRDS(here('models/rpart_ProgressedToTreatment_F_model.RDS'));
+prog.gbm.F.model <- readRDS(here('models/gbm_ProgressedToTreatment_F_model.RDS'));
 
 prog.resamps <- resamples(
-  list(XGB.F = xgb.F.model,
-       GBM.F = gbm.F.model,
-       rpart.F = rpart.F.model));
+  list(XGB.F = prog.xgb.F.model,
+       GBM.F = prog.gbm.F.model,
+       rpart.F = prog.rpart.F.model));
 
-dotplot(prog.resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Progressed To Treatment Model Comparision")
+dotplot(prog.resamps, metric = c("F", "ROC", "AUC", "Accuracy"), main = "Progressed To Treatment Model Comparision")
 
-rpart.plot::rpart.plot(rpart.F.model$finalModel)
-
-plot(xgb.F.model)
+rpart.plot::rpart.plot(prog.rpart.F.model$finalModel)
 ```
 
 #### Prostatectomy
@@ -260,7 +258,63 @@ prostate.resamps <- resamples(
        GBM.F = prostate.gbm.F.model,
        rpart.F = prostate.rpart.F.model));
 
-dotplot(prostate.resamps, metric = c("F", "Sens", "Spec", "Accuracy"), main = "Prostatectom Model Comparision")
+dotplot(prostate.resamps, metric = c("F", "ROC", "AUC", "Accuracy"), main = "Prostatectom Model Comparision")
 
 rpart.plot::rpart.plot(prostate.rpart.F.model$finalModel)
+```
+
+
+## Cut-points for survival analysis
+
+### Progressed To Treatment
+```{r}
+prog.gbm.preds <- as.factor(predict(prog.gbm.F.model))
+levels(prog.gbm.preds) <- c('0', '1')
+
+BoutrosLab.plotting.survival::create.km.plot(
+    survival.object = progression.surv.bx,
+    patient.groups = prog.gbm.preds,
+    xaxis.cex = axis.cex,
+    yaxis.cex = axis.cex,
+    main.cex = 1.4,
+    main = 'Overall Days-to-Progression from Biopsy',    
+    xlab.label = 'Time to progression from biopsy (Days)',
+    xlab.cex = lab.cex,
+    ylab.label = 'Estimated survival probability',
+    ylab.cex = lab.cex
+    );
+
+BoutrosLab.plotting.survival::create.km.plot(
+    survival.object = progression.surv.dx,
+    patient.groups = prog.gbm.preds,
+    xaxis.cex = axis.cex,
+    yaxis.cex = axis.cex,
+    main.cex = 1.4,
+    main = 'Overall Days-to-Progression from Diagnosis',
+    xlab.label = 'Time to progression from diagnosis (Days)',
+    xlab.cex = lab.cex,
+    ylab.label = 'Estimated survival probability',
+    ylab.cex = lab.cex
+    );
+```
+
+### Days to Upgrade from Diagnosis
+```{r}
+bx.gbm.preds <- rep(NA, nrow(biodb))
+bx.gbm.preds[!is.na(biodb$BiopsyUpgraded)] <- predict(bx.gbm.F.model)
+bx.gbm.preds <- as.factor(bx.gbm.preds)
+levels(bx.gbm.preds) <- c('0', '1')
+
+BoutrosLab.plotting.survival::create.km.plot(
+    survival.object = upgrade.surv,
+    patient.groups = bx.gbm.preds,
+    xaxis.cex = axis.cex,
+    yaxis.cex = axis.cex,
+    main.cex = 1.4,
+    main = 'Overall Days-to-Upgrade from Diagnosis',
+    xlab.label = 'Time to upgrade since diagnosis (Days)',
+    xlab.cex = lab.cex,
+    ylab.label = 'Estimated survival probability',
+    ylab.cex = lab.cex
+    );
 ```
