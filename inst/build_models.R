@@ -5,7 +5,7 @@ biodb <- default.load.data(onlyBiodb = TRUE);
 train.control <- trainControl(
     method = "repeatedcv",
     number = 10,
-    repeats = 10
+    repeats = 5
     );
 
 metrics <- c('F');
@@ -21,4 +21,4 @@ results <- lapply(targets, function(tg) {
 });
 names(results) <- targets;
 
-compare.var.imp(results$ProgressedToTreatment$F)
+compare.var.imp(results$ProgressedToTreatment$F, include.ranks = TRUE)

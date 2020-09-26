@@ -221,7 +221,7 @@ do.call(
 
 ## Predictive Analysis
 ```{r}
-seed <- 1313
+seed <- 1010
 model.names <- c('xgb', 'rpart', 'gbm')
 
 model.file.names <- paste0('models/', model.names, '_ProgressedToTreatment_F_', seed, '_model.RDS')
@@ -354,5 +354,5 @@ plot(varImp(prostate.xgb.F.model), top = 25, main = "Variable Importance Prostat
 prog.model.list <- list(prog.xgb.F.model, prog.gbm.F.model, prog.rpart.F.model)
 names(prog.model.list) <- c('xgb', 'gbm', 'rpart')
 
-View(compare.var.imp(prog.model.list, include.ranks = TRUE)[, -1])
+kable(compare.var.imp(prog.model.list, include.ranks = TRUE)[, -1], caption = "Variable importance (0-100) and rankings")
 ```
