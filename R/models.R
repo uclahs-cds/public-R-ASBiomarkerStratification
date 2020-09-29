@@ -13,11 +13,13 @@ AS.models <- function(
     biodb,
     train.control = NULL,
     target = c('ProgressedToTreatment', 'BiopsyUpgraded', 'Prostatectomy'),
-    metric = c('F', 'Accuracy', 'AUPRC', 'Kappa', 'Precision', 'Recall', 'AUC-ROC',
+    metric = c('F', 'Accuracy', 'PR-AUC', 'Kappa', 'Precision', 'Recall', 'AUC-ROC',
                'Sens', 'Spec'),
     exclude.vars = NULL,
     predict.missing = FALSE,
-    seed = NULL) {
+    seed = NULL,
+    rpart.cost = NULL
+    ) {
     target <- match.arg(target);
     metric <- match.arg(metric);
 
@@ -95,38 +97,20 @@ AS.models <- function(
         subsample = 1
         );
 
-    custom.summary <- function (data, lev = NULL, model = NULL) {
-        if(length(levels(y)) == 2) {
-            two.class.sum <- twoClassSummary(data, lev, model);
-            names(two.class.sum) <- c('AUC-ROC', 'Sens', 'Spec');
-            pr.summary <- prSummary(data, lev, model);
-            names(pr.summary) <- c('AUPRC', 'Precision', 'Recall', 'F');
-            c(
-                defaultSummary(data, lev, model),
-                two.class.sum,
-                pr.summary
-                )
-        } else if(length(levels(y)) > 2) {
-            c(
-                defaultSummary(data, lev, model),
-                multiClassSummary(data, lev, model)
-            )
-        }
-
-        }
-
     if(is.null(train.control)) {
         train.control <- trainControl(
             method = 'repeatedcv',
             number = 10,
             repeats = 5,
             classProbs = TRUE,
+            savePredictions = T,
             summaryFunction = custom.summary
             # https://topepo.github.io/caret/subsampling-for-class-imbalances.html
             # Don't seem to be enough of a class imbalance to make a difference
             # sampling = 'up'
             )
         } else {
+            train.control$savePredictions <- TRUE
             train.control$classProbs <- TRUE
             train.control$summaryFunction <- custom.summary
         }
@@ -141,42 +125,47 @@ AS.models <- function(
 
     # Convert to dummy variables
     dummy.formula <- paste0("~ ", paste0(biokey.variables, collapse = " + "))
-    X.dummy.ints <- predict(dummyVars(dummy.formula, data = X.ints, fullRank = TRUE), newdata = X.ints)
+    X.dummy.ints <- predict(caret::dummyVars(dummy.formula, data = X.ints, fullRank = TRUE), newdata = X.ints)
 
     print(paste("Fitting models for:", target, "optimizing", metric));
 
-    if(!is.null(seed)) set.seed(seed);
+    # if(!is.null(seed)) set.seed(seed);
+    #
+    # print("Fitting XGB model...");
+    # xgb.fit <- caret::train(
+    #     X.dummy.ints,
+    #     y,
+    #     trControl = train.control,
+    #     tuneGrid = xgb.grid,
+    #     metric = metric,
+    #     method = "xgbTree"
+    # )
+    #
+    # print("Completed fitting XGB model...");
 
-    print("Fitting XGB model...");
-    xgb.fit <- train(
-        X.dummy.ints,
-        y,
-        trControl = train.control,
-        tuneGrid = xgb.grid,
-        metric = metric,
-        method = "xgbTree"
-    )
-
-    print("Completed fitting XGB model...");
-
-    model.file <- paste('xgb', target, metric, seed, 'model.RDS', sep = "_");
+    # model.file <- paste('xgb', target, metric, seed, 'model.RDS', sep = "_");
     # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
-    saveRDS(object = xgb.fit, file = here::here(paste0('models/', model.file)));
+    # saveRDS(object = xgb.fit, file = here::here(paste0('models/', model.file)));
 
     # Add up-sampling for rpart
     train.control.up <- train.control;
     train.control.up$sampling <- "up";
 
-    if(!is.null(seed)) set.seed(seed);
+    if(!is.null(rpart.cost)) {
+        print("Fitting rpart model with cost matrix...");
+        print(rpart.cost)
+        }
 
-    print("Fitting rpart Model...");
-    rpart.fit <- train(
+
+    if(!is.null(seed)) set.seed(seed);
+    rpart.fit <- caret::train(
         X,
         y,
         method = 'rpart',
         metric = metric,
-        trControl = train.control.up,
-        tuneLength = 30
+        trControl = train.control,
+        tuneLength = 30,
+        parms = list(loss = rpart.cost)
     )
     print("Completed fitting rpart model...");
 
@@ -184,10 +173,30 @@ AS.models <- function(
     # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
     saveRDS(object = rpart.fit, file = here::here(paste0('models/', model.file)));
 
+    # cost.matrix.3 <- matrix(c(0,1,2,0), byrow = TRUE, nrow = 2);
+    # print("Fitting rpart model with cost matrix...");
+    # print(cost.matrix.3)
+    #
+    # if(!is.null(seed)) set.seed(seed);
+    # rpart.cost3.fit <- caret::train(
+    #     X,
+    #     y,
+    #     method = 'rpart',
+    #     metric = metric,
+    #     trControl = train.control,
+    #     tuneLength = 30,
+    #     parms = list(loss = cost.matrix.3)
+    # )
+    # print("Completed fitting rpart model...");
+    #
+    # model.file <- paste('rpart_cost3', target, metric, seed, 'model.RDS', sep = "_");
+    # # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
+    # saveRDS(object = rpart.cost3.fit, file = here::here(paste0('models/', model.file)));
+
     if(!is.null(seed)) set.seed(seed);
 
     print("Fitting gbm model");
-    gbm.fit <- train(
+    gbm.fit <- caret::train(
         X,
         y,
         method = 'gbm',
@@ -203,11 +212,50 @@ AS.models <- function(
     saveRDS(object = gbm.fit, file = here::here(paste0('models/', model.file)));
 
     list(
-        rpart.fit = rpart.fit,
-        xgb.fit = xgb.fit,
+        rpart.fit,
+        # rpart.cost3.fit,
+        # xgb.fit = xgb.fit,
         gbm.fit = gbm.fit
         )
     }
+
+custom.summary <- function (data, lev = NULL, model = NULL) {
+    if(length(lev) == 2) {
+        two.class.sum <- caret::twoClassSummary(data, lev, model);
+        names(two.class.sum) <- c('AUC-ROC', 'Sens', 'Spec');
+        pr.summary <- caret::prSummary(data, lev, model);
+        names(pr.summary) <- c('PR-AUC', 'Precision', 'Recall', 'F');
+        c(
+            caret::defaultSummary(data, lev, model),
+            two.class.sum,
+            pr.summary,
+            F2 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 2),
+            F3 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 3)
+        )
+    } else if(length(lev) > 2) {
+        c(
+            caret::defaultSummary(data, lev, model),
+            caret::multiClassSummary(data, lev, model)
+        )
+    }
+
+}
+
+#' Title
+#'
+#' @param precision
+#' @param recall
+#' @param beta
+#'
+#' @return
+#' @export
+#'
+#' @examples
+F_beta <- function(precision, recall, beta = 1) {
+    unname(
+        (1 + beta^2) * (precision * recall) / (beta^2 * precision + recall)
+    )
+}
 
 #' Combines the importance score of dummy variables into one
 squash.importance <- function(importance, FUN = 'sum') {
@@ -234,7 +282,7 @@ var.imp <- function(x, squash = TRUE) {
         class(res) <- 'varImp.train';
         res
     } else {
-        res <- varImp(x);
+        res <- caret::varImp(x);
     }
     row.names(res$importance) <- gsub("(.*)\\.1", "\\1", row.names(res$importance));
     if(squash) {
@@ -268,8 +316,9 @@ compare.var.imp <- function(x, include.ranks = FALSE) {
         var.importance[rownames(imp.df), model.name] <- imp.df$Overall;
         }
     if(include.ranks) {
-        ranks <- lapply(var.importance[, -1] * -1, rank);
+        ranks <- as.data.frame(lapply(var.importance[, -1] * -1, rank));
         names(ranks) <- paste0(names(ranks), ".rank");
+        ranks$mean.rank <- rowMeans(ranks);
         var.importance <- cbind.data.frame(var.importance, ranks);
         }
     var.importance;

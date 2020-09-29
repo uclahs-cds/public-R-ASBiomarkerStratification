@@ -1,7 +1,9 @@
 ---
-title: "R Notebook"
+title: 'Active Surveillance Progression Prediction'
+author: 'Stefan Eng'
 output:
-  pdf_document: default
+  bookdown::pdf_document2:
+    number_sections: false
   html_notebook: default
 ---
 
@@ -13,6 +15,8 @@ library(gridExtra);
 library(magrittr);
 library(here);
 library(caret);
+# library(MLeval);
+library(pROC)
 
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '50%')
 
@@ -36,29 +40,12 @@ km.arguments <- list(
 biodb <- default.load.data(onlyBiodb = TRUE);
 ```
 
-## Introduction
-
-There is a clinical need to predict *before* surgery if a man has aggressive disease so that we can decide if they need surgery at all.  The quality of life benefits are thus huge (avoiding therapy entirely!).  The problem is that because it’s pre-surgery, we do not have the full cancer to study.  Instead we use biopsies (spatially-restricted samples of the cancer), radiology (imaging like MRI) and minimally-invasive biomarkers (e.g. blood or urine tests).  It's unclear which of those different strategies is best, and how those strategies should be sequenced or ordered.  A collaborator at UTHSCSA (University of Texas Health Sciences Center San Antonio) Dr. Michael Liss is a surgeon who is thinking hard about these problems.  He's put together a really nice cohort of ~100 patients where basically every possible biomarker has been generated and we want to figure out 'what is the optimal biomarker we can make using all tests'.  That will put an upper-bound to accuracy which we can go investigate in a prospective clinical trial.  We can then go backwards to start figuring out if there are ways to simplify/cheapen that test.
-
-### Background
-
-  - The Prostate Health Index (PHI): a new test for the detection of prostate cancer https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3943368
-    - In multiple prospective international trials, this composite measurement has been shown to outperform conventional PSA and free PSA measurements.
-    - Unlike PCA3 and TMPRSS2:ERG, PHI is also consistently associated with Gleason score and upgrading during active surveillance.
-
-The Prostate Health Index (PHI) is computed as
-$$
-\text{PHI} = ([-2]\text{proPSA}/\text{free PSA}) \times \sqrt{\text{PSA}}
-$$
-
-In the data set this corresponds to `(p2PSA / freePSA) * sqrt(PSAHyb)`
-
 ## Data
-In this cohort there are $N = `r nrow(biodb)`$ subjects.
+In this cohort there are $N = `r nrow(biodb)`$ patients.
 There are three variables that are of interest to predict.
-The first, `BiopsyUpgraded`, is whether the subject's research study biopsy increased cancer grade from the most recent biopsy results.
-The second, `ProgressedToTreatment`, is whether the subject progressed to treatment.
-Finally we have `Prostatectomy` which indicates whether the subject had a prostatectomy.
+The first, `BiopsyUpgraded`, is whether the patient's research study biopsy increased cancer grade from the most recent biopsy results.
+The second, `ProgressedToTreatment`, is whether the patient progressed to treatment.
+Finally we have `Prostatectomy` which indicates whether the patient had a prostatectomy.
 
 ```{r}
 pred.vars.xtabs <- xtabs(~ BiopsyUpgraded + ProgressedToTreatment + Prostatectomy, data = biodb, addNA = TRUE)
@@ -67,7 +54,7 @@ pred.vars.df <- as.data.frame(ftable(pred.vars.xtabs))
 pred.table <- reshape(pred.vars.df, idvar = c('BiopsyUpgraded', 'ProgressedToTreatment'), timevar = 'Prostatectomy', direction = 'wide')
 
 row.order <- with(pred.table, order(BiopsyUpgraded, ProgressedToTreatment))
-prostatectomy.cols <- paste0(0:1, " (N=", table(biodb$Prostatectomy), ")")
+prostatectomy.cols <- paste0(0:1, ' (N=', table(biodb$Prostatectomy), ')')
 overall.col <- paste0('Overall (N=', nrow(biodb), ')')
 
 pred.table$Overall <- rowSums(pred.table[row.order, c(3,4)])
@@ -77,10 +64,10 @@ pred.table[row.order, ] %>%
     booktabs = TRUE,
     align =  c('c', 'c', 'c', 'c'),
     col.names = c('Biopsy Upgraded', 'Progressed To Treatment', prostatectomy.cols, overall.col),
-    caption = "Comparision of prediction variables of interest") %>%
+    caption = 'Comparison of prediction variables of interest') %>%
   kable_styling() %>%
   collapse_rows(columns = 1) %>%
-  add_header_above(c(" " = 2, "Prostatectomy" = 2, " " = 1), align = 'c')
+  add_header_above(c(' ' = 2, 'Prostatectomy' = 2, ' ' = 1), align = 'c')
 ```
 
 The severity of the prostate cancers were measured on the Gleason scale.
@@ -89,18 +76,18 @@ The Gleason score is computed again in the variable `StudyHighestGleason` after 
 We compare the progression of the cancers by the Gleason grades.
 ```{r}
 progressed <- rep(NA, length(biodb$PreviousGleason))
-progressed[biodb$PreviousGleason < biodb$StudyHighestGleason] <- "Increased";
-progressed[biodb$PreviousGleason > biodb$StudyHighestGleason] <- "Decreased";
-progressed[biodb$PreviousGleason == biodb$StudyHighestGleason] <- "No Change";
+progressed[biodb$PreviousGleason < biodb$StudyHighestGleason] <- 'Increased';
+progressed[biodb$PreviousGleason > biodb$StudyHighestGleason] <- 'Decreased';
+progressed[biodb$PreviousGleason == biodb$StudyHighestGleason] <- 'No Change';
 
-kable(t(table(progressed)), caption = "Comparision of pre-research biopsy Gleason score to post research MRI Gleason score");
+kable(t(table(progressed)), caption = 'Comparison of pre-research biopsy Gleason score to post research MRI Gleason score');
 
 with(biodb, {
   table(PreviousGleason, StudyHighestGleason, useNA='ifany') %>%
   kable(booktabs = TRUE,
     align =  'c') %>%
   kable_styling() %>%
-  add_header_above(c(" " = 1, "Study Highest Gleason" = length(levels(StudyHighestGleason)) + 1), align = 'c')
+  add_header_above(c(' ' = 1, 'Study Highest Gleason' = length(levels(StudyHighestGleason)) + 1), align = 'c')
 })
 ```
 
@@ -108,15 +95,15 @@ with(biodb, {
 
 #### Biopsy Upgraded
 ```{r, results= 'hide', out.width='90%'}
-demographic.vars <- c("Age", "Weight", "Height", "BMI");
-bx.plots <- lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = "BiopsyUpgraded", cond = "Race", yaxis.cex = axis.cex, xaxis.cex = axis.cex, ylab.cex = lab.cex, xlab.cex = lab.cex, strip.cex = strip.cex);
+demographic.vars <- c('Age', 'Weight', 'Height', 'BMI');
+bx.plots <- lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = 'BiopsyUpgraded', cond = 'Race', yaxis.cex = axis.cex, xaxis.cex = axis.cex, ylab.cex = lab.cex, xlab.cex = lab.cex, strip.cex = strip.cex);
 do.call(gridExtra::grid.arrange, bx.plots);
 ```
 
 #### Progressed to Treatment
 ```{r, results= 'hide', out.width='90%'}
-demographic.vars <- c("Age", "Weight", "Height", "BMI");
-prog.plots <- lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = "ProgressedToTreatment", cond = "Race", yaxis.cex = axis.cex, xaxis.cex = axis.cex, ylab.cex = lab.cex, xlab.cex = lab.cex, strip.cex = strip.cex);
+demographic.vars <- c('Age', 'Weight', 'Height', 'BMI');
+prog.plots <- lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = 'ProgressedToTreatment', cond = 'Race', yaxis.cex = axis.cex, xaxis.cex = axis.cex, ylab.cex = lab.cex, xlab.cex = lab.cex, strip.cex = strip.cex);
 do.call(gridExtra::grid.arrange, prog.plots);
 ```
 
@@ -125,17 +112,17 @@ do.call(gridExtra::grid.arrange, prog.plots);
 # TODO: Update render.default to always include missing?
 t1 <- table1::table1(~ p2PSA +  freePSA + PSAHyb + SOCPSA + PHI | ProgressedToTreatment, data = biodb);
 table1.to.kable(t1) %>%
-  add_header_above(c(" " = 1, "Progressed To Treatment" = 2, " " = 1))
+  add_header_above(c(' ' = 1, 'Progressed To Treatment' = 2, ' ' = 1))
 ```
 
 ```{r}
 t1.bx <- table1::table1(~ p2PSA +  freePSA + PSAHyb + SOCPSA + PHI | BiopsyUpgraded, data = biodb);
 table1.to.kable(t1.bx) %>%
-  add_header_above(c(" " = 1, "Biopsy Upgraded" = 2, " " = 1))
+  add_header_above(c(' ' = 1, 'Biopsy Upgraded' = 2, ' ' = 1))
 ```
 
 ### Correlation Heatmap
-```{r, out.width = "100%"}
+```{r, out.width = '100%'}
 create.heatmap.AS(biodb);
 ```
 
@@ -155,9 +142,9 @@ stopifnot(
     all(is.na(biodb$BiopsyResult) == is.na(biodb$DaysBxToLastClinicalAppt))
     );
 ```
-All subjects have values for the days from diagnosis to the last clinical appointment `DaysDxToLastClinicalAppt` and last review `DaysDxToLastReview`.
-The subjects that had a biopsy have values for variables `DaysBxToLastClinicalAppt` and `DaysBxToLastReview`.
-If a subject progressed to treatment, then the days from diagnosis are in `DaysDxToProgression`.
+All patients have values for the days from diagnosis to the last clinical appointment `DaysDxToLastClinicalAppt` and last review `DaysDxToLastReview`.
+The patients that had a biopsy have values for variables `DaysBxToLastClinicalAppt` and `DaysBxToLastReview`.
+If a patient progressed to treatment, then the days from diagnosis are in `DaysDxToProgression`.
 If they had a biopsy and progressed to treatment then `DaysDxToProgression` will contain the days between the biopsy and progression.
 
 #### Overall Days to Progression from Biopsy/Diagnosis
@@ -221,79 +208,131 @@ do.call(
 
 ## Predictive Analysis
 ```{r}
-seed <- 1010
-model.names <- c('xgb', 'rpart', 'gbm')
+seed <- 1313;
+model.names <- c('rpart', 'gbm');
+targets <- c(
+    'BiopsyUpgraded',
+    'Prostatectomy',
+    'ProgressedToTreatment');
+metric <- 'PR-AUC';
 
-model.file.names <- paste0('models/', model.names, '_ProgressedToTreatment_F_', seed, '_model.RDS')
-prog.xgb.F.model <- readRDS(here(model.file.names[1]));
-prog.rpart.F.model <- readRDS(here(model.file.names[2]));
-prog.gbm.F.model <- readRDS(here(model.file.names[3]));
-
-model.file.names <- paste0('models/', model.names, '_BiopsyUpgraded_F_', seed, '_model.RDS')
-bx.xgb.F.model <- readRDS(here(model.file.names[1]));
-bx.rpart.F.model <- readRDS(here(model.file.names[2]));
-bx.gbm.F.model <- readRDS(here(model.file.names[3]));
-
-model.file.names <- paste0('models/', model.names, '_Prostatectomy_F_', seed, '_model.RDS')
-prostate.xgb.F.model <- readRDS(here(model.file.names[1]));
-prostate.rpart.F.model <- readRDS(here(model.file.names[2]));
-prostate.gbm.F.model <- readRDS(here(model.file.names[3]));
+models <- lapply(targets, function(tg) {
+    model.file.names <- here(paste0('models/', model.names, '_', tg, '_', metric, '_', seed, '_model.RDS'));
+    res <- lapply(model.file.names, readRDS);
+    names(res) <- model.names;
+    res
+});
+names(models) <- targets;
 ```
 
 We predict the three variables: `ProgressedToTreatment`, `BiopsyUpgraded`, `Prostatectomy`.
 For each of these variable we compare the results from three models: a regression tree (`rpart`), gradient boosting machine (`gbm`), and eXtreme Gradient Boosting (`xgboost`).
 The regression tree model is the most interpretable as it produces a single decision tree.
-The other models produce better accuracy as well as $F_1$ scores but require more work to interpret.
+The other models produce better accuracy as well as $F_1$ scores but require more work to interpret. The following variables were used as the initial set of variables for `ProgressedToTreatment` and `Prostatectomy`. In the case of `BiopsyUpgraded`, the variable `BiopsyResult` was removed from the predictor variables.
 
-The following variables were used as the initial set of variables for `ProgressedToTreatment` and `Prostatectomy`. In the case of `BiopsyUpgraded`, the variable `BiopsyResult` was removed from the predictor variables.
+### Method
+For each of the models we performed a grid-search to find the optimal parameters.
+The area under the ROC curve was used as the (threshold invariant) metric for which the parameters were tuned.
+
 ```{r}
-kable(prog.gbm.F.model$finalModel$var.names, col.names = "Variable")
+kable(models$ProgressedToTreatment$gbm$finalModel$var.names, col.names = 'Variable', booktabs = T) %>%
+  kable_styling(position =  'center')
+```
+
+### ROC and PR Curve
+```{r}
+# https://stackoverflow.com/a/37261201/1351718
+roc.prog.gbm <- pROC::roc(predictor = models$ProgressedToTreatment$gbm$pred$yes, response = models$ProgressedToTreatment$gbm$pred$obs)
+coords(roc.prog.gbm, 'best')
+
+x <- plot(roc.prog.gbm)
+
+# Plot PR Curves
+# Plot the Precision-Recall curve
+plot(precision ~ recall,
+  coords(roc.prog.gbm, "all", ret = c("recall", "precision"), transpose = FALSE),
+  type="l")
+```
+
+### Optimal cutpoint
+```{r}
+# cost.matrix <- lapply(1:3, function(x) matrix(c(0,x,1,0), byrow = TRUE, nrow = 2))
+cost.matrix <- matrix(c(0,3,1,0), byrow = TRUE, nrow = 2)
+thresholds <- seq(0, 1, length.out = 100)
+threshold.cost <- optimal.threshold.train(models$ProgressedToTreatment$gbm, thresholds = thresholds, cost.matrix = cost.matrix)
+plot(thresholds, threshold.cost, type = "l")
+lines(thresholds, moving.avg(threshold.cost, order = 5), col = 'red')
+
+threshold.cost.rpart <- optimal.threshold.train(models$ProgressedToTreatment$rpart, thresholds = thresholds, cost.matrix = cost.matrix)
+plot(thresholds, threshold.cost.rpart, type = "l")
+lines(thresholds, moving.avg(threshold.cost.rpart, order = 5), col = 'red')
+# thresholder(models$ProgressedToTreatment$gbm, threshold = seq(0, 1, length.out = 10))
 ```
 
 ### Prediction Results
+All of the models were validated using 10-fold cross-validation repeated 5 times.
+That is, we partition the data set into 10 parts and use 9 parts to train the model and the last to evaluate the model.
+Several metrics are computed based on the results such as $F_1$ score, area under the ROC curve (AUC-ROC), area under the precision-recall curve, accuracy, sensitivity, and specificity.
+This process is repeated so that each part of the partition is used to validate exactly once.
+We repeat this entire process 5 times so that 10 random partitions are generated.
+This results in a distribution for the metrics which is an approximation for how to models will perform out of sample.
 
 #### Biopsy Upgraded
-```{r}
+First we predict whether a patients biopsy will be upgraded.
+
+```{r bx-metrics}
 bx.resamps <- resamples(
-  list(XGB.F = bx.xgb.F.model,
-       GBM.F = bx.gbm.F.model,
-       rpart.F = bx.rpart.F.model));
+  models$BiopsyUpgraded);
 
 trellis.par.set(caretTheme())
-dotplot(bx.resamps, metric = c("F", "AUC-ROC", "AUPRC", "Accuracy", "Sens", "Spec"), main = "Biopsy Upgraded Model Comparision")
+dotplot(bx.resamps, metric = c('F', 'AUC-ROC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Biopsy Upgraded Model Comparison')
+```
 
-rpart.plot::rpart.plot(bx.rpart.F.model$finalModel)
+The regression tree produces the worst results in almost all metrics except for specificity.
+The final regression tree is shown in Figure \@ref(fig:bx-rpart).
+We can see that the final regression the only variable used in the prediction is the RSI Lesion Signal.
+```{r bx-rpart, fig.cap='Regresion tree for predicting whether biopsy will be upgraded. Only the RSI Lesion Signal variable is used.'}
+rpart.plot::rpart.plot(models$BiopsyUpgraded$rpart_cost2$finalModel, main = 'Biopsy Upgraded Regression Tree FN x 2')
+rpart.plot::rpart.plot(models$BiopsyUpgraded$rpart_cost3$finalModel, main = 'Biopsy Upgraded Regression Tree FN x 3')
 ```
 
 #### Progressed To Treatment
-```{r}
-prog.resamps <- resamples(
-  list(XGB.F = prog.xgb.F.model,
-       GBM.F = prog.gbm.F.model,
-       rpart.F = prog.rpart.F.model));
+Next we predict whether a patient will progress to treatment.
+```{r prog-metrics}
+prog.resamps <- resamples(models$ProgressedToTreatment);
 
-dotplot(prog.resamps, metric = c("F", "AUC-ROC", "AUPRC", "Accuracy", "Sens", "Spec"), main = "Progressed To Treatment Model Comparision")
-rpart.plot::rpart.plot(prog.rpart.F.model$finalModel)
+#evalm(prog.gbm.F.model)
+# prog.gbm.F.model$results
+
+dotplot(prog.resamps, metric = c('F', 'AUC-ROC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Progressed To Treatment Model Comparison')
+```
+
+```{r prog-rpart, fig.cap='Regresion tree for predicting whether the patient will progress to treatment.', out.width = '75%'}
+rpart.plot::rpart.plot(models$ProgressedToTreatment$rpart_cost2$finalModel, main = 'Progressed-to-Treatment Regression Tree FN x 2')
+rpart.plot::rpart.plot(models$ProgressedToTreatment$rpart_cost3$finalModel, main = 'Progressed-to-Treatment Regression Tree FN x 3')
 ```
 
 #### Prostatectomy
-```{r}
-prostate.resamps <- resamples(
-  list(XGB.F = prostate.xgb.F.model,
-       GBM.F = prostate.gbm.F.model,
-       rpart.F = prostate.rpart.F.model));
+Finally, we predict whether a patient will require a prostatectomy.
+```{r prostate-metrics}
+prostate.resamps <- resamples(models$Prostatectomy);
 
-dotplot(prostate.resamps, metric = c("F", "AUC-ROC", "AUPRC", "Accuracy", "Sens", "Spec"), main = "Prostatectom Model Comparision")
+dotplot(prostate.resamps, metric = c('F', 'AUC-ROC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Prostatectomy Model Comparison')
+```
 
-rpart.plot::rpart.plot(prostate.rpart.F.model$finalModel)
+```{r prostate-rpart, fig.cap='Regresion tree for predicting whether the patient will require a prostatectomy.', out.width = '75%'}
+rpart.plot::rpart.plot(models$Prostatectomy$rpart_cost2$finalModel, main = 'Prostatectomy Regression Tree FN x 2')
+rpart.plot::rpart.plot(models$Prostatectomy$rpart_cost3$finalModel, main = 'Prostatectomy Regression Tree FN x 3')
 ```
 
 
-## Cut-points for survival analysis
+## Cut-points for time-to-event analysis
+The gradient boosted model (gbm) provided the best predictive power of the models.
+We use the predictions from this model to show that days until the patient progressed or had the biopsy upgraded for each of the prediction groups.
 
 ### Progressed To Treatment
 ```{r}
-prog.gbm.preds <- as.factor(predict(prog.gbm.F.model))
+prog.gbm.preds <- as.factor(predict(models$ProgressedToTreatment$gbm))
 levels(prog.gbm.preds) <- c('0', '1')
 
 do.call(
@@ -326,7 +365,7 @@ do.call(
 ### Days to Upgrade from Diagnosis
 ```{r}
 bx.gbm.preds <- rep(NA, nrow(biodb))
-bx.gbm.preds[!is.na(biodb$BiopsyUpgraded)] <- predict(bx.gbm.F.model)
+bx.gbm.preds[!is.na(biodb$BiopsyUpgraded)] <- predict(models$BiopsyUpgraded$gbm)
 bx.gbm.preds <- as.factor(bx.gbm.preds)
 levels(bx.gbm.preds) <- c('0', '1')
 
@@ -345,14 +384,24 @@ do.call(
 ```
 
 
-## Variable Importance
+## Variable Importance for Progressed to Treatment
+The regression tree output is simple to interpret but does not provide the best predictions.
+The other models are not as easy to interpret but have measures of variable importance of the predictors.
+We compare the three models' variable importance ranks to see important variables across all models.
+
 ```{r}
-plot(varImp(prog.xgb.F.model), top = 25, main = "Variable Importance Progressed-to-Treatment XGB")
-plot(varImp(bx.xgb.F.model), top = 25, main = "Variable Importance Biopsy Upgraded XGB")
-plot(varImp(prostate.xgb.F.model), top = 25, main = "Variable Importance Prostatectomy XGB")
+#plot(varImp(prog.gbm.F.model), top = 25, main = 'Variable Importance Progressed-to-Treatment XGB')
+#plot(varImp(bx.gbm.F.model), top = 25, main = 'Variable Importance Biopsy Upgraded XGB')
+#plot(varImp(prostate.gbm.F.model), top = 25, main = 'Variable Importance Prostatectomy XGB')
 
-prog.model.list <- list(prog.xgb.F.model, prog.gbm.F.model, prog.rpart.F.model)
-names(prog.model.list) <- c('xgb', 'gbm', 'rpart')
+prog.model.list <- list(prog.gbm.F.model, prog.xgb.F.model, prog.rpart.F.model)
+names(prog.model.list) <- c('gbm', 'xgb', 'rpart')
 
-kable(compare.var.imp(prog.model.list, include.ranks = TRUE)[, -1], caption = "Variable importance (0-100) and rankings")
+var.imp.joined <- compare.var.imp(prog.model.list, include.ranks = TRUE)[, -1]
+                   
+var.imp.joined <- var.imp.joined[order(var.imp.joined$mean.rank),]
+kable(
+  x = head(var.imp.joined[,c(7, 4:6)], n = 25),
+  caption = paste('Top 25 variable importance rankings out of', nrow(var.imp.joined), 'variables'), digits = 2
+  )
 ```

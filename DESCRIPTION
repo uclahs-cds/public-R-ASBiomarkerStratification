@@ -17,7 +17,8 @@ Imports:
     BoutrosLab.plotting.general,
     pROC,
     xlsx,
-    here
+    here,
+    caret
 Suggests:
     BoutrosLab.plotting.survival,
     BoutrosLab.statistics.survival,

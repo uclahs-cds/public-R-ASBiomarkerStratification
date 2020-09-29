@@ -10,7 +10,7 @@ There is a clinical need to predict *before* surgery if a man has aggressive dis
   - To revisit the initial descriptive analysis (feel free to keep any/all code you find useful, but no requirement for that)
   - Do some careful CV to identify the optimal model and operating point (probably F1 for the latter)
   - Take a look at full and truncated time-to-event for that final operating point
-
+  
 
 ## Questions
   - Predicting `BiopsyUpgraded` and `ProgressedToTreatment`?
@@ -23,6 +23,19 @@ There is a clinical need to predict *before* surgery if a man has aggressive dis
   - The Prostate Health Index (PHI): a new test for the detection of prostate cancer https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3943368
     - In multiple prospective international trials, this composite measurement has been shown to outperform conventional PSA and free PSA measurements.
     - Unlike PCA3 and TMPRSS2:ERG, PHI is also consistently associated with Gleason score and upgrading during active surveillance.
+    
+## Background
+
+  - The Prostate Health Index (PHI): a new test for the detection of prostate cancer https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3943368
+    - In multiple prospective international trials, this composite measurement has been shown to outperform conventional PSA and free PSA measurements.
+    - Unlike PCA3 and TMPRSS2:ERG, PHI is also consistently associated with Gleason score and upgrading during active surveillance.
+
+The Prostate Health Index (PHI) is computed as
+$$
+\text{PHI} = ([-2]\text{proPSA}/\text{free PSA}) \times \sqrt{\text{PSA}}
+$$
+
+In the data set this corresponds to `(p2PSA / freePSA) * sqrt(PSAHyb)`
 
 ## Data
   - PHI = ([-2]proPSA/free PSA) × √PSA.

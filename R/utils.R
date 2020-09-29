@@ -22,3 +22,27 @@ camel.to.spaces <- function(x) {
     split.string <- strsplit(matches, " ")
     unlist(lapply(split.string, paste0, collapse = " "))
 }
+
+# Moving average code from forecast
+#' Title
+#'
+#' @param x
+#' @param order
+#' @param center
+#'
+#' @return
+#' @export
+#'
+#' @examples
+moving.avg <- function(x, order, center = TRUE) {
+    if (abs(order - round(order)) > 1e-08) {
+        stop("order must be an integer")
+    }
+    if (order%%2 == 0 && centre) {
+        w <- c(0.5, rep(1, order - 1), 0.5)/order
+    }
+    else {
+        w <- rep(1, order)/order
+    }
+    return(stats::filter(x, w))
+}
