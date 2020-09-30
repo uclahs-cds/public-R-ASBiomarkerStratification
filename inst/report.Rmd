@@ -223,17 +223,6 @@ models <- lapply(targets, function(tg) {
     res
 });
 names(models) <- targets;
-
-## Upsampling models
-up.seed <- 456456;
-
-up.models <- lapply(targets, function(tg) {
-    model.file.names <- here(paste0('models/', model.names, '_', tg, '_', metric, '_', seed, '_model.RDS'));
-    res <- lapply(model.file.names, readRDS);
-    names(res) <- model.names;
-    res
-});
-names(up.models) <- targets;
 ```
 
 We predict the three variables: `ProgressedToTreatment`, `BiopsyUpgraded`, `Prostatectomy`.
@@ -274,10 +263,11 @@ lines(precision ~ recall,
   type="l", las = 1, col = "blue")
 ```
 
-### Optimal cutpoint
+### Operating Point
 ```{r}
 # cost.matrix <- lapply(1:3, function(x) matrix(c(0,x,1,0), byrow = TRUE, nrow = 2))
-cost.matrix <- matrix(c(0,3,1,0), byrow = TRUE, nrow = 2)
+# cost.matrix <- matrix(c(0,3,1,0), byrow = TRUE, nrow = 2)
+cost.matrix <- matrix(c(0,2,1,0), byrow = TRUE, nrow = 2)
 thresholds <- seq(0, 1, length.out = 100)
 
 statistics <- c("prob_threshold", "Sensitivity", "Specificity", "Pos Pred Value", "Neg Pred Value", 
@@ -297,12 +287,15 @@ thresholds.info.list <- lapply(names(optimal.thresholds), function(x) {
   res <- lapply(names(target.list), function(y) {
     m <- target.list[[y]]
     threshold <- optimal.thresholds[[x]][[y]]
-    thres.res <- thresholder(m, threshold = threshold, final = TRUE)
-    thres.res <- thres.res[statistics]
-    rownames(thres.res) <- m$method
+    thres.res <- colMeans(threshold.summary.stats(m, threshold), na.rm = TRUE)
+    thres.res$method <- m$method
+    thres.res$threshold <- threshold
     thres.res
   })
-  do.call(rbind.data.frame, res)
+  
+  res.df <- do.call(rbind.data.frame, res)
+  rownames(res.df) <- names(target.list)
+  res.df
 })
 
 names(thresholds.info.list) <- names(optimal.thresholds);
@@ -310,18 +303,18 @@ names(thresholds.info.list) <- names(optimal.thresholds);
 thresholds.info <- do.call(rbind.data.frame, thresholds.info.list)
 ```
 
-To find the optimal cut point we make a false positive ()
-We show how to find the optimal point for Progressed To Treatment
-```{r, fig.cap="Optimal cut-points for the Progressed to Treatment prediction models"}
+Each of the models outputs a probability being in class 1, e.g. the probability of biopsy upgraded, or progression to treatment.
+By default the models threshold anything above 0.5 as class 1 and anything below as 0.
+We want to find a better threshold value, called the operating point.
+To find the optimal operating point we make a false negative FN (when we predict indolent disease when it truly is aggresive) 3 times as costly as a false positive FP.
+For each threshold the cost is computed for each of the folds in the 10-fold cross-validation and averaged across all 10 folds and 5 repetitions.
+Then the optimal operating point is selected as the threshold with the minimum cost.
+
+We show how to find the optimal point for predicting whether a patient progressed to treatment.
+```{r, fig.cap="Optimal operating point for the Progressed to Treatment prediction models."}
 threshold.cost.gbm <- cost.threshold.train(models$ProgressedToTreatment$gbm, thresholds = thresholds, cost.matrix = cost.matrix)
 
-#plot(thresholds, threshold.cost, type = "l", las = 1)
-#lines(thresholds, moving.avg(threshold.cost, order = 5), col = 'red', las = 1)
-
 threshold.cost.rpart <- cost.threshold.train(models$ProgressedToTreatment$rpart, thresholds = thresholds, cost.matrix = cost.matrix)
-#lines(thresholds, threshold.cost.rpart, type = "l", lty = 2, las = 1)
-#lines(thresholds, moving.avg(threshold.cost.rpart, order = 5), col = 'red', lty = 2, las = 1)
-# thresholder(models$ProgressedToTreatment$gbm, threshold = seq(0, 1, length.out = 10))
 
 threshold.plot.df <- rbind(
   data.frame(threshold = thresholds, cost = threshold.cost.gbm, model = "gbm"),
@@ -339,6 +332,10 @@ BoutrosLab.plotting.general::create.scatterplot(
   xaxis.lab = round(xat, 2),
   xaxis.cex = 1,
   yaxis.cex = 1,
+  ylab.cex = 1.2,
+  xlab.cex = 1.2,
+  main = "Optimal operating points for Progressed to Treatment prediction",
+  main.cex = 1.3,
   type = "l",
   abline.v = min.thresholds,
   abline.col = default.colours(2),
@@ -359,8 +356,11 @@ BoutrosLab.plotting.general::create.scatterplot(
 )
 ```
 
-Then we show the results for each of the models at the given optimal threshold
-```{r}
+Then we show the results for each of the models at the given optimal operating points for each model
+```{r operating-points, fig.cap='Summary statistics for the optimal operating points for each model'}
+# cols <- c("prob_threshold", "Sensitivity", "Specificity", "Pos Pred Value", "Neg Pred Value", 
+# "Precision", "Recall", "F1", "Prevalence", "Accuracy"
+# )
 kable(thresholds.info, digits = 3) %>%
   kable_styling()
 ```
@@ -369,7 +369,7 @@ kable(thresholds.info, digits = 3) %>%
 ### Prediction Results
 All of the models were validated using 10-fold cross-validation repeated 5 times.
 That is, we partition the data set into 10 parts and use 9 parts to train the model and the last to evaluate the model.
-Several metrics are computed based on the results such as $F_1$ score, area under the ROC curve (AUC-ROC), area under the precision-recall curve, accuracy, sensitivity, and specificity.
+Several metrics are computed based on the results such as $F_1$ score, area under the ROC curve (ROC-AUC), area under the precision-recall curve, accuracy, sensitivity, and specificity.
 This process is repeated so that each part of the partition is used to validate exactly once.
 We repeat this entire process 5 times so that 10 random partitions are generated.
 This results in a distribution for the metrics which is an approximation for how to models will perform out of sample.
@@ -382,7 +382,7 @@ bx.resamps <- resamples(
   models$BiopsyUpgraded);
 
 trellis.par.set(caretTheme())
-dotplot(bx.resamps, metric = c('F', 'AUC-ROC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Biopsy Upgraded Model Comparison')
+dotplot(bx.resamps, metric = c('F', 'ROC-AUC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Biopsy Upgraded Model Comparison')
 ```
 
 The regression tree produces the worst results in almost all metrics except for specificity.
@@ -400,7 +400,7 @@ prog.resamps <- resamples(models$ProgressedToTreatment);
 #evalm(prog.gbm.F.model)
 # prog.gbm.F.model$results
 
-dotplot(prog.resamps, metric = c('F', 'AUC-ROC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Progressed To Treatment Model Comparison')
+dotplot(prog.resamps, metric = c('F', 'ROC-AUC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Progressed To Treatment Model Comparison')
 ```
 
 ```{r prog-rpart, fig.cap='Regresion tree for predicting whether the patient will progress to treatment.', out.width = '75%'}
@@ -412,7 +412,7 @@ Finally, we predict whether a patient will require a prostatectomy.
 ```{r prostate-metrics}
 prostate.resamps <- resamples(models$Prostatectomy);
 
-dotplot(prostate.resamps, metric = c('F', 'AUC-ROC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Prostatectomy Model Comparison')
+dotplot(prostate.resamps, metric = c('F', 'ROC-AUC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Prostatectomy Model Comparison')
 ```
 
 ```{r prostate-rpart, fig.cap='Regresion tree for predicting whether the patient will require a prostatectomy.', out.width = '75%'}
@@ -426,21 +426,23 @@ We use the predictions from this model to show that days until the patient progr
 
 ### Progressed To Treatment
 ```{r}
-prog.gbm.preds <- as.factor(predict(models$ProgressedToTreatment$gbm))
+prog.gbm.preds <- as.factor(predict(models$ProgressedToTreatment$gbm > optimal.thresholds$ProgressedToTreatment$gbm,))
 levels(prog.gbm.preds) <- c('0', '1')
+# prog.gbm.preds[is.na(progression.surv.bx)] <- NA
 
-do.call(
-  what = BoutrosLab.plotting.survival::create.km.plot,
-  args = c(
-    km.arguments,
-    list(
-      survival.object = progression.surv.bx,
-      patient.groups = prog.gbm.preds,
-      main = 'Overall Days-to-Progression from Biopsy',
-      xlab.label = 'Time to upgrade since biopsy (Days)'
-      )
-    )
-  )
+# What's the issue with this?
+# do.call(
+#   what = BoutrosLab.plotting.survival::create.km.plot,
+#   args = c(
+#     km.arguments,
+#     list(
+#       survival.object = progression.surv.bx,
+#       patient.groups = prog.gbm.preds,
+#       main = 'Overall Days-to-Progression from Biopsy',
+#       xlab.label = 'Time to upgrade since biopsy (Days)'
+#       )
+#     )
+#   )
 
 do.call(
   what = BoutrosLab.plotting.survival::create.km.plot,

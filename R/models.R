@@ -13,7 +13,7 @@ AS.models <- function(
     biodb,
     train.control = NULL,
     target = c('ProgressedToTreatment', 'BiopsyUpgraded', 'Prostatectomy'),
-    metric = c('F', 'Accuracy', 'PR-AUC', 'Kappa', 'Precision', 'Recall', 'AUC-ROC',
+    metric = c('F', 'Accuracy', 'PR-AUC', 'Kappa', 'Precision', 'Recall', 'ROC-AUC',
                'Sens', 'Spec'),
     models = c('xgb', 'gbm', 'rpart'),
     exclude.vars = NULL,
@@ -78,6 +78,8 @@ AS.models <- function(
         y.target <- biodb[!missing.target, target];
         y <- y.target
         levels(y) <- c('no', 'yes');
+        # Most functions expect the positive case to be the first factor
+        factor(y, levels = c('yes', 'no'));
 
         # Drop the missing target values
         X <- biodb[!missing.target, biokey.variables]
@@ -206,7 +208,7 @@ AS.models <- function(
 custom.summary <- function (data, lev = NULL, model = NULL) {
     if(length(lev) == 2) {
         two.class.sum <- caret::twoClassSummary(data, lev, model);
-        names(two.class.sum) <- c('AUC-ROC', 'Sens', 'Spec');
+        names(two.class.sum) <- c('ROC-AUC', 'Sens', 'Spec');
         pr.summary <- caret::prSummary(data, lev, model);
         names(pr.summary) <- c('PR-AUC', 'Precision', 'Recall', 'F');
         c(

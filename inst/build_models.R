@@ -10,11 +10,14 @@ train.control <- caret::trainControl(
     repeats = 5
     );
 
-metrics <- c('PR-AUC');
+metrics <- c('ROC-AUC'
+             #, 'PR-AUC'
+             );
 targets <- c(
     'BiopsyUpgraded', # This needs some work... do we want to predict the missing values as well?
-    'Prostatectomy',
-    'ProgressedToTreatment');
+    # 'Prostatectomy'
+    'ProgressedToTreatment'
+    );
 
 results <- lapply(targets, function(tg) {
     res <- lapply(metrics,
@@ -24,7 +27,7 @@ results <- lapply(targets, function(tg) {
                   train.control = train.control,
                   predict.missing = FALSE,
                   seed = seed,
-                  models = c('gbm', 'rpart', 'xgb'),
+                  models = c('gbm', 'rpart'),
                   rpart.cost = matrix(c(0,1,2,0), byrow = TRUE, nrow = 2));
     names(res) <- metrics;
     res;
