@@ -2,13 +2,12 @@ library(ProstateCancer.ASBiomarkerSynergy);
 
 biodb <- default.load.data(onlyBiodb = TRUE);
 
-seed <- 456456;
+seed <- 1313;
 
 train.control <- caret::trainControl(
     method = "repeatedcv",
-    number = 20,
-    repeats = 5,
-    sampling = "up"
+    number = 10,
+    repeats = 5
     );
 
 metrics <- c('PR-AUC');
@@ -25,6 +24,7 @@ results <- lapply(targets, function(tg) {
                   train.control = train.control,
                   predict.missing = FALSE,
                   seed = seed,
+                  models = c('gbm', 'rpart', 'xgb'),
                   rpart.cost = matrix(c(0,1,2,0), byrow = TRUE, nrow = 2));
     names(res) <- metrics;
     res;

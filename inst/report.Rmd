@@ -223,6 +223,17 @@ models <- lapply(targets, function(tg) {
     res
 });
 names(models) <- targets;
+
+## Upsampling models
+up.seed <- 456456;
+
+up.models <- lapply(targets, function(tg) {
+    model.file.names <- here(paste0('models/', model.names, '_', tg, '_', metric, '_', seed, '_model.RDS'));
+    res <- lapply(model.file.names, readRDS);
+    names(res) <- model.names;
+    res
+});
+names(up.models) <- targets;
 ```
 
 We predict the three variables: `ProgressedToTreatment`, `BiopsyUpgraded`, `Prostatectomy`.
@@ -243,15 +254,24 @@ kable(models$ProgressedToTreatment$gbm$finalModel$var.names, col.names = 'Variab
 ```{r}
 # https://stackoverflow.com/a/37261201/1351718
 roc.prog.gbm <- pROC::roc(predictor = models$ProgressedToTreatment$gbm$pred$yes, response = models$ProgressedToTreatment$gbm$pred$obs)
-coords(roc.prog.gbm, 'best')
+roc.prog.rpart <- pROC::roc(predictor = models$ProgressedToTreatment$rpart$pred$yes, response = models$ProgressedToTreatment$rpart$pred$obs)
 
-x <- plot(roc.prog.gbm)
+coords(roc.prog.gbm, 'best')
+coords(roc.prog.rpart, 'best')
+
+par(pty="s")
+plot(roc.prog.gbm, las = 1, col = "red")
+plot(roc.prog.rpart, las = 1, add = TRUE, col = "blue", xlim = c(1, 0))
 
 # Plot PR Curves
 # Plot the Precision-Recall curve
 plot(precision ~ recall,
   coords(roc.prog.gbm, "all", ret = c("recall", "precision"), transpose = FALSE),
-  type="l")
+  type="l", las = 1, col = "red")
+
+lines(precision ~ recall,
+  coords(roc.prog.rpart, "all", ret = c("recall", "precision"), transpose = FALSE),
+  type="l", las = 1, col = "blue")
 ```
 
 ### Optimal cutpoint
@@ -259,15 +279,92 @@ plot(precision ~ recall,
 # cost.matrix <- lapply(1:3, function(x) matrix(c(0,x,1,0), byrow = TRUE, nrow = 2))
 cost.matrix <- matrix(c(0,3,1,0), byrow = TRUE, nrow = 2)
 thresholds <- seq(0, 1, length.out = 100)
-threshold.cost <- optimal.threshold.train(models$ProgressedToTreatment$gbm, thresholds = thresholds, cost.matrix = cost.matrix)
-plot(thresholds, threshold.cost, type = "l")
-lines(thresholds, moving.avg(threshold.cost, order = 5), col = 'red')
 
-threshold.cost.rpart <- optimal.threshold.train(models$ProgressedToTreatment$rpart, thresholds = thresholds, cost.matrix = cost.matrix)
-plot(thresholds, threshold.cost.rpart, type = "l")
-lines(thresholds, moving.avg(threshold.cost.rpart, order = 5), col = 'red')
-# thresholder(models$ProgressedToTreatment$gbm, threshold = seq(0, 1, length.out = 10))
+statistics <- c("prob_threshold", "Sensitivity", "Specificity", "Pos Pred Value", "Neg Pred Value", 
+"Precision", "Recall", "F1", "Prevalence", "Detection Rate", 
+"Detection Prevalence", "Balanced Accuracy", "Accuracy", "Kappa"
+)
+
+optimal.thresholds <- lapply(models, function(mods) {
+  lapply(mods, function(m) {
+      optimal.threshold.train(m, thresholds = thresholds, cost.matrix = cost.matrix)
+  })
+})
+
+thresholds.info.list <- lapply(names(optimal.thresholds), function(x) {
+  target.list <- models[[x]]
+  
+  res <- lapply(names(target.list), function(y) {
+    m <- target.list[[y]]
+    threshold <- optimal.thresholds[[x]][[y]]
+    thres.res <- thresholder(m, threshold = threshold, final = TRUE)
+    thres.res <- thres.res[statistics]
+    rownames(thres.res) <- m$method
+    thres.res
+  })
+  do.call(rbind.data.frame, res)
+})
+
+names(thresholds.info.list) <- names(optimal.thresholds);
+
+thresholds.info <- do.call(rbind.data.frame, thresholds.info.list)
 ```
+
+To find the optimal cut point we make a false positive ()
+We show how to find the optimal point for Progressed To Treatment
+```{r, fig.cap="Optimal cut-points for the Progressed to Treatment prediction models"}
+threshold.cost.gbm <- cost.threshold.train(models$ProgressedToTreatment$gbm, thresholds = thresholds, cost.matrix = cost.matrix)
+
+#plot(thresholds, threshold.cost, type = "l", las = 1)
+#lines(thresholds, moving.avg(threshold.cost, order = 5), col = 'red', las = 1)
+
+threshold.cost.rpart <- cost.threshold.train(models$ProgressedToTreatment$rpart, thresholds = thresholds, cost.matrix = cost.matrix)
+#lines(thresholds, threshold.cost.rpart, type = "l", lty = 2, las = 1)
+#lines(thresholds, moving.avg(threshold.cost.rpart, order = 5), col = 'red', lty = 2, las = 1)
+# thresholder(models$ProgressedToTreatment$gbm, threshold = seq(0, 1, length.out = 10))
+
+threshold.plot.df <- rbind(
+  data.frame(threshold = thresholds, cost = threshold.cost.gbm, model = "gbm"),
+  data.frame(threshold = thresholds, cost = threshold.cost.rpart, model = "rpart"))
+
+min.thresholds <- thresholds[c(which.min(threshold.cost.gbm), which.min(threshold.cost.rpart))]
+xat <- c(0, sort(min.thresholds), 0.5, 1)
+
+BoutrosLab.plotting.general::create.scatterplot(
+  formula = cost ~ threshold,
+  groups = threshold.plot.df$model,
+  data = threshold.plot.df,
+  col = default.colours(2),
+  xat = xat,
+  xaxis.lab = round(xat, 2),
+  xaxis.cex = 1,
+  yaxis.cex = 1,
+  type = "l",
+  abline.v = min.thresholds,
+  abline.col = default.colours(2),
+  key = list(
+    text = list(
+      lab = c('GBM', 'rpart'),
+      cex = 1,
+      col = 'black'
+    ),
+    lines = list(
+      type = 'l',
+      col = default.colours(2),
+      cex = 1
+    ),
+    x = 0.8,
+    y = 0.75
+  )
+)
+```
+
+Then we show the results for each of the models at the given optimal threshold
+```{r}
+kable(thresholds.info, digits = 3) %>%
+  kable_styling()
+```
+
 
 ### Prediction Results
 All of the models were validated using 10-fold cross-validation repeated 5 times.
@@ -292,8 +389,7 @@ The regression tree produces the worst results in almost all metrics except for 
 The final regression tree is shown in Figure \@ref(fig:bx-rpart).
 We can see that the final regression the only variable used in the prediction is the RSI Lesion Signal.
 ```{r bx-rpart, fig.cap='Regresion tree for predicting whether biopsy will be upgraded. Only the RSI Lesion Signal variable is used.'}
-rpart.plot::rpart.plot(models$BiopsyUpgraded$rpart_cost2$finalModel, main = 'Biopsy Upgraded Regression Tree FN x 2')
-rpart.plot::rpart.plot(models$BiopsyUpgraded$rpart_cost3$finalModel, main = 'Biopsy Upgraded Regression Tree FN x 3')
+rpart.plot::rpart.plot(models$BiopsyUpgraded$rpart$finalModel, main = 'Biopsy Upgraded Regression Tree')
 ```
 
 #### Progressed To Treatment
@@ -308,8 +404,7 @@ dotplot(prog.resamps, metric = c('F', 'AUC-ROC', 'PR-AUC', 'Accuracy', 'Sens', '
 ```
 
 ```{r prog-rpart, fig.cap='Regresion tree for predicting whether the patient will progress to treatment.', out.width = '75%'}
-rpart.plot::rpart.plot(models$ProgressedToTreatment$rpart_cost2$finalModel, main = 'Progressed-to-Treatment Regression Tree FN x 2')
-rpart.plot::rpart.plot(models$ProgressedToTreatment$rpart_cost3$finalModel, main = 'Progressed-to-Treatment Regression Tree FN x 3')
+rpart.plot::rpart.plot(models$ProgressedToTreatment$rpart$finalModel, main = 'Progressed-to-Treatment Regression Tree')
 ```
 
 #### Prostatectomy
@@ -321,8 +416,7 @@ dotplot(prostate.resamps, metric = c('F', 'AUC-ROC', 'PR-AUC', 'Accuracy', 'Sens
 ```
 
 ```{r prostate-rpart, fig.cap='Regresion tree for predicting whether the patient will require a prostatectomy.', out.width = '75%'}
-rpart.plot::rpart.plot(models$Prostatectomy$rpart_cost2$finalModel, main = 'Prostatectomy Regression Tree FN x 2')
-rpart.plot::rpart.plot(models$Prostatectomy$rpart_cost3$finalModel, main = 'Prostatectomy Regression Tree FN x 3')
+rpart.plot::rpart.plot(models$Prostatectomy$rpart$finalModel, main = 'Prostatectomy Regression Tree')
 ```
 
 

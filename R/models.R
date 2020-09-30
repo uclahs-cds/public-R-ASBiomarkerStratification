@@ -15,6 +15,7 @@ AS.models <- function(
     target = c('ProgressedToTreatment', 'BiopsyUpgraded', 'Prostatectomy'),
     metric = c('F', 'Accuracy', 'PR-AUC', 'Kappa', 'Precision', 'Recall', 'AUC-ROC',
                'Sens', 'Spec'),
+    models = c('xgb', 'gbm', 'rpart'),
     exclude.vars = NULL,
     predict.missing = FALSE,
     seed = NULL,
@@ -22,6 +23,7 @@ AS.models <- function(
     ) {
     target <- match.arg(target);
     metric <- match.arg(metric);
+    models <- match.arg(models, several.ok = TRUE);
 
     biokey.variables <- c('Age',
                           'Race', # 'GeneticAncestry',
@@ -129,94 +131,76 @@ AS.models <- function(
 
     print(paste("Fitting models for:", target, "optimizing", metric));
 
-    # if(!is.null(seed)) set.seed(seed);
-    #
-    # print("Fitting XGB model...");
-    # xgb.fit <- caret::train(
-    #     X.dummy.ints,
-    #     y,
-    #     trControl = train.control,
-    #     tuneGrid = xgb.grid,
-    #     metric = metric,
-    #     method = "xgbTree"
-    # )
-    #
-    # print("Completed fitting XGB model...");
+    if('xgb' %in% models) {
+        print("Fitting XGB model...");
+        if(!is.null(seed)) set.seed(seed);
+        xgb.fit <- caret::train(
+            X.dummy.ints,
+            y,
+            trControl = train.control,
+            tuneGrid = xgb.grid,
+            metric = metric,
+            method = "xgbTree"
+        )
 
-    # model.file <- paste('xgb', target, metric, seed, 'model.RDS', sep = "_");
-    # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
-    # saveRDS(object = xgb.fit, file = here::here(paste0('models/', model.file)));
+        print("Completed fitting XGB model...");
 
-    # Add up-sampling for rpart
-    train.control.up <- train.control;
-    train.control.up$sampling <- "up";
+        model.file <- paste('xgb', target, metric, seed, 'model.RDS', sep = "_");
+        print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
+        saveRDS(object = xgb.fit, file = here::here(paste0('models/', model.file)));
+    }
 
-    if(!is.null(rpart.cost)) {
-        print("Fitting rpart model with cost matrix...");
-        print(rpart.cost)
+    if('rpart' %in% models) {
+        if(!is.null(rpart.cost)) {
+            print("Fitting rpart model with cost matrix...");
+            print(rpart.cost)
         }
 
 
-    if(!is.null(seed)) set.seed(seed);
-    rpart.fit <- caret::train(
-        X,
-        y,
-        method = 'rpart',
-        metric = metric,
-        trControl = train.control,
-        tuneLength = 30,
-        parms = list(loss = rpart.cost)
-    )
-    print("Completed fitting rpart model...");
-
-    model.file <- paste('rpart', target, metric, seed, 'model.RDS', sep = "_");
-    # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
-    saveRDS(object = rpart.fit, file = here::here(paste0('models/', model.file)));
-
-    # cost.matrix.3 <- matrix(c(0,1,2,0), byrow = TRUE, nrow = 2);
-    # print("Fitting rpart model with cost matrix...");
-    # print(cost.matrix.3)
-    #
-    # if(!is.null(seed)) set.seed(seed);
-    # rpart.cost3.fit <- caret::train(
-    #     X,
-    #     y,
-    #     method = 'rpart',
-    #     metric = metric,
-    #     trControl = train.control,
-    #     tuneLength = 30,
-    #     parms = list(loss = cost.matrix.3)
-    # )
-    # print("Completed fitting rpart model...");
-    #
-    # model.file <- paste('rpart_cost3', target, metric, seed, 'model.RDS', sep = "_");
-    # # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
-    # saveRDS(object = rpart.cost3.fit, file = here::here(paste0('models/', model.file)));
-
-    if(!is.null(seed)) set.seed(seed);
-
-    print("Fitting gbm model");
-    gbm.fit <- caret::train(
-        X,
-        y,
-        method = 'gbm',
-        metric = metric,
-        trControl = train.control,
-        tuneGrid = gbm.grid,
-        verbose = FALSE
+        if(!is.null(seed)) set.seed(seed);
+        rpart.fit <- caret::train(
+            X,
+            y,
+            method = 'rpart',
+            metric = metric,
+            trControl = train.control,
+            tuneLength = 30,
+            parms = list(loss = rpart.cost)
         )
-    print("Completed fitting gbm model...");
+        print("Completed fitting rpart model...");
 
-    model.file <- paste('gbm', target, metric, seed, 'model.RDS', sep = "_");
-    # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
-    saveRDS(object = gbm.fit, file = here::here(paste0('models/', model.file)));
+        model.file <- paste('rpart', target, metric, seed, 'model.RDS', sep = "_");
+        # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
+        saveRDS(object = rpart.fit, file = here::here(paste0('models/', model.file)));
+    }
 
-    list(
-        rpart.fit,
-        # rpart.cost3.fit,
-        # xgb.fit = xgb.fit,
-        gbm.fit = gbm.fit
+    if('gbm' %in% models) {
+        if(!is.null(seed)) set.seed(seed);
+
+        print("Fitting gbm model");
+        gbm.fit <- caret::train(
+            X,
+            y,
+            method = 'gbm',
+            metric = metric,
+            trControl = train.control,
+            tuneGrid = gbm.grid,
+            verbose = FALSE
         )
+        print("Completed fitting gbm model...");
+
+        model.file <- paste('gbm', target, metric, seed, 'model.RDS', sep = "_");
+        # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
+        saveRDS(object = gbm.fit, file = here::here(paste0('models/', model.file)));
+    }
+
+    list()
+    # list(
+    #     rpart.fit,
+    #     # rpart.cost3.fit,
+    #     # xgb.fit = xgb.fit,
+    #     gbm.fit = gbm.fit
+    #     )
     }
 
 custom.summary <- function (data, lev = NULL, model = NULL) {
