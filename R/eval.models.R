@@ -62,7 +62,7 @@ optimal.threshold.train <- function(model,
 }
 
 flatten.ConfusionMatrix <- function(...) {
-    res <- confusionMatrix(...)
+    res <- caret::confusionMatrix(...)
     cbind.data.frame(t(res$overall), t(res$byClass))
 }
 

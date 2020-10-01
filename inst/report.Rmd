@@ -5,6 +5,7 @@ output:
   bookdown::pdf_document2:
     number_sections: false
   html_notebook: default
+bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -18,7 +19,7 @@ library(caret);
 # library(MLeval);
 library(pROC)
 
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '50%')
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '70%')
 
 axis.cex <- .7
 lab.cex <- .8
@@ -225,77 +226,61 @@ models <- lapply(targets, function(tg) {
 names(models) <- targets;
 ```
 
-We predict the three variables: `ProgressedToTreatment`, `BiopsyUpgraded`, `Prostatectomy`.
-For each of these variable we compare the results from three models: a regression tree (`rpart`), gradient boosting machine (`gbm`), and eXtreme Gradient Boosting (`xgboost`).
-The regression tree model is the most interpretable as it produces a single decision tree.
-The other models produce better accuracy as well as $F_1$ scores but require more work to interpret. The following variables were used as the initial set of variables for `ProgressedToTreatment` and `Prostatectomy`. In the case of `BiopsyUpgraded`, the variable `BiopsyResult` was removed from the predictor variables.
 
 ### Method
-For each of the models we performed a grid-search to find the optimal parameters.
-The area under the ROC curve was used as the (threshold invariant) metric for which the parameters were tuned.
 
-```{r}
+We predict the three variables: `ProgressedToTreatment`, `BiopsyUpgraded`, `Prostatectomy`.
+For each of these variable we compare the results from three models: a regression tree (`rpart`), gradient boosting machine (`gbm`), and eXtreme Gradient Boosting (`xgboost`).
+We only report the results from `rpart` and `gbm` as the results are very similar for the two gradient boosting methods and `gbm` performs slightly better.
+The regression tree model is the most interpretable as it produces a single decision tree.
+The other models produce better accuracy as well as $F_1$ scores but require more work to interpret.
+
+All of the models were validated using 10-fold cross-validation repeated 5 times.
+That is, we partition the data set into 10 parts and use 9 parts to train the model and the last to evaluate the model.
+Several metrics are computed based on the results such as $F_1$ score, area under the ROC curve (ROC-AUC), area under the precision-recall curve, accuracy, sensitivity, and specificity.
+This process is repeated so that each part of the partition is used to validate exactly once.
+We repeat this entire process 5 times so that 10 random partitions are generated.
+This results in a distribution for the metrics which is an approximation for how to models will perform out of sample.
+For each of the models we performed a grid-search to find the optimal parameters.
+The area under the precision-recall curve was used as the (threshold invariant) metric for which the parameters were tuned.
+
+The variables in \@ref(tab:variable-set) were used as the initial set of variables for `ProgressedToTreatment` and `Prostatectomy`. In the case of `BiopsyUpgraded`, the variable `BiopsyResult` was removed from the predictor variables.
+```{r variable-set, fig.cap="Variables used to predict ProgressedToTreatment and Prostatectomy"}
 kable(models$ProgressedToTreatment$gbm$finalModel$var.names, col.names = 'Variable', booktabs = T) %>%
   kable_styling(position =  'center')
 ```
 
 ### ROC and PR Curve
-```{r, out.width="90%"}
-# https://stackoverflow.com/a/37261201/1351718
-gbm.prog.best.preds <- with(models$ProgressedToTreatment$gbm,
-                      merge(pred, bestTune))
+```{r roc-curves, out.width="90%", fig.cap="Cross-Validation ROC Curves for Progressed to Treatment and Biopsy Upgraded"}
+cex.main <- 1.2
+cex.title <- 1.4
 
-rpart.prog.best.preds <- with(models$ProgressedToTreatment$rpart,
-                      merge(pred, bestTune))
+models.roc <- lapply(models, function(mods) {
+  lapply(mods, function(m) {
+      bestPreds <- with(m, merge(pred, bestTune));
+      pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<');
+  })
+})
+```
 
-gbm.bx.best.preds <- with(models$BiopsyUpgraded$gbm,
-                      merge(pred, bestTune))
+Progressed to Treatment
+```{r prog-roc, out.width="90%", fig.cap="Cross-Validation ROC and Precision-Recall Curves for Progressed to Treatment. The optimal (Youden's J statistic) is indicated with a point on the ROC curve."}
+#coords(roc.prostate.gbm, 'best');
+#coords(roc.prostate.rpart, 'best');
 
-rpart.bx.best.preds <- with(models$BiopsyUpgraded$rpart,
-                      merge(pred, bestTune))
+roc.pr.plot(models.roc$ProgressedToTreatment, cex.main = cex.main)
+mtext('Progressed to Treatment Cross-Validation Curves', side = 3, line = -2, outer = TRUE, cex = cex.title);
+```
 
-roc.prog.gbm <- pROC::roc(predictor = gbm.prog.best.preds$yes, response = gbm.prog.best.preds$obs)
-roc.prog.rpart <- pROC::roc(predictor = rpart.prog.best.preds$yes, response = rpart.prog.best.preds$obs)
+Biopsy Upgraded
+```{r bx-roc, out.width="90%", fig.cap="Cross-Validation ROC and Precision-Recall Curves for Biopsy Upgraded. The optimal (Youden's J statistic) is indicated with a point on the ROC curve."}
+roc.pr.plot(models.roc$BiopsyUpgraded, cex.main = cex.main)
+mtext('Biopsy Upgraded Cross-Validation Curves', side = 3, line = -2, outer = TRUE, cex = cex.title);
+```
 
-roc.bx.gbm <- pROC::roc(predictor = gbm.bx.best.preds$yes, response = gbm.bx.best.preds$obs)
-roc.bx.rpart <- pROC::roc(predictor = rpart.bx.best.preds$yes, response = rpart.bx.best.preds$obs)
-
-coords(roc.prog.gbm, 'best')
-coords(roc.prog.rpart, 'best')
-
-par(pty="s", mfrow=c(1,2))
-plot(roc.prog.gbm, las = 1, col = default.colours(2)[1], main = 'Cross-validation ROC Curve\n for Progressed To Treatment')
-plot(roc.prog.rpart, las = 1, add = TRUE, col = default.colours(2)[2], xlim = c(1, 0))
-# legend("topleft", c('gbm', 'rpart'), cex = 0.8, col = default.colours(2), lwd = c(2, 2), inset = 0.02)
-
-# Biopsy Upgraded
-plot(roc.bx.gbm, las = 1, col = default.colours(2)[1], main = 'Cross-validation ROC Curve\n for Biopsy Upgraded')
-plot(roc.bx.rpart, las = 1, add = TRUE, col = default.colours(2)[2], xlim = c(1, 0))
-
-legend("bottomright", c('gbm', 'rpart'), cex = 0.8, col = default.colours(2), lwd = c(2, 2), inset = 0.02)
-
-# Plot PR Curves
-# Plot the Precision-Recall curve
-plot(precision ~ recall,
-  coords(roc.prog.gbm, "all", ret = c("recall", "precision"), transpose = FALSE),
-  type="l", las = 1, col = default.colours(2)[1], lwd = 2, main = 'Cross-validation Precision-Recall Curve\nfor Progressed To Treatment')
-
-lines(precision ~ recall,
-  coords(roc.prog.rpart, "all", ret = c("recall", "precision"), transpose = FALSE),
-  type="l", las = 1, col = default.colours(2)[2], lwd = 2)
-
-# legend("topright", c('gbm', 'rpart'), cex = 0.8, col = default.colours(2), lwd = c(2, 2), inset = 0.02)
-
-## Biopsy Upgraded PR Curves
-plot(precision ~ recall,
-  coords(roc.bx.gbm, "all", ret = c("recall", "precision"), transpose = FALSE),
-  type="l", las = 1, col = default.colours(2)[1], lwd = 2, main = 'Cross-validation Precision-Recall Curve\nfor Biopsy Upgraded')
-
-lines(precision ~ recall,
-  coords(roc.bx.rpart, "all", ret = c("recall", "precision"), transpose = FALSE),
-  type="l", las = 1, col = default.colours(2)[2], lwd = 2)
-
-legend("bottom", c('gbm', 'rpart'), cex = 0.8, col = default.colours(2), lwd = c(2, 2), inset = 0.02)
+```{r prostate-roc, out.width="90%", fig.cap="Cross-Validation ROC and Precision-Recall Curves for Prostatectomy. The optimal (Youden's J statistic) is indicated with a point on the ROC curve."}
+roc.pr.plot(models.roc$Prostatectomy, cex.main = cex.main)
+mtext('Prostatectomy Cross-Validation Curves', side = 3, line = -2, outer = TRUE, cex = cex.title);
 ```
 
 ### Operating Point
@@ -303,7 +288,7 @@ legend("bottom", c('gbm', 'rpart'), cex = 0.8, col = default.colours(2), lwd = c
 # cost.matrix <- lapply(1:3, function(x) matrix(c(0,x,1,0), byrow = TRUE, nrow = 2))
 # cost.matrix <- matrix(c(0,3,1,0), byrow = TRUE, nrow = 2)
 cost.matrix <- matrix(c(0,2,1,0), byrow = TRUE, nrow = 2)
-thresholds <- seq(0, 1, length.out = 100)
+thresholds <- seq(.01, .99, length.out = 100)
 
 statistics <- c("prob_threshold", "Sensitivity", "Specificity", "Pos Pred Value", "Neg Pred Value", 
 "Precision", "Recall", "F1", "Prevalence", "Detection Rate", 
@@ -316,21 +301,35 @@ optimal.thresholds <- lapply(models, function(mods) {
   })
 })
 
+# Use the ROC levels instead
+optimal.thresholds.youden <- lapply(models.roc, function(rocs) {
+  lapply(rocs, function(r) {
+      as.numeric(coords(r, 'best')[1])
+  })
+})
+
 thresholds.info.list <- lapply(names(optimal.thresholds), function(x) {
   target.list <- models[[x]]
   
   res <- lapply(names(target.list), function(y) {
     m <- target.list[[y]]
     threshold <- optimal.thresholds[[x]][[y]]
+    threshold.roc <- optimal.thresholds.youden[[x]][[y]]
+    
     thres.res <- colMeans(threshold.summary.stats(m, threshold), na.rm = TRUE)
-    thres.res$method <- m$method
+    thres.res$model <- m$method
+    thres.res$method <- 'cost';
     thres.res$threshold <- threshold
-    thres.res
+    
+    thres.res.roc <- colMeans(threshold.summary.stats(m, threshold.roc), na.rm = TRUE)
+    thres.res.roc$model <- m$method
+    thres.res.roc$method <- 'roc';
+    thres.res.roc$threshold <- threshold.roc
+    
+    rbind(thres.res, thres.res.roc)
   })
   
-  res.df <- do.call(rbind.data.frame, res)
-  rownames(res.df) <- names(target.list)
-  res.df
+  do.call(rbind.data.frame, res)
 })
 
 names(thresholds.info.list) <- names(optimal.thresholds);
@@ -341,7 +340,12 @@ thresholds.info <- do.call(rbind.data.frame, thresholds.info.list)
 Each of the models outputs a probability being in class 1, e.g. the probability of biopsy upgraded, or progression to treatment.
 By default the models threshold anything above 0.5 as class 1 and anything below as 0.
 We want to find a better threshold value, called the operating point.
-To find the optimal operating point we make a false negative FN (when we predict indolent disease when it truly is aggresive) 3 times as costly as a false positive FP.
+
+The first method we test for finding the optimal operating point is to maximize Youden's J statistic @Youden1950 which is defined as
+$$
+J = \text{sensitivity} + \text{specificity} - 1
+$$
+The second method we use to find the optimal operating point is to make a false negative FN (when we predict indolent disease when it truly is aggresive) 2 times as costly as a false positive FP.
 For each threshold the cost is computed for each of the folds in the 10-fold cross-validation and averaged across all 10 folds and 5 repetitions.
 Then the optimal operating point is selected as the threshold with the minimum cost.
 
@@ -369,9 +373,11 @@ BoutrosLab.plotting.general::create.scatterplot(
   yaxis.cex = 1,
   ylab.cex = 1.2,
   xlab.cex = 1.2,
-  main = "Optimal operating points for Progressed to Treatment prediction",
+  ylab.label = 'mean cost',
+  main = "Progressed to Treatment\nOptimal operating points",
   main.cex = 1.3,
   type = "l",
+  lwd = 2,
   abline.v = min.thresholds,
   abline.col = default.colours(2),
   key = list(
@@ -383,77 +389,29 @@ BoutrosLab.plotting.general::create.scatterplot(
     lines = list(
       type = 'l',
       col = default.colours(2),
-      cex = 1
+      cex = 1,
+      lwd = 2
     ),
     x = 0.8,
-    y = 0.75
+    y = 0.2
   )
 )
 ```
 
-Then we show the results for each of the models at the given optimal operating points for each model
+The results are very similar for the $J$ statistic optimization and the cost-weighted method.
+The only model in which the results differ dramatically are in the prostatectomy prediction.
+In the cost-weighted method the threshold is optimized at 0 or 1 which results in all positive or all negative predictions.
+Using the $J$ statistic prevents the models from predicting the same class. 
+We show summary statistics in \@ref(tab:threshold-results) for the optimal thresholds for both J statistic and cost-weighted methods.
 ```{r operating-points, fig.cap='Summary statistics for the optimal operating points for each model'}
-# cols <- c("prob_threshold", "Sensitivity", "Specificity", "Pos Pred Value", "Neg Pred Value", 
-# "Precision", "Recall", "F1", "Prevalence", "Accuracy"
-# )
-kable(thresholds.info, digits = 3) %>%
+cols <- c("model", "method", "threshold", "Accuracy", "Sensitivity", "Specificity", 
+  "Pos Pred Value", "Neg Pred Value", "Precision", "Recall", "F1", 
+  "Prevalence", "Detection Rate", "Detection Prevalence", "Balanced Accuracy"
+  )
+
+kable(thresholds.info[, cols], digits = 3, row.names = FALSE) %>%
   kable_styling()
 ```
-
-
-### Prediction Results
-All of the models were validated using 10-fold cross-validation repeated 5 times.
-That is, we partition the data set into 10 parts and use 9 parts to train the model and the last to evaluate the model.
-Several metrics are computed based on the results such as $F_1$ score, area under the ROC curve (ROC-AUC), area under the precision-recall curve, accuracy, sensitivity, and specificity.
-This process is repeated so that each part of the partition is used to validate exactly once.
-We repeat this entire process 5 times so that 10 random partitions are generated.
-This results in a distribution for the metrics which is an approximation for how to models will perform out of sample.
-
-#### Biopsy Upgraded
-First we predict whether a patients biopsy will be upgraded.
-
-```{r bx-metrics}
-bx.resamps <- resamples(
-  models$BiopsyUpgraded);
-
-trellis.par.set(caretTheme())
-dotplot(bx.resamps, metric = c('F', 'ROC-AUC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Biopsy Upgraded Model Comparison')
-```
-
-The regression tree produces the worst results in almost all metrics except for specificity.
-The final regression tree is shown in Figure \@ref(fig:bx-rpart).
-We can see that the final regression the only variable used in the prediction is the RSI Lesion Signal.
-```{r bx-rpart, fig.cap='Regresion tree for predicting whether biopsy will be upgraded. Only the RSI Lesion Signal variable is used.'}
-rpart.plot::rpart.plot(models$BiopsyUpgraded$rpart$finalModel, main = 'Biopsy Upgraded Regression Tree')
-```
-
-#### Progressed To Treatment
-Next we predict whether a patient will progress to treatment.
-```{r prog-metrics}
-prog.resamps <- resamples(models$ProgressedToTreatment);
-
-#evalm(prog.gbm.F.model)
-# prog.gbm.F.model$results
-
-dotplot(prog.resamps, metric = c('F', 'ROC-AUC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Progressed To Treatment Model Comparison')
-```
-
-```{r prog-rpart, fig.cap='Regresion tree for predicting whether the patient will progress to treatment.', out.width = '75%'}
-rpart.plot::rpart.plot(models$ProgressedToTreatment$rpart$finalModel, main = 'Progressed-to-Treatment Regression Tree')
-```
-
-#### Prostatectomy
-Finally, we predict whether a patient will require a prostatectomy.
-```{r prostate-metrics}
-prostate.resamps <- resamples(models$Prostatectomy);
-
-dotplot(prostate.resamps, metric = c('F', 'ROC-AUC', 'PR-AUC', 'Accuracy', 'Sens', 'Spec'), main = 'Prostatectomy Model Comparison')
-```
-
-```{r prostate-rpart, fig.cap='Regresion tree for predicting whether the patient will require a prostatectomy.', out.width = '75%'}
-rpart.plot::rpart.plot(models$Prostatectomy$rpart$finalModel, main = 'Prostatectomy Regression Tree')
-```
-
 
 ## Cut-points for time-to-event analysis
 The gradient boosted model (gbm) provided the best predictive power of the models.
