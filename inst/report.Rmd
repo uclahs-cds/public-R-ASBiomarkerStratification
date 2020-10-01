@@ -426,23 +426,21 @@ We use the predictions from this model to show that days until the patient progr
 
 ### Progressed To Treatment
 ```{r}
-prog.gbm.preds <- as.factor(predict(models$ProgressedToTreatment$gbm > optimal.thresholds$ProgressedToTreatment$gbm,))
-levels(prog.gbm.preds) <- c('0', '1')
-# prog.gbm.preds[is.na(progression.surv.bx)] <- NA
+prog.gbm.preds <- ifelse(predict(models$ProgressedToTreatment$gbm, type = 'prob')[, 'yes'] > optimal.thresholds$ProgressedToTreatment$gbm, 1, 0)
 
-# What's the issue with this?
-# do.call(
-#   what = BoutrosLab.plotting.survival::create.km.plot,
-#   args = c(
-#     km.arguments,
-#     list(
-#       survival.object = progression.surv.bx,
-#       patient.groups = prog.gbm.preds,
-#       main = 'Overall Days-to-Progression from Biopsy',
-#       xlab.label = 'Time to upgrade since biopsy (Days)'
-#       )
-#     )
-#   )
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      # Is this right to remove the missing values?
+      survival.object = progression.surv.bx[!is.na(progression.surv.bx)],
+      patient.groups = prog.gbm.preds[!is.na(progression.surv.bx)],
+      main = 'Overall Days-to-Progression from Biopsy',
+      xlab.label = 'Time to upgrade since biopsy (Days)'
+      )
+    )
+  )
 
 do.call(
   what = BoutrosLab.plotting.survival::create.km.plot,
@@ -461,9 +459,9 @@ do.call(
 ### Days to Upgrade from Diagnosis
 ```{r}
 bx.gbm.preds <- rep(NA, nrow(biodb))
-bx.gbm.preds[!is.na(biodb$BiopsyUpgraded)] <- predict(models$BiopsyUpgraded$gbm)
-bx.gbm.preds <- as.factor(bx.gbm.preds)
-levels(bx.gbm.preds) <- c('0', '1')
+bx.gbm.preds[!is.na(biodb$BiopsyUpgraded)] <- ifelse(predict(models$BiopsyUpgraded$gbm, type = 'prob')[, 'yes'] > optimal.thresholds$BiopsyUpgraded$gbm, 1, 0)
+# bx.gbm.preds <- as.factor(bx.gbm.preds)
+# levels(bx.gbm.preds) <- c('0', '1')
 
 do.call(
   what = BoutrosLab.plotting.survival::create.km.plot,
@@ -490,14 +488,15 @@ We compare the three models' variable importance ranks to see important variable
 #plot(varImp(bx.gbm.F.model), top = 25, main = 'Variable Importance Biopsy Upgraded XGB')
 #plot(varImp(prostate.gbm.F.model), top = 25, main = 'Variable Importance Prostatectomy XGB')
 
-prog.model.list <- list(prog.gbm.F.model, prog.xgb.F.model, prog.rpart.F.model)
-names(prog.model.list) <- c('gbm', 'xgb', 'rpart')
+#prog.model.list <- list(prog.gbm.F.model, prog.rpart.F.model)
+# names(prog.model.list) <- c('gbm', 'xgb', 'rpart')
 
-var.imp.joined <- compare.var.imp(prog.model.list, include.ranks = TRUE)[, -1]
+var.imp.joined <- compare.var.imp(models$ProgressedToTreatment, include.ranks = TRUE)[, -1]
                    
 var.imp.joined <- var.imp.joined[order(var.imp.joined$mean.rank),]
 kable(
-  x = head(var.imp.joined[,c(7, 4:6)], n = 25),
-  caption = paste('Top 25 variable importance rankings out of', nrow(var.imp.joined), 'variables'), digits = 2
+  x = head(var.imp.joined[, c('mean.rank', 'gbm.rank', 'rpart.rank')], n = 25),
+  caption = paste('Top 25 variable importance rankings out of', nrow(var.imp.joined), 'variables'), digits = 2,
+  col.names = c('Mean rank', 'rpart rank', 'GBM rank')
   )
 ```
