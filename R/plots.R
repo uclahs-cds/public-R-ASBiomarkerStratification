@@ -31,6 +31,15 @@ demographics.boxplot <- function(biodb, y, x, cond = NULL, ...) {
     );
 }
 
+#' Title
+#'
+#' @param models.roc
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 roc.pr.plot <- function(models.roc, ...) {
     opar <- par(pty="s", mfrow=c(1,2))
     on.exit(par(opar))

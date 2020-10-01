@@ -6,6 +6,7 @@ output:
     number_sections: false
   html_notebook: default
 bibliography: bibliography.bib
+csl: acm-sig-proceedings.csl
 ---
 
 ```{r setup, include=FALSE}
@@ -258,16 +259,13 @@ cex.title <- 1.4
 models.roc <- lapply(models, function(mods) {
   lapply(mods, function(m) {
       bestPreds <- with(m, merge(pred, bestTune));
-      pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<');
+      pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
   })
 })
 ```
 
 Progressed to Treatment
 ```{r prog-roc, out.width="90%", fig.cap="Cross-Validation ROC and Precision-Recall Curves for Progressed to Treatment. The optimal (Youden's J statistic) is indicated with a point on the ROC curve."}
-#coords(roc.prostate.gbm, 'best');
-#coords(roc.prostate.rpart, 'best');
-
 roc.pr.plot(models.roc$ProgressedToTreatment, cex.main = cex.main)
 mtext('Progressed to Treatment Cross-Validation Curves', side = 3, line = -2, outer = TRUE, cex = cex.title);
 ```
@@ -283,7 +281,7 @@ roc.pr.plot(models.roc$Prostatectomy, cex.main = cex.main)
 mtext('Prostatectomy Cross-Validation Curves', side = 3, line = -2, outer = TRUE, cex = cex.title);
 ```
 
-### Operating Point
+### Optimal Operating Point
 ```{r}
 # cost.matrix <- lapply(1:3, function(x) matrix(c(0,x,1,0), byrow = TRUE, nrow = 2))
 # cost.matrix <- matrix(c(0,3,1,0), byrow = TRUE, nrow = 2)
@@ -316,15 +314,17 @@ thresholds.info.list <- lapply(names(optimal.thresholds), function(x) {
     threshold <- optimal.thresholds[[x]][[y]]
     threshold.roc <- optimal.thresholds.youden[[x]][[y]]
     
-    thres.res <- colMeans(threshold.summary.stats(m, threshold), na.rm = TRUE)
-    thres.res$model <- m$method
+    thres.res <- colMeans(threshold.summary.stats(m, threshold), na.rm = TRUE);
+    thres.res$model <- m$method;
     thres.res$method <- 'cost';
-    thres.res$threshold <- threshold
+    thres.res$target <- x;
+    thres.res$threshold <- threshold;
     
-    thres.res.roc <- colMeans(threshold.summary.stats(m, threshold.roc), na.rm = TRUE)
-    thres.res.roc$model <- m$method
+    thres.res.roc <- colMeans(threshold.summary.stats(m, threshold.roc), na.rm = TRUE);
+    thres.res.roc$model <- m$method;
     thres.res.roc$method <- 'roc';
-    thres.res.roc$threshold <- threshold.roc
+    thres.res.roc$target <- x;
+    thres.res.roc$threshold <- threshold.roc;
     
     rbind(thres.res, thres.res.roc)
   })
@@ -404,13 +404,18 @@ In the cost-weighted method the threshold is optimized at 0 or 1 which results i
 Using the $J$ statistic prevents the models from predicting the same class. 
 We show summary statistics in \@ref(tab:threshold-results) for the optimal thresholds for both J statistic and cost-weighted methods.
 ```{r operating-points, fig.cap='Summary statistics for the optimal operating points for each model'}
-cols <- c("model", "method", "threshold", "Accuracy", "Sensitivity", "Specificity", 
-  "Pos Pred Value", "Neg Pred Value", "Precision", "Recall", "F1", 
-  "Prevalence", "Detection Rate", "Detection Prevalence", "Balanced Accuracy"
+cols <- c("target", "model", "method", "threshold", "Accuracy", "Sensitivity", "Specificity", 
+  #"Pos Pred Value", "Neg Pred Value",
+  "Precision", "Recall", "F1", "Balanced Accuracy"
   )
 
-kable(thresholds.info[, cols], digits = 3, row.names = FALSE) %>%
-  kable_styling()
+thresholds.table <- thresholds.info[, cols]
+num.cols <- 4:length(cols)
+thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 3))
+
+kable(thresholds.table, digits = 3, row.names = FALSE) %>%
+  kable_styling(full_width = TRUE) %>%
+  collapse_rows(columns = 1:3)
 ```
 
 ## Cut-points for time-to-event analysis
@@ -477,13 +482,6 @@ The other models are not as easy to interpret but have measures of variable impo
 We compare the three models' variable importance ranks to see important variables across all models.
 
 ```{r}
-#plot(varImp(prog.gbm.F.model), top = 25, main = 'Variable Importance Progressed-to-Treatment XGB')
-#plot(varImp(bx.gbm.F.model), top = 25, main = 'Variable Importance Biopsy Upgraded XGB')
-#plot(varImp(prostate.gbm.F.model), top = 25, main = 'Variable Importance Prostatectomy XGB')
-
-#prog.model.list <- list(prog.gbm.F.model, prog.rpart.F.model)
-# names(prog.model.list) <- c('gbm', 'xgb', 'rpart')
-
 var.imp.joined <- compare.var.imp(models$ProgressedToTreatment, include.ranks = TRUE)[, -1]
                    
 var.imp.joined <- var.imp.joined[order(var.imp.joined$mean.rank),]
