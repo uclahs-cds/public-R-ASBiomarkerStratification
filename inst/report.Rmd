@@ -240,27 +240,62 @@ kable(models$ProgressedToTreatment$gbm$finalModel$var.names, col.names = 'Variab
 ```
 
 ### ROC and PR Curve
-```{r}
+```{r, out.width="90%"}
 # https://stackoverflow.com/a/37261201/1351718
-roc.prog.gbm <- pROC::roc(predictor = models$ProgressedToTreatment$gbm$pred$yes, response = models$ProgressedToTreatment$gbm$pred$obs)
-roc.prog.rpart <- pROC::roc(predictor = models$ProgressedToTreatment$rpart$pred$yes, response = models$ProgressedToTreatment$rpart$pred$obs)
+gbm.prog.best.preds <- with(models$ProgressedToTreatment$gbm,
+                      merge(pred, bestTune))
+
+rpart.prog.best.preds <- with(models$ProgressedToTreatment$rpart,
+                      merge(pred, bestTune))
+
+gbm.bx.best.preds <- with(models$BiopsyUpgraded$gbm,
+                      merge(pred, bestTune))
+
+rpart.bx.best.preds <- with(models$BiopsyUpgraded$rpart,
+                      merge(pred, bestTune))
+
+roc.prog.gbm <- pROC::roc(predictor = gbm.prog.best.preds$yes, response = gbm.prog.best.preds$obs)
+roc.prog.rpart <- pROC::roc(predictor = rpart.prog.best.preds$yes, response = rpart.prog.best.preds$obs)
+
+roc.bx.gbm <- pROC::roc(predictor = gbm.bx.best.preds$yes, response = gbm.bx.best.preds$obs)
+roc.bx.rpart <- pROC::roc(predictor = rpart.bx.best.preds$yes, response = rpart.bx.best.preds$obs)
 
 coords(roc.prog.gbm, 'best')
 coords(roc.prog.rpart, 'best')
 
-par(pty="s")
-plot(roc.prog.gbm, las = 1, col = "red")
-plot(roc.prog.rpart, las = 1, add = TRUE, col = "blue", xlim = c(1, 0))
+par(pty="s", mfrow=c(1,2))
+plot(roc.prog.gbm, las = 1, col = default.colours(2)[1], main = 'Cross-validation ROC Curve\n for Progressed To Treatment')
+plot(roc.prog.rpart, las = 1, add = TRUE, col = default.colours(2)[2], xlim = c(1, 0))
+# legend("topleft", c('gbm', 'rpart'), cex = 0.8, col = default.colours(2), lwd = c(2, 2), inset = 0.02)
+
+# Biopsy Upgraded
+plot(roc.bx.gbm, las = 1, col = default.colours(2)[1], main = 'Cross-validation ROC Curve\n for Biopsy Upgraded')
+plot(roc.bx.rpart, las = 1, add = TRUE, col = default.colours(2)[2], xlim = c(1, 0))
+
+legend("bottomright", c('gbm', 'rpart'), cex = 0.8, col = default.colours(2), lwd = c(2, 2), inset = 0.02)
 
 # Plot PR Curves
 # Plot the Precision-Recall curve
 plot(precision ~ recall,
   coords(roc.prog.gbm, "all", ret = c("recall", "precision"), transpose = FALSE),
-  type="l", las = 1, col = "red")
+  type="l", las = 1, col = default.colours(2)[1], lwd = 2, main = 'Cross-validation Precision-Recall Curve\nfor Progressed To Treatment')
 
 lines(precision ~ recall,
   coords(roc.prog.rpart, "all", ret = c("recall", "precision"), transpose = FALSE),
-  type="l", las = 1, col = "blue")
+  type="l", las = 1, col = default.colours(2)[2], lwd = 2)
+
+# legend("topright", c('gbm', 'rpart'), cex = 0.8, col = default.colours(2), lwd = c(2, 2), inset = 0.02)
+
+## Biopsy Upgraded PR Curves
+plot(precision ~ recall,
+  coords(roc.bx.gbm, "all", ret = c("recall", "precision"), transpose = FALSE),
+  type="l", las = 1, col = default.colours(2)[1], lwd = 2, main = 'Cross-validation Precision-Recall Curve\nfor Biopsy Upgraded')
+
+lines(precision ~ recall,
+  coords(roc.bx.rpart, "all", ret = c("recall", "precision"), transpose = FALSE),
+  type="l", las = 1, col = default.colours(2)[2], lwd = 2)
+
+legend("bottom", c('gbm', 'rpart'), cex = 0.8, col = default.colours(2), lwd = c(2, 2), inset = 0.02)
 ```
 
 ### Operating Point
