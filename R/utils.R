@@ -17,10 +17,10 @@ str.match <- function(x, pattern) {
 #'
 #' @examples
 #' camel.to.spaces(c("BiopsyUpgraded", "ProgressedToTreatment"))
-camel.to.spaces <- function(x) {
+camel.to.spaces <- function(x, replace = " ") {
     matches <- gsub("(?!^)([[:upper:]])", " \\1", x, perl = TRUE)
     split.string <- strsplit(matches, " ")
-    unlist(lapply(split.string, paste0, collapse = " "))
+    unlist(lapply(split.string, paste0, collapse = replace))
 }
 
 # Moving average code from forecast

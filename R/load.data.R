@@ -102,9 +102,9 @@ load.data.AS <- function(biomark.path,
                                  'MRI Negative/Biopsy Positive', 'MRI Negative/Biopsy Negative');
 
   # Rename Ethnicity to Hispanic
-  biodb$Hispanic <- biodb$Ethnicity
+  biodb$Hispanic <- as.factor(biodb$Ethnicity);
   # Remove old Ethnicity column
-  biodb$Ethnicity <- NULL
+  biodb$Ethnicity <- NULL;
 
   attr(biodb$Weight, 'label') <- "Weight (kg)";
   attr(biodb$Height, 'label') <- "Height (cm)";
@@ -156,7 +156,7 @@ load.data.AS <- function(biomark.path,
 #' @export
 default.load.data <- function(onlyBiodb = FALSE) {
   file.names <- c(
-    'MRI DOD Biomarkers Database_Boutros - 2020.09.21.xlsx',
+    'MRI DOD Biomarkers Database_Boutros - 2020.10.2.xlsx',
     'MRI DOD Biomarkers Database_Boutros - Key.xlsx',
     'MRI DOD Biomarkers Genetics_Boutros - 2019.11.12.xlsx',
     'MRI DOD Biomarkers Category_Boutros.xlsx'
