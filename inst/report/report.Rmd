@@ -21,7 +21,7 @@ library(caret);
 library(pROC);
 library(rpart.plot);
 
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '60%');
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '60%', fig.pos = 'H');
 
 axis.cex <- .7
 lab.cex <- .8
@@ -48,17 +48,12 @@ valid.patients <- biodb$NoUpgradeAndProgressed == 0 | is.na(biodb$NoUpgradeAndPr
 biodb.valid <- biodb[valid.patients, ];
 ```
 
-# Background (To Remove)
-
-
-In general a patient with GS 3+3 (now increasingly called ISUP Grade Group 1 or ISUP GG1 or just GG1) will go on AS while a 3+4 (GG2) may but probably will not and a 4+3 (gg3) definitely will not.  Thus you can also look at the patients who did get surgery and see if a GG1 patient on biopsy (a tiny fraction of the tumor) was actually GG2 or GG3 (or worse) after surgery when the entire tumor is available for checking.  Thus looking at the surgical pathology can remove the spatial variability component (called undersampling) of the biopsy procedure out.
-
-Clinically, AS means *not* treating a patient.  This is of course statistically superior for a bulk population, but still leads to problems when there is a FN (somebody has aggressive disease, but that isn’t recognized and thus they are inappropriately on AS).  Many patients will therefore voluntarily elect to exit AS prematurely, seeking a treatment that they may not derive benefit from.  Thus the key clinical problem is unrecognized aggressive disease, which both hinders those patients directly and more broadly reduces confidence in AS.  The goal of our work is thus to give better identification of which patients should exit AS, so that those who should not have more confidence in their decision.  Surgery/Radiotherapy (Sx/Rt) is extremely expensive ($20-50k) and has long-term morbidities (quality-of-life impacts).  We sometimes talk about this in terms of “health preference values”, which reflects how much a change in life-quality relates to a full-year of health.  Very roughly, every year on AS relative to definitive local therapy (Sx or Rt) saves the patient ~0.2 years of fully-healthy life, so prolonging AS as long as possible has big advantages.  For example, my dad has been on AS for almost 7 years now, and it’s very possible he will be on it for the rest of his life.  But, his initial immediate instinct was “cut this thing out of me”, and having a son who could walk him through the decision-making made a big difference there.  So in the long-run, the question is really “can these biomarkers improve confidence men have to remain on AS” as much as anything else -- ~15% each year *voluntarily* leave AS for treatment.
-
 # Introduction
 
 ## Study design and objectives
-  There is a clinical need to predict *before* surgery if a man has aggressive disease so that we can decide if they need surgery at all.  The quality of life benefits are thus huge (avoiding therapy entirely!).  The problem is that because it’s pre-surgery, we do not have the full cancer to study.  Instead we use biopsies (spatially-restricted samples of the cancer), radiology (imaging like MRI) and minimally-invasive biomarkers (e.g. blood or urine tests).  It's unclear which of those different strategies is best, and how those strategies should be sequenced or ordered. A collaborator at UTHSCSA (University of Texas Health Sciences Center San Antonio, I think) Dr. Michael Liss is a surgeon who is thinking hard about these problems.  He's put together a really nice cohort of ~100 patients where basically every possible biomarker has been generated and we want to figure out 'what is the optimal biomarker we can make using all tests'.  That will put an upper-bound to accuracy which we can go investigate in a prospective clinical trial.  We can then go backwards to start figuring out if there are ways to simplify/cheapen that test.
+  There is a clinical need to predict *before* surgery if a man has aggressive disease so that we can decide if they need surgery at all.  The quality of life benefits are thus huge (avoiding therapy entirely!).  The problem is that because it's pre-surgery, we do not have the full cancer to study.  Instead we use biopsies (spatially-restricted samples of the cancer), radiology (imaging like MRI) and minimally-invasive biomarkers (e.g. blood or urine tests).  It's unclear which of those different strategies is best, and how those strategies should be sequenced or ordered. A collaborator at UTHSCSA (University of Texas Health Sciences Center San Antonio, I think) Dr. Michael Liss is a surgeon who is thinking hard about these problems.  He's put together a really nice cohort of ~100 patients where basically every possible biomarker has been generated and we want to figure out 'what is the optimal biomarker we can make using all tests'.  That will put an upper-bound to accuracy which we can go investigate in a prospective clinical trial.  We can then go backwards to start figuring out if there are ways to simplify/cheapen that test.
+  
+  Clinically, AS means *not* treating a patient.  This is of course statistically superior for a bulk population, but still leads to problems when there is a FN (somebody has aggressive disease, but that isn’t recognized and thus they are inappropriately on AS).  Many patients will therefore voluntarily elect to exit AS prematurely, seeking a treatment that they may not derive benefit from.  Thus the key clinical problem is unrecognized aggressive disease, which both hinders those patients directly and more broadly reduces confidence in AS.  The goal of our work is thus to give better identification of which patients should exit AS, so that those who should not have more confidence in their decision.  Surgery/Radiotherapy (Sx/Rt) is extremely expensive ($20-50k) and has long-term morbidities (quality-of-life impacts).  We sometimes talk about this in terms of “health preference values”, which reflects how much a change in life-quality relates to a full-year of health.  Very roughly, every year on AS relative to definitive local therapy (Sx or Rt) saves the patient ~0.2 years of fully-healthy life, so prolonging AS as long as possible has big advantages.  So in the long-run, the question is really “can these biomarkers improve confidence men have to remain on AS” as much as anything else. Approximately ~15% each year *voluntarily* leave AS for treatment.
   
 ## Data description
 In this cohort there are $N = `r nrow(biodb)`$ patients.
@@ -69,7 +64,7 @@ Finally we have `Prostatectomy` which indicates whether the patient had a prosta
 
 The Prostate Health Index (PHI) and PHI density have been used in detection of prostate cancer [@Druskin2017].
 
-The biomarkers used are shown in \@ref(tab:biomarker-categories).
+The biomarkers used are shown in Table \@ref(tab:biomarker-categories).
 ```{r biomarker-categories}
 kable(as.data$bio.categories[,1:2], caption = "Biomarkers categories") %>%
   kable_styling() %>%
@@ -88,7 +83,7 @@ row.order <- with(pred.table, order(BiopsyUpgraded, ProgressedToTreatment))
 prostatectomy.cols <- paste0(c('no', 'yes'), ' (N=', table(biodb$Prostatectomy), ')')
 overall.col <- paste0('Overall (N=', nrow(biodb), ')')
 
-pred.table$Overall <- rowSums(pred.table[row.order, c(3,4)])
+pred.table$Overall <- rowSums(pred.table[, c(3,4)])
 
 pred.table[row.order, ] %>%
   kable(row.names = FALSE,
@@ -103,17 +98,23 @@ pred.table[row.order, ] %>%
 
 The severity of the prostate cancers were measured on the Gleason scale/ISUP grade group [@ISUP2016].
 
-Gleason Scores | Grade Group
---- | ---
-Gleason Score $\leq$ 6 | Grade Group 1
-3 + 4 = 7 | Grade Group 2
-4 + 3 = 7 | Grade Group 3
-Gleason Score 8 | Grade Group 4
-Gleason Score 9-10 | Grade Group 5
+```{r}
+gleason.isup.table <- data.frame(
+  gleason = paste('Gleason Score', c('$\\leq 6$', '3 + 4 = 7', '4 + 3 = 7', '8', '9-10')),
+  grade.group = paste('Grade Group', 1:5)
+)
+
+gleason.isup.table %>%
+  kable(
+    escape = FALSE,
+    col.names = c('Gleason Score', 'ISUP Grade Group'),
+    caption = 'ISUP grade group definitions from Gleason scores') %>%
+  kable_styling()
+```
 
 The variable `PreviousISUP` is the most recent prostate cancer ISUP grade group (GG) rating prior to research biopsy.
 The ISUP grade group is computed again in the variable `StudyHighestISUP` after the research MRI.
-We compare the progression of the cancers by the Gleason grades.
+We compare the progression of the cancers by the ISUP grade groups from the previous result to the highest study result.
 ```{r}
 progressed <- rep(NA, length(biodb$PreviousISUP))
 progressed[biodb$PreviousISUP < biodb$StudyHighestISUP] <- 'Increased';
@@ -124,23 +125,41 @@ kable(t(table(progressed)), caption = 'Comparison of pre-research biopsy ISUP gr
 
 isup.names <- c('No Cancer', 1:5, 'NA');
 
-isup.table <- with(biodb, table(PreviousISUP, StudyHighestISUP, useNA='ifany'))
-row.names(isup.table) <- isup.names;
+isup.table <- with(biodb, table(PreviousISUP, StudyHighestISUP, useNA='ifany'));
+isup.table <- cbind(rownames(isup.table), isup.table)
 
 isup.table %>%
   kable(
+    row.names = FALSE,
     booktabs = TRUE,
     align =  'c',
-    col.names = isup.names
+    col.names = c('Previous ISUP GG', isup.names)
     ) %>%
   kable_styling() %>%
-  add_header_above(c(' ' = 1, 'Study Highest ISUP Grade Group ' = length(levels(biodb$StudyHighestGleason)) + 1), align = 'c')
+  add_header_above(c(' ' = 1, 'Study Highest ISUP Grade Group' = length(levels(biodb$StudyHighestGleason)) + 1), align = 'c')
 ```
+
+```{r surgery-isup-compare}
+surgery.isup.xtabs <- xtabs(~ ProgressedToTreatment + Prostatectomy + StudyHighestISUP, data = biodb, addNA = TRUE)
+surgery.isup.df <- as.data.frame(ftable(surgery.isup.xtabs))
+
+surgery.isup.wide <- reshape(surgery.isup.df, idvar = c('ProgressedToTreatment', 'Prostatectomy'), timevar = 'StudyHighestISUP', direction = 'wide')
+
+row.order <- order(surgery.isup.wide$ProgressedToTreatment, surgery.isup.wide$Prostatectomy)# [-2] Add this is we want to remove useless row
+
+surgery.isup.wide[row.order, ] %>%
+    kable(row.names = FALSE,
+    booktabs = TRUE,
+    col.names = c('Progressed To Treatment', 'Prostatectomy', isup.names),
+    caption = 'Comparing highest ISUP grade group for those progressed to treatment') %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1) %>%
+  add_header_above(c(' ' = 2, 'Study Highest ISUP Grade Group' = length(isup.names)), align = 'c')
+```
+
 # Results
 
 ## Descriptive Statistics
-
-### Demographics
 
 ```{r, results= 'hide', out.width='90%', fig.cap='Demographics by race and whether biopsy was upgraded.'}
 demographic.vars <- c('Age', 'Weight', 'Height', 'BMI');
@@ -154,18 +173,18 @@ prog.plots <- lapply(demographic.vars, demographics.boxplot, biodb = biodb, x = 
 do.call(gridExtra::grid.arrange, prog.plots);
 ```
 
-```{r}
+```{r bx-biomarker-summary}
 tab.form <- "~ p2PSA +  freePSA + PSAHyb + PSADensity + SOCPSA + PHI + PHIDensity + ProstateVolume + TNFaAverage"
-# TODO: Update render.default to always include missing?
-t1 <- table1::table1(as.formula(paste(tab.form, 'ProgressedToTreatment', sep="|")), data = biodb);
-table1.to.kable(t1) %>%
-  add_header_above(c(' ' = 1, 'Progressed To Treatment' = 2, ' ' = 1))
+t1.bx <- table1::table1(as.formula(paste(tab.form, 'BiopsyUpgraded', sep="|")), data = biodb);
+table1.to.kable(t1.bx, caption = "Biomarker summaries for biopsy upgraded.") %>%
+  add_header_above(c(' ' = 1, 'Biopsy Upgraded' = 2, ' ' = 1))
 ```
 
-```{r}
-t1.bx <- table1::table1(as.formula(paste(tab.form, 'BiopsyUpgraded', sep="|")), data = biodb);
-table1.to.kable(t1.bx) %>%
-  add_header_above(c(' ' = 1, 'Biopsy Upgraded' = 2, ' ' = 1))
+```{r prog-biomarker-summary}
+# TODO: Update render.default to always include missing?
+t1 <- table1::table1(as.formula(paste(tab.form, 'ProgressedToTreatment', sep="|")), data = biodb);
+table1.to.kable(t1, caption = "Biomarker summaries for progressed to treatment.") %>%
+  add_header_above(c(' ' = 1, 'Progressed To Treatment' = 2, ' ' = 1))
 ```
 
 ```{r, out.width = '100%', fig.cap='Correlation heapmap with test with test methodology labels.'}
@@ -191,8 +210,7 @@ All patients have values for the days from diagnosis to the last clinical appoin
 The patients that had a biopsy have values for variables `DaysBxToLastClinicalAppt` and `DaysBxToLastReview`.
 If a patient progressed to treatment, then the days from diagnosis are in `DaysDxToProgression`.
 If they had a biopsy and progressed to treatment then `DaysDxToProgression` will contain the days between the biopsy and progression.
-
-#### Overall Days to Progression from Biopsy/Diagnosis
+We should the days to progression from biopsy in Figure \@ref(fig:days-bx-progression), the days to progression from diagnosis in Figure \@ref(fig:days-dx-progression), and the days to biopsy upgrade in \@ref(fig:days-dx-upgrade).
 
 ```{r days-bx-progression, fig.cap='Days to progression from biopsy for entire cohort.'}
 # Create a Surv object from survival package
@@ -214,7 +232,7 @@ do.call(
   )
 ```
 
-```{r }
+```{r days-dx-progression, fig.cap='Days to progression from diagnosis for entire cohort.'}
 progression.surv.dx <- do.call(
     what = survival::Surv,
     args = surv.format(biodb$DaysDxToProgression, biodb$DaysDxToLastReview)
@@ -233,8 +251,7 @@ do.call(
   )
 ```
 
-#### Overall Time-to-Upgrade from Diagnosis
-```{r}
+```{r days-dx-upgrade, fig.cap='Days to biopsy upgrade from diagnosis'}
 # Create a Surv object from survival package
 upgrade.surv <- do.call(
     what = survival::Surv,
@@ -257,7 +274,10 @@ do.call(
 ## Predictive Analysis
 ```{r}
 # seed <- 1313;
-seed <- 42;
+# With TNFaSTD
+# seed <- 42;
+# Without TNFaSTD
+seed <- 2626;
 model.names <- c('rpart', 'gbm', 'xgb');
 targets <- c(
     'BiopsyUpgraded',
@@ -275,19 +295,14 @@ names(models) <- targets;
 ```
 
 We predict the three variables: `ProgressedToTreatment`, `BiopsyUpgraded`, `Prostatectomy`.
+We remove all of the patients that did not had their biopsy upgraded (`BiopsyUpgraded = 0`) and still progressed to treatment (`ProgressedToTreatment = 1`).
+This indicates that progression to treatment was voluntary.
+From the Table \@ref(tab:prediction-vars), we see that then any indication of an aggressive disease is first indicated by biopsy upgraded.
+In this sense it is the most fundamental to predict as if a patient is predicted not to have their biopsy upgraded then they will not be predicted to have progressed to treatment or have a prostatectomy.
+
 For each of these variable we compare the results from three models: a regression tree (`rpart`), gradient boosting machine (`gbm`), and eXtreme Gradient Boosting (`xgboost`).
-We only report the results from `rpart` and `gbm` as the results are very similar for the two gradient boosting methods and `gbm` performs slightly better.
 The regression tree model is the most interpretable as it produces a single decision tree.
 The other models produce better accuracy as well as $F_1$ scores but require more work to interpret.
-
-All of the models were validated using 10-fold cross-validation repeated 5 times.
-That is, we partition the data set into 10 parts and use 9 parts to train the model and the last to evaluate the model.
-Several metrics are computed based on the results such as $F_1$ score, area under the ROC curve (ROC-AUC), area under the precision-recall curve, accuracy, sensitivity, and specificity.
-This process is repeated so that each part of the partition is used to validate exactly once.
-We repeat this entire process 5 times so that 10 random partitions are generated.
-This results in a distribution for the metrics which is an approximation for how to models will perform out of sample.
-For each of the models we performed a grid-search to find the optimal parameters.
-The area under the precision-recall curve was used as the (threshold invariant) metric for which the parameters were tuned.
 
 The variables in \@ref(tab:variable-set) were used as the initial set of variables for `ProgressedToTreatment` and `Prostatectomy`. In the case of `BiopsyUpgraded`, the variable `BiopsyResult` was removed from the predictor variables.
 ```{r variable-set}
@@ -400,7 +415,7 @@ Each of the models outputs a probability being in class 1, e.g. the probability 
 By default the models threshold anything above 0.5 as class 1 and anything below as 0.
 We want to find a better threshold value, called the operating point.
 
-The first method we test for finding the optimal operating point is to maximize Youden's J statistic @Youden1950 which is defined as
+The first method we test for finding the optimal operating point is to maximize Youden's J statistic [@Youden1950] which is defined as
 $$
 J = \text{sensitivity} + \text{specificity} - 1
 $$
@@ -466,7 +481,7 @@ The results are very similar for the $J$ statistic optimization and the cost-wei
 The only model in which the results differ dramatically are in the prostatectomy prediction.
 In the cost-weighted method the threshold is optimized at 0 or 1 which results in all positive or all negative predictions.
 Using the $J$ statistic prevents the models from predicting the same class. 
-We show summary statistics in \@ref(tab:threshold-results) for the optimal thresholds for both J statistic and cost-weighted methods.
+We show summary statistics in Table \@ref(tab:threshold-results) for the optimal thresholds for both J statistic and cost-weighted methods.
 ```{r threshold-results, fig.cap='Summary statistics for the optimal operating points for each model'}
 cols <- c("target", "model", "method", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision"
   #"Pos Pred Value", "Neg Pred Value",
@@ -483,20 +498,19 @@ kable(
   thresholds.table,
   digits = 2,
   row.names = FALSE,
-  caption = "Summary statistics for the different operating points, targets and models.",
+  caption = "Summary statistics for the different operating points, targets and models. Bold is the optimal model with cut-point selected from J statistic.",
   escape = F) %>%
   kable_styling() %>%
   column_spec(1, width_min = "7em") %>%
-  collapse_rows(columns = 1:3)
-  
+  collapse_rows(columns = 1:3) %>%
+  row_spec(c(4, 10, 16), bold = TRUE)
 ```
 
 ## Cut-points for time-to-event analysis
 The gradient boosted model (gbm) provided the best predictive power of the models.
 We use the predictions from this model to show that days until the patient progressed or had the biopsy upgraded for each of the prediction groups.
 
-### Progressed To Treatment
-```{r, fig.cap = 'Days to progression from biopsy for the prediction groups'}
+```{r cutpoint-days-prog-bx, fig.cap = 'Days to progression from biopsy for the prediction groups'}
 prog.gbm.preds <- ifelse(predict(models$ProgressedToTreatment$gbm, type = 'prob')[, 'yes'] > optimal.thresholds$ProgressedToTreatment$gbm, 1, 0)
 
 progression.surv.bx.valid <- do.call(
@@ -519,7 +533,7 @@ do.call(
   )
 ```
 
-```{r, fig.cap = 'Days to progression from diagnosis for the prediction groups'}
+```{r cutpoint-days-prog-dx, fig.cap = 'Days to progression from diagnosis for the prediction groups'}
 progression.surv.dx.valid <- do.call(
     what = survival::Surv,
     args = surv.format(biodb.valid$DaysDxToProgression, biodb.valid$DaysDxToLastReview)
@@ -540,18 +554,14 @@ do.call(
   )
 ```
 
-### Days to Upgrade from Diagnosis
-```{r}
+```{r cutpoint-days-upgrade-dx, fig.cap='Days to biopsy upgrade from diagnosis for the prediction groups.'}
 bx.gbm.preds <- rep(NA, nrow(biodb.valid))
 bx.gbm.preds[!is.na(biodb.valid$BiopsyUpgraded)] <- ifelse(predict(models$BiopsyUpgraded$gbm, type = 'prob')[, 'yes'] > optimal.thresholds$BiopsyUpgraded$gbm, 1, 0)
-# bx.gbm.preds <- as.factor(bx.gbm.preds)
-# levels(bx.gbm.preds) <- c('0', '1')
 
 upgrade.surv.valid <- do.call(
     what = survival::Surv,
     args = surv.format(biodb.valid$DaysDxToUpgrade, biodb.valid$DaysDxToLastReview)
     );
-
 
 do.call(
   what = BoutrosLab.plotting.survival::create.km.plot,
@@ -586,13 +596,13 @@ kable(
 
 ## Decision Trees
 The GBM models perform much better than the rpart models.
-We include the rpart decision tree models as they are easy to interpret. 
+We include the rpart decision tree models as they are easy to interpret.
 
 ```{r decision-tree-bx, out.width="75%", fig.cap="Decision tree for Biopsy Upgraded prediction."}
 rpart.plot(models$BiopsyUpgraded$rpart$finalModel);
 ```
 
-```{r decision-tree-prog, out.width="90%", fig.cap="Decision tree for Progressed to Treatment prediction."}
+```{r decision-tree-prog, out.width="75%", fig.cap="Decision tree for Progressed to Treatment prediction."}
 rpart.plot(models$ProgressedToTreatment$rpart$finalModel);
 ```
 
@@ -634,8 +644,64 @@ sessioninfo::session_info()
 
 # Appendix
 
-- Optional
-- Include supplementary materials that may be helpful in providing a more comprehensive understanding of the research problem.
-- Technical description of statistical procedures
-- Detailed tables or computer output
-- Figures that were not central to the arguments presented in the body of the reportot.
+## Model Fitting
+All of the models were validated using 10-fold cross-validation repeated 5 times.
+That is, we partition the data set into 10 parts and use 9 parts to train the model and the last to evaluate the model.
+Several metrics are computed based on the results such as $F_1$ score, area under the ROC curve (ROC-AUC), area under the precision-recall curve, accuracy, sensitivity, and specificity.
+This process is repeated so that each part of the partition is used to validate exactly once.
+We repeat this entire process 5 times so that 10 random partitions are generated.
+This results in a distribution for the metrics which is an approximation for how to models will perform out of sample.
+For each of the models we performed a grid-search to find the optimal parameters.
+We should the optimal parameters for the GBM and XGB model in Table \@ref(tab:gbm-grid) and Table \@ref(tab:xgb-grid).
+The area under the precision-recall curve was used as the (threshold invariant) metric for which the parameters were tuned.
+
+```{r gbm-grid}
+gbm.params <- models$BiopsyUpgraded$gbm$modelInfo$parameters
+rownames(gbm.params) <- gbm.params$parameter
+
+gbm.grid <- list(interaction.depth = expr(c(1, 5, 9)),
+                            n.trees = expr(seq(50, 1500, by = 50)),
+                            shrinkage = expr(c(0.001, 0.01, 0.1)),
+                            n.minobsinnode = expr(10)
+                            )
+
+gbm.params$range <- gbm.grid[rownames(gbm.params)]
+gbm.params$length <- lapply(gbm.grid[rownames(gbm.params)], function(x) length(eval(x)))
+gbm.params$best.bx <- round(t(models$BiopsyUpgraded$gbm$bestTune[rownames(gbm.params)]))
+gbm.params$best.prog <- round(t(models$ProgressedToTreatment$gbm$bestTune[rownames(gbm.params)]))
+gbm.params$best.surg <- round(t(models$Prostatectomy$gbm$bestTune[rownames(gbm.params)]))
+
+gbm.caption <- paste0('Hyperparameters for GBM model. The total grid size is: ', Reduce('*', gbm.params$length));
+gbm.params[, c('label', 'range', 'length', 'best.bx', 'best.prog', 'best.surg')] %>%
+  kable(
+    booktabs = TRUE,
+    caption = gbm.caption,
+    col.names = c('label', 'range', 'length', 'BX Best', 'TRT Best', 'Surgery Best')) %>%
+  kable_styling()
+```
+
+```{r}                            
+xgb.grid <- list(
+    nrounds = expr(seq(from = 200, to = 1000, by = 50)),
+    eta = expr(c(0.025, 0.05, 0.1, 0.3)),
+    max_depth = expr(c(4, 5, 6)),
+    gamma = expr(0),
+    colsample_bytree = expr(1),
+    min_child_weight = expr(1),
+    subsample = expr(1)
+    );
+
+xgb.params <- models$BiopsyUpgraded$xgb$modelInfo$parameters
+rownames(xgb.params) <- xgb.params$parameter
+
+xgb.params$range <- xgb.grid[rownames(xgb.params)]
+xgb.params$length <- lapply(xgb.grid[rownames(xgb.params)], function(x) length(eval(x)))
+xgb.params$best <- t(models$BiopsyUpgraded$xgb$bestTune[rownames(xgb.params)])
+
+xgb.caption <- paste0('Hyperparameters for XGB modelfor biopsy upgraded prediction. The total grid size is: ', Reduce('*', xgb.params$length));
+xgb.params[, c('label', 'range', 'length', 'best')] %>%
+  kable(booktabs = TRUE, caption = xgb.caption) %>%
+  kable_styling()
+```
+
+
