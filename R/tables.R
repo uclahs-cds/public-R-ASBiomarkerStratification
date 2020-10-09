@@ -2,12 +2,13 @@
 #'
 #' @param tb1
 #' @param group
+#' @param ... pass additional arguments into kable
 #'
 #' @return
 #' @export
 #'
 #' @examples
-table1.to.kable <- function(tb1, group) {
+table1.to.kable <- function(tb1, group, ...) {
     rt <- rvest::html_table(xml2::read_html(tb1))[[1]]
     group.index <- which(rt[,2] == "");
     group.names <- rt[group.index, 1];
@@ -15,7 +16,7 @@ table1.to.kable <- function(tb1, group) {
     # Remove the group rows
     rt.nogroup <- rt[-group.index, ];
 
-    k1 <- kable(rt.nogroup, align = c('l', 'c', 'c', 'c'), row.names = FALSE, booktabs = T);
+    k1 <- kable(rt.nogroup, align = c('l', 'c', 'c', 'c'), row.names = FALSE, booktabs = T, ...);
 
     group.index.aligned <- group.index - seq(0,length(group.index) - 1)
     group.index.end <- c(group.index.aligned, nrow(rt.nogroup))

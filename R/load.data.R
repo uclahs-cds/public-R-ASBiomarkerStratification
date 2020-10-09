@@ -103,6 +103,11 @@ load.data.AS <- function(biomark.path,
   levels(biodb$Observation) <- c('MRI Positive/Biopsy Positive', 'MRI Positive/Biopsy Negative',
                                  'MRI Negative/Biopsy Positive', 'MRI Negative/Biopsy Negative');
 
+  # Note: When we remove the NoUpgradeAndProgressed then BiopsyUpgrade represents any aggressive disease progression.
+  # New target that combines all of the other targets
+  # biodb$AggressiveDisease <- as.factor(apply(biodb[, targets], 1, function(r) any(r == 1, na.rm = TRUE)))
+  # targets <- c(targets, 'AggressiveDisease')
+
   # Re-levels the targets to no/yes levels
   biodb[, targets] <- lapply(biodb[, targets], `levels<-`, value = c('no', 'yes'))
 

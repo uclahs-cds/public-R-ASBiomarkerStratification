@@ -41,7 +41,7 @@ demographics.boxplot <- function(biodb, y, x, cond = NULL, ...) {
 #'
 #' @examples
 roc.pr.plot <- function(models.roc, ...) {
-    opar <- par(pty="s", mfrow=c(1,2))
+    opar <- par(pty="s", mfrow=c(1,2), mar = 0.1 + c(8, 6, 4, 2))
     on.exit(par(opar))
 
     models.n <- length(models.roc);
@@ -93,8 +93,14 @@ roc.pr.plot <- function(models.roc, ...) {
               type="l", las = 1, col = default.colours(models.n)[i], lwd = 2, ...);
     }
 
-    models.auc <- unlist(lapply(models.roc, `[[`, i = 'auc'));
-    legend.text <- paste0(names(models.roc), ': AUC = ', round(models.auc, 3));
+    # models.auc <- unlist(lapply(models.roc, `[[`, i = 'auc'));
 
-    legend(-0.7, -0.3, legend.text, cex = 0.8, col = default.colours(models.n), lwd = c(2, 2), inset = 0.02, xpd="NA");
+    auc.ci.text <- lapply(models.roc, function(m) {
+        auc.ci <- ci(m$auc);
+        sprintf("%.3f (%.3f, %.3f) 95%% CI", auc.ci[2], auc.ci[1], auc.ci[3])
+        });
+
+    legend.text <- paste0(names(models.roc), ': AUC = ', auc.ci.text);
+
+    legend(-1.5, -0.6, legend.text, cex = 0.8, col = default.colours(models.n), lwd = c(2, 2), inset = 0.02, xpd="NA");
 }
