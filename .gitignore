@@ -2,6 +2,7 @@ data/
 .Rproj.user
 *.txt
 *.Rproj
+*.log
 
 *.pdf
 *.html

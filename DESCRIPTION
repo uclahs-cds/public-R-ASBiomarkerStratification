@@ -25,7 +25,13 @@ Suggests:
     table1,
     testthat,
     rvest,
-    xml2
+    xml2,
+    kableExtra,
+    knitr,
+    sessioninfo,
+    gridExtra,
+    magrittr,
+    rpart.plot
 Exports:
     compute.auc,
     compute.auc.ci,

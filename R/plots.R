@@ -44,10 +44,12 @@ roc.pr.plot <- function(models.roc, ...) {
     opar <- par(pty="s", mfrow=c(1,2))
     on.exit(par(opar))
 
+    models.n <- length(models.roc);
+
     plot(
         x = models.roc[[1]],
         las = 1,
-        col = default.colours(2)[1],
+        col = default.colours(models.n)[1],
         main = 'ROC Curve',
         ylim = c(0, 1),
         # pROC resets mar and mpg..
@@ -56,26 +58,43 @@ roc.pr.plot <- function(models.roc, ...) {
         mgp = par('mgp'),
         print.thres = TRUE,
         # print.thres.adj=c(1, -.6),
-        print.thres.cex=.75,
-        print.thres.pattern = "%.2f",
+        #print.thres.cex=.75,
+        print.thres.pattern = "",
+        print.thres.col= default.colours(models.n)[1],
+        # print.auc=TRUE,
         ...
     )
-    if(2 == length(models.roc)) {
-        plot(models.roc[[2]], las = 1, add = TRUE, col = default.colours(2)[2], xlim = c(1, 0), print.thres = TRUE,
-             print.thres.cex=.75, print.thres.pattern = "%.2f", ...);
+    for(i in 2:models.n) {
+        plot(
+            models.roc[[i]],
+            las = 1,
+            add = TRUE,
+            col = default.colours(models.n)[i],
+            xlim = c(1, 0),
+            print.thres = TRUE,
+            # print.thres.cex=.75,
+            print.thres.pattern = '', # "%.2f",
+            print.thres.col= default.colours(models.n)[i],
+            # print.auc=TRUE,
+            # print.auc.adj = c(0, i),
+            ...
+        );
     }
-
-    legend("bottomright", names(models.roc), cex = 0.8, col = default.colours(2), lwd = c(2, 2), inset = 0.02);
 
     # Plot PR Curves
     # Plot the Precision-Recall curve
     plot(precision ~ recall,
          coords(models.roc[[1]], "all", ret = c("recall", "precision"), transpose = FALSE),
-         type="l", las = 1, col = default.colours(2)[1], lwd = 2, main = 'Precision-Recall Curve', ylim = c(0, 1), ...);
+         type="l", las = 1, col = default.colours(models.n)[1], lwd = 2, main = 'Precision-Recall Curve', ylim = c(0, 1), ...);
 
-    if(2 == length(models.roc)) {
+    for(i in 2:models.n) {
         lines(precision ~ recall,
-              coords(models.roc[[2]], "all", ret = c("recall", "precision"), transpose = FALSE),
-              type="l", las = 1, col = default.colours(2)[2], lwd = 2, ...);
-        }
+              coords(models.roc[[i]], "all", ret = c("recall", "precision"), transpose = FALSE),
+              type="l", las = 1, col = default.colours(models.n)[i], lwd = 2, ...);
+    }
+
+    models.auc <- unlist(lapply(models.roc, `[[`, i = 'auc'));
+    legend.text <- paste0(names(models.roc), ': AUC = ', round(models.auc, 3));
+
+    legend(-0.7, -0.3, legend.text, cex = 0.8, col = default.colours(models.n), lwd = c(2, 2), inset = 0.02, xpd="NA");
 }

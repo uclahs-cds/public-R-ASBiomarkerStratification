@@ -19,7 +19,8 @@ AS.models <- function(
     exclude.vars = NULL,
     predict.missing = FALSE,
     seed = NULL,
-    rpart.cost = NULL
+    rpart.cost = NULL,
+    rm.NoUpgradeAndProgressed = TRUE
     ) {
     target <- match.arg(target);
     metric <- match.arg(metric);
@@ -61,9 +62,14 @@ AS.models <- function(
         }
     }
 
-    biokey.variables <- setdiff(biokey.variables, exclude.vars)
+    biokey.variables <- setdiff(biokey.variables, exclude.vars);
 
-    missing.target <- is.na(biodb[, target])
+    missing.target <- is.na(biodb[, target]);
+
+    # Only keep the patient that did not leave AS voluntarily if we have the rm.NoUpgradeAndProgressed flag
+    valid.patients <- ! rm.NoUpgradeAndProgressed |
+        (! (biodb$NoUpgradeAndProgressed == 1) |
+        is.na(biodb$NoUpgradeAndProgressed));
 
     if(predict.missing) {
         X <- biodb[, biokey.variables];
@@ -75,14 +81,14 @@ AS.models <- function(
         levels(y) <- c('no', 'yes', 'Missing');
     } else {
         # Variable we want to predict
-        y.target <- biodb[!missing.target, target];
+        y.target <- biodb[!missing.target & valid.patients, target];
         y <- y.target
         levels(y) <- c('no', 'yes');
         # Most functions expect the positive case to be the first factor
-        factor(y, levels = c('yes', 'no'));
+        # factor(y, levels = c('yes', 'no'));
 
         # Drop the missing target values
-        X <- biodb[!missing.target, biokey.variables]
+        X <- biodb[!missing.target & valid.patients, biokey.variables]
     }
 
     gbm.grid <-  expand.grid(interaction.depth = c(1, 5, 9),
@@ -156,6 +162,8 @@ AS.models <- function(
         if(!is.null(rpart.cost)) {
             print("Fitting rpart model with cost matrix...");
             print(rpart.cost)
+        } else {
+            print("Fitting rpart model ...");
         }
 
 

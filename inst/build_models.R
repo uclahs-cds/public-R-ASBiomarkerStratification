@@ -2,7 +2,7 @@ library(ProstateCancer.ASBiomarkerSynergy);
 
 biodb <- default.load.data(onlyBiodb = TRUE);
 
-seed <- 1313;
+seed <- 2626;
 
 train.control <- caret::trainControl(
     method = "repeatedcv",
@@ -10,12 +10,12 @@ train.control <- caret::trainControl(
     repeats = 5
     );
 
-metrics <- c('ROC-AUC'
-             #, 'PR-AUC'
+metrics <- c(#'ROC-AUC'
+             'PR-AUC'
              );
 targets <- c(
     'BiopsyUpgraded', # This needs some work... do we want to predict the missing values as well?
-    # 'Prostatectomy'
+    'Prostatectomy',
     'ProgressedToTreatment'
     );
 
@@ -27,8 +27,11 @@ results <- lapply(targets, function(tg) {
                   train.control = train.control,
                   predict.missing = FALSE,
                   seed = seed,
-                  models = c('gbm', 'rpart'),
-                  rpart.cost = matrix(c(0,1,2,0), byrow = TRUE, nrow = 2));
+                  models = c('rpart', 'gbm', 'xgb'),
+                  rm.NoUpgradeAndProgressed = TRUE,
+                  exclude.vars = 'TNFaSTD'
+                  #rpart.cost = matrix(c(0,1,2,0), byrow = TRUE, nrow = 2)
+                  );
     names(res) <- metrics;
     res;
 });

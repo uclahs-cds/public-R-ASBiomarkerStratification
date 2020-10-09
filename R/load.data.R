@@ -57,6 +57,8 @@ load.data.AS <- function(biomark.path,
 
   mutation.cols <- c("Mutation1", "Mutation.2");
 
+  targets <- c('ProgressedToTreatment', 'BiopsyUpgraded', 'Prostatectomy');
+
   # Open Raw data:
   biodb <- xlsx::read.xlsx(
     biomark.path,
@@ -83,7 +85,7 @@ load.data.AS <- function(biomark.path,
   biodb[,Gleason.cols] <-  lapply(biodb[, Gleason.cols], factor.Gleason);
 
   # Add PSA and PHI Density
-  biodb$PSADensity <- biodb$freePSA / biodb$ProstateVolume;
+  biodb$PSADensity <- biodb$PSAHyb / biodb$ProstateVolume;
   biodb$PHIDensity = biodb$PHI / biodb$ProstateVolume;
 
   # TODO: Add all other binary variables as logical
@@ -100,6 +102,9 @@ load.data.AS <- function(biomark.path,
   # levels(biodb$BiopsyResult) <- c('Negative', 'Positive');
   levels(biodb$Observation) <- c('MRI Positive/Biopsy Positive', 'MRI Positive/Biopsy Negative',
                                  'MRI Negative/Biopsy Positive', 'MRI Negative/Biopsy Negative');
+
+  # Re-levels the targets to no/yes levels
+  biodb[, targets] <- lapply(biodb[, targets], `levels<-`, value = c('no', 'yes'))
 
   # Rename Ethnicity to Hispanic
   biodb$Hispanic <- as.factor(biodb$Ethnicity);
