@@ -354,3 +354,10 @@ BoutrosLab.plotting.survival::create.km.plot(
     ylab.cex = 1.5
     );
 ```
+
+
+```{r}
+x <- with(biodb, xtabs(~ ProgressedToTreatment + Prostatectomy + BiopsyUpgraded))
+kable(x[1,,])
+kable(x[2,,])
+```

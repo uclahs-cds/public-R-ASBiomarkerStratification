@@ -327,6 +327,11 @@ $endif$
 \usepackage{enumitem} % to adjust spacing between bullet point and dashed line
 \usepackage{hyperref}
 
+% Add some math unicode characters
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+
+
 %% Force topsep = 0 for all itemize environments
 \setlist[itemize]{topsep=0pt, itemsep=0pt}
 

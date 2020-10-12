@@ -133,6 +133,8 @@ load.data.AS <- function(biomark.path,
     stringsAsFactors = FALSE
     );
 
+  biokey <- biokey[!is.na(biokey$Column.ID), ]
+
   biokey.gen <- xlsx::read.xlsx(
     genetics.path,
     sheetIndex = 1,
