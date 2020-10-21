@@ -4,6 +4,13 @@
 #' @param train.control
 #' @param target
 #' @param metric
+#' @param models
+#' @param exclude.vars
+#' @param predict.missing
+#' @param seed
+#' @param rpart.cost
+#' @param rm.NoUpgradeAndProgressed
+#' @param reduced.model
 #'
 #' @return
 #' @export
@@ -20,38 +27,62 @@ AS.models <- function(
     predict.missing = FALSE,
     seed = NULL,
     rpart.cost = NULL,
-    rm.NoUpgradeAndProgressed = TRUE
+    rm.NoUpgradeAndProgressed = TRUE,
+    reduced.model = FALSE
     ) {
     target <- match.arg(target);
     metric <- match.arg(metric);
     models <- match.arg(models, several.ok = TRUE);
 
-    biokey.variables <- c('Age',
-                          'Race', # 'GeneticAncestry',
-                          'Hispanic',
-                          'Weight',
-                          'Height',
-                          'BMI', 'MRIResult', 'MRILesions',
-                          'BiopsyResult',
-                          'ProstateVolume',
-                          # 'Observation',
-                          'PCA3',
-                          'T2ERG', 'MiPSCancerRisk', 'MiPSHighGradeCancerRisk', 'PSAHyb',
-                          'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI',
-                          # 'PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason', # Only use the ISUP grade group over Gleason
-                          # 'StudyHighestISUP', 'HighestPIRADS',
-                          'PreviousISUP',
-                          'GeneticRiskScore',
-                          'TNFaAverage', 'TNFaSTD', # Tumor necrosis factor
-                          #'GeneticRiskCategory', Don't need since genetic risk score is continuous version of this
-                          'GlobalScreeningArray', # This is just an indicator if any of the follow are > 0
-                          'GSAPositives', 'BRCAMutation',
-                          'Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', # 'Mutation_MLH1', 'Mutation_PMS2', Not enough data
-                          'RSInormalSignal',
-                          'RSIlesionSignal',
-                          'ADCnormalSignal', 'ADClesionSignal',
-                          # 'RSIlesionPIRADS', 'RSIlesionCancer',  'RSIlesionUpgraded', 'RSIlesionISUP',
-                          'PSADensity', 'PHIDensity');
+    if(reduced.model) {
+        biokey.variables <- c(
+            'Age',
+            'BMI',
+            'Race',
+            'Hispanic',
+            'ProstateVolume',
+            'PCA3',
+            'T2ERG',
+            'MiPSCancerRisk',
+            'MiPSHighGradeCancerRisk',
+            'PercentFreePSA',
+            'PHI',
+            'GeneticRiskScore',
+            'RSIlesionSignal',
+            'RSIlesionPIRADS',
+            'PSADensity',
+            'PHIDensity'
+            );
+    } else {
+        biokey.variables <- c(
+            'Age',
+            'Race', # 'GeneticAncestry',
+            'Hispanic',
+            'Weight',
+            'Height',
+            'BMI', 'MRIResult', 'MRILesions',
+            'BiopsyResult',
+            'ProstateVolume',
+            # 'Observation',
+            'PCA3',
+            'T2ERG', 'MiPSCancerRisk', 'MiPSHighGradeCancerRisk', 'PSAHyb',
+            'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI',
+            # 'PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason', # Only use the ISUP grade group over Gleason
+            # 'StudyHighestISUP', 'HighestPIRADS',
+            'PreviousISUP',
+            'GeneticRiskScore',
+            'TNFaAverage', 'TNFaSTD', # Tumor necrosis factor
+            #'GeneticRiskCategory', Don't need since genetic risk score is continuous version of this
+            'GlobalScreeningArray', # This is just an indicator if any of the follow are > 0
+            'GSAPositives', 'BRCAMutation',
+            'Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', # 'Mutation_MLH1', 'Mutation_PMS2', Not enough data
+            'RSInormalSignal',
+            'RSIlesionSignal',
+            'ADCnormalSignal', 'ADClesionSignal',
+            # 'RSIlesionPIRADS', 'RSIlesionCancer',  'RSIlesionUpgraded', 'RSIlesionISUP',
+            'PSADensity', 'PHIDensity'
+            );
+    }
 
     if('BiopsyUpgraded' == target) {
         exclude.vars <- c(exclude.vars, 'BiopsyResult');
@@ -131,7 +162,9 @@ AS.models <- function(
     X.ints <- X
     # biodb.ints[, ordered.cols] <- lapply(biodb.ints[, ordered.cols], function(x) as.numeric(x))
     # Convert ordered variable to numeric
-    X.ints$PreviousISUP <- as.numeric(as.character(X$PreviousISUP))
+    if('PreviousISUP' %in% colnames(X.ints)) {
+        X.ints$PreviousISUP <- as.numeric(as.character(X$PreviousISUP))
+    }
 
     # Convert to dummy variables
     dummy.formula <- paste0("~ ", paste0(biokey.variables, collapse = " + "))
@@ -263,11 +296,19 @@ squash.importance <- function(importance, FUN = 'sum') {
     res
 }
 
-#' Fixes caret::varImp for gbm
+#' Compute the variable importance for GBM, XGB, rpart
+#'
+#' @param x
+#' @param squash
+#'
+#' @return
+#' @export
+#'
+#' @examples
 var.imp <- function(x, squash = TRUE) {
     stopifnot('train' == class(x));
     if('gbm' == x$method) {
-        gbm.sum <- summary(x$finalModel, plotit = FALSE);
+        gbm.sum <- gbm::summary.gbm(x$finalModel, plotit = FALSE);
         res <- list(
             model = 'gbm',
             calledFrom = 'summary.gbm',

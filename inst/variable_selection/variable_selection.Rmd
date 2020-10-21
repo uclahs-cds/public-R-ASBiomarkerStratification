@@ -1,0 +1,123 @@
+---
+title: 'Active Surveillance Progression Prediction Variable Selection'
+author: 'Stefan Eng '
+output:
+  bookdown::pdf_document2:
+    template: ../boutros_template.tex
+    keep_tex: true
+  html_notebook: default
+bibliography:  bibliography.bib
+csl: european-urology.csl
+nocite: |
+  @BPG
+---
+
+```{r setup, include=FALSE}
+library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.plotting.general);
+library(kableExtra);
+library(gridExtra);
+library(magrittr);
+library(here);
+library(caret);
+library(pROC);
+library(rpart.plot);
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '60%', fig.pos = 'H');
+
+axis.cex <- .7
+lab.cex <- .8
+strip.cex <- 0.45
+
+km.arguments <- list(
+  xaxis.cex = axis.cex,
+  yaxis.cex = axis.cex,
+  main.cex = 1.4,
+  xlab.cex = lab.cex,
+  ylab.label = 'Estimated survival probability',
+  ylab.cex = lab.cex,
+  risktable.fontsize = 14,
+  key.groups.cex = 1,
+  key.stats.cex = 1,
+  key.stats.y.pos = 0.5
+  );
+
+as.data <- default.load.data();
+biodb <- as.data$biodb;
+
+valid.patients <- biodb$NoUpgradeAndProgressed == 0 | is.na(biodb$NoUpgradeAndProgressed);
+
+biodb.valid <- biodb[valid.patients, ];
+```
+
+# Introduction
+Variable selection
+
+```{r}
+seed <- 2626;
+targets <- c(
+    'BiopsyUpgraded',
+    'Prostatectomy',
+    'ProgressedToTreatment');
+metric <- 'PR-AUC';
+
+full.models <- lapply(targets, function(tg) {
+    readRDS(here(paste0('models/gbm_', tg, '_', metric, '_', seed, '_model.RDS')))
+    })
+names(full.models) <- targets;
+
+reduced.seed <- 111111;
+reduced.models <- lapply(targets, function(tg) {
+    readRDS(here(paste0('models/gbm_', tg, '_', metric, '_', reduced.seed, '_model.RDS')))
+    })
+names(reduced.models) <- targets;
+
+reduced.PIRADS.seed <- 222222;
+reduced.PIRADS.models <- lapply(targets, function(tg) {
+    readRDS(here(paste0('models/gbm_', tg, '_', metric, '_', reduced.PIRADS.seed, '_model.RDS')))
+    })
+names(reduced.PIRADS.models) <- targets;
+```
+
+This is questionable
+```{r}
+lapply(reduced.models, var.imp)
+lapply(full.models, var.imp)
+```
+
+```{r}
+reduced.models.roc <- lapply(reduced.models, function(m) {
+      bestPreds <- with(m, merge(pred, bestTune));
+      pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
+  })
+
+reduced.PIRADS.models.roc <- lapply(reduced.PIRADS.models, function(m) {
+      bestPreds <- with(m, merge(pred, bestTune));
+      pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
+  })
+
+full.models.roc <- lapply(full.models, function(m) {
+      bestPreds <- with(m, merge(pred, bestTune));
+      pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
+  })
+
+reduced.models.roc
+full.models.roc
+
+optimal.thresholds.youden <- lapply(reduced.models.roc, function(rocs) {
+    as.numeric(coords(rocs, 'best')[1])
+})
+
+thresholds.info.list <- lapply(names(optimal.thresholds.youden), function(x) {
+    model <- reduced.models[[x]]
+    threshold <- optimal.thresholds.youden[[x]]
+    
+    cbind(target = x, colMeans(threshold.summary.stats(model, threshold), na.rm = TRUE))
+    })
+
+thresholds.info <- do.call(rbind.data.frame, thresholds.info.list);
+```
+
+
+
+

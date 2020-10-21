@@ -3,7 +3,7 @@ title: 'Active Surveillance Progression Prediction'
 author: 'Stefan Eng'
 output:
   bookdown::pdf_document2:
-    template: boutros_template.tex
+    template: ../boutros_template.tex
     keep_tex: true
   html_notebook: default
 bibliography:  bibliography.bib

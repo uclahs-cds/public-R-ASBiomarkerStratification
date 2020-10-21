@@ -2,7 +2,7 @@ library(ProstateCancer.ASBiomarkerSynergy);
 
 biodb <- default.load.data(onlyBiodb = TRUE);
 
-seed <- 2626;
+seed <- 222222;
 
 train.control <- caret::trainControl(
     method = "repeatedcv",
@@ -27,9 +27,9 @@ results <- lapply(targets, function(tg) {
                   train.control = train.control,
                   predict.missing = FALSE,
                   seed = seed,
-                  models = c('rpart', 'gbm', 'xgb'),
+                  models = c('gbm'),
                   rm.NoUpgradeAndProgressed = TRUE,
-                  exclude.vars = 'TNFaSTD'
+                  reduced.model = TRUE
                   #rpart.cost = matrix(c(0,1,2,0), byrow = TRUE, nrow = 2)
                   );
     names(res) <- metrics;
