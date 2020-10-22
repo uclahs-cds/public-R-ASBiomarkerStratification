@@ -54,6 +54,44 @@ biodb.valid <- biodb[valid.patients, ];
 Variable selection
 
 ```{r}
+seed <- 1313;
+targets <- c(
+    'BiopsyUpgraded',
+    'Prostatectomy',
+    'ProgressedToTreatment');
+metric <- 'PR-AUC';
+method <- 'gbm';
+model.names <- c('reduced_both', 'reduced_only_RSIlesionSignal', 'reduced_only_RSIlesionPIRADS');
+models <- lapply(targets, function(x) {
+    model.id <- paste(x, metric, seed, sep = "_");
+    model.id <- paste(model.id, model.names, sep = "_");
+  
+    model.files <- here(paste('models/gbm', model.id, 'model.RDS', sep = "_"));  
+    names(model.files) <- model.names;
+    lapply(model.files, readRDS);
+})
+names(models) <- targets;
+
+# Compare the models with resampling
+summary(resamples(models$BiopsyUpgraded))
+
+lapply(models$BiopsyUpgraded, var.imp)
+var.imp(models$BiopsyUpgraded$reduced_both)
+
+# old.model.id <- paste0(targets, metric, seed, sep = "_");
+# old.model.id <- paste0(rep(old.model.id, length(model.names)), model.names, sep = "_");
+#   
+# old.model.files <- here(paste('models/gbm', old.model.id, 'model.RDS', sep = "_")); 
+# 
+# new.model.id <- paste(targets, metric, seed, sep = "_");
+# new.model.id <- paste(rep(new.model.id, length(model.names)), model.names, sep = "_");
+#   
+# new.model.files <- here(paste('models/gbm', new.model.id, 'model.RDS', sep = "_"));
+# 
+# mapply(file.rename, from = old.model.files, to = new.model.files)
+```
+
+```{r}
 seed <- 2626;
 targets <- c(
     'BiopsyUpgraded',
@@ -66,11 +104,11 @@ full.models <- lapply(targets, function(tg) {
     })
 names(full.models) <- targets;
 
-reduced.seed <- 111111;
-reduced.models <- lapply(targets, function(tg) {
-    readRDS(here(paste0('models/gbm_', tg, '_', metric, '_', reduced.seed, '_model.RDS')))
-    })
-names(reduced.models) <- targets;
+# reduced.seed <- 111111;
+# reduced.models <- lapply(targets, function(tg) {
+#     readRDS(here(paste0('models/gbm_', tg, '_', metric, '_', reduced.seed, '_model.RDS')))
+#     })
+# names(reduced.models) <- targets;
 
 reduced.PIRADS.seed <- 222222;
 reduced.PIRADS.models <- lapply(targets, function(tg) {
@@ -81,6 +119,7 @@ names(reduced.PIRADS.models) <- targets;
 
 This is questionable
 ```{r}
+lapply(reduced.PIRADS.models, var.imp)
 lapply(reduced.models, var.imp)
 lapply(full.models, var.imp)
 ```
@@ -119,5 +158,9 @@ thresholds.info <- do.call(rbind.data.frame, thresholds.info.list);
 ```
 
 
-
+## Compare the models
+```{r}
+resamps <- resamples(list(full = full.models$BiopsyUpgraded, reduced = reduced.PIRADS.models$BiopsyUpgraded))
+summary(resamps)
+```
 

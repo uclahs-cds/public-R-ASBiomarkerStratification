@@ -28,7 +28,8 @@ AS.models <- function(
     seed = NULL,
     rpart.cost = NULL,
     rm.NoUpgradeAndProgressed = TRUE,
-    reduced.model = FALSE
+    reduced.model = FALSE,
+    suffix = ""
     ) {
     target <- match.arg(target);
     metric <- match.arg(metric);
@@ -78,6 +79,7 @@ AS.models <- function(
             'Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', # 'Mutation_MLH1', 'Mutation_PMS2', Not enough data
             'RSInormalSignal',
             'RSIlesionSignal',
+            'RSIlesionPIRADS',
             'ADCnormalSignal', 'ADClesionSignal',
             # 'RSIlesionPIRADS', 'RSIlesionCancer',  'RSIlesionUpgraded', 'RSIlesionISUP',
             'PSADensity', 'PHIDensity'
@@ -91,6 +93,12 @@ AS.models <- function(
         if(predict.missing && 'F' == metric) {
             metric <- 'Mean_F1'
         }
+    }
+
+    # Part of file name
+    model.id <- paste(target, metric, seed, sep = "_");
+    if(!is.null(suffix)) {
+        model.id <- paste(model.id, suffix, sep = "_");
     }
 
     biokey.variables <- setdiff(biokey.variables, exclude.vars);
@@ -186,7 +194,7 @@ AS.models <- function(
 
         print("Completed fitting XGB model...");
 
-        model.file <- paste('xgb', target, metric, seed, 'model.RDS', sep = "_");
+        model.file <- paste('xgb', model.id, 'model.RDS', sep = "_");
         print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
         saveRDS(object = xgb.fit, file = here::here(paste0('models/', model.file)));
     }
@@ -212,7 +220,7 @@ AS.models <- function(
         )
         print("Completed fitting rpart model...");
 
-        model.file <- paste('rpart', target, metric, seed, 'model.RDS', sep = "_");
+        model.file <- paste('rpart', model.id, 'model.RDS', sep = "_");
         # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
         saveRDS(object = rpart.fit, file = here::here(paste0('models/', model.file)));
     }
@@ -232,7 +240,7 @@ AS.models <- function(
         )
         print("Completed fitting gbm model...");
 
-        model.file <- paste('gbm', target, metric, seed, 'model.RDS', sep = "_");
+        model.file <- paste('gbm', model.id, 'model.RDS', sep = "_");
         # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
         saveRDS(object = gbm.fit, file = here::here(paste0('models/', model.file)));
     }
@@ -255,9 +263,9 @@ custom.summary <- function (data, lev = NULL, model = NULL) {
         c(
             caret::defaultSummary(data, lev, model),
             two.class.sum,
-            pr.summary,
-            F2 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 2),
-            F3 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 3)
+            pr.summary#,
+            # F2 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 2),
+            # F3 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 3)
         )
     } else if(length(lev) > 2) {
         c(

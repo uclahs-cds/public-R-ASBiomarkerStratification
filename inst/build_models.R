@@ -2,7 +2,7 @@ library(ProstateCancer.ASBiomarkerSynergy);
 
 biodb <- default.load.data(onlyBiodb = TRUE);
 
-seed <- 222222;
+seed <- 1313;
 
 train.control <- caret::trainControl(
     method = "repeatedcv",
@@ -19,22 +19,64 @@ targets <- c(
     'ProgressedToTreatment'
     );
 
-results <- lapply(targets, function(tg) {
-    res <- lapply(metrics,
-                  AS.models,
-                  biodb = biodb,
-                  target = tg,
-                  train.control = train.control,
-                  predict.missing = FALSE,
-                  seed = seed,
-                  models = c('gbm'),
-                  rm.NoUpgradeAndProgressed = TRUE,
-                  reduced.model = TRUE
-                  #rpart.cost = matrix(c(0,1,2,0), byrow = TRUE, nrow = 2)
-                  );
-    names(res) <- metrics;
-    res;
+lapply(targets, function(tg) {
+    lapply(metrics,
+           AS.models,
+           biodb = biodb,
+           target = tg,
+           train.control = train.control,
+           predict.missing = FALSE,
+           seed = seed,
+           models = c('gbm'),
+           rm.NoUpgradeAndProgressed = TRUE,
+           reduced.model = TRUE,
+           suffix = 'reduced_both'
+    );
 });
-names(results) <- targets;
 
-# compare.var.imp(results$ProgressedToTreatment$F, include.ranks = TRUE)
+lapply(targets, function(tg) {
+    lapply(metrics,
+              AS.models,
+              biodb = biodb,
+              target = tg,
+              train.control = train.control,
+              predict.missing = FALSE,
+              seed = seed,
+              models = c('gbm'),
+              rm.NoUpgradeAndProgressed = TRUE,
+              reduced.model = TRUE,
+              exclude.vars = 'RSIlesionSignal',
+              suffix = 'reduced_only_RSIlesionPIRADS'
+              );
+    });
+
+lapply(targets, function(tg) {
+    lapply(metrics,
+           AS.models,
+           biodb = biodb,
+           target = tg,
+           train.control = train.control,
+           predict.missing = FALSE,
+           seed = seed,
+           models = c('gbm'),
+           rm.NoUpgradeAndProgressed = TRUE,
+           reduced.model = TRUE,
+           exclude.vars = 'RSIlesionPIRADS',
+           suffix = 'reduced_only_RSIlesionSignal'
+    );
+});
+
+lapply(targets, function(tg) {
+    lapply(metrics,
+           AS.models,
+           biodb = biodb,
+           target = tg,
+           train.control = train.control,
+           predict.missing = FALSE,
+           seed = seed,
+           models = c('gbm'),
+           rm.NoUpgradeAndProgressed = TRUE,
+           reduced.model = FALSE,
+           suffix = 'everything'
+    );
+});
