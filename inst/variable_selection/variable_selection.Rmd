@@ -75,20 +75,7 @@ names(models) <- targets;
 # Compare the models with resampling
 summary(resamples(models$BiopsyUpgraded))
 
-lapply(models$BiopsyUpgraded, var.imp)
-var.imp(models$BiopsyUpgraded$reduced_both)
-
-# old.model.id <- paste0(targets, metric, seed, sep = "_");
-# old.model.id <- paste0(rep(old.model.id, length(model.names)), model.names, sep = "_");
-#   
-# old.model.files <- here(paste('models/gbm', old.model.id, 'model.RDS', sep = "_")); 
-# 
-# new.model.id <- paste(targets, metric, seed, sep = "_");
-# new.model.id <- paste(rep(new.model.id, length(model.names)), model.names, sep = "_");
-#   
-# new.model.files <- here(paste('models/gbm', new.model.id, 'model.RDS', sep = "_"));
-# 
-# mapply(file.rename, from = old.model.files, to = new.model.files)
+var.imp.combine(models$BiopsyUpgraded)
 ```
 
 ```{r}

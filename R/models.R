@@ -29,7 +29,7 @@ AS.models <- function(
     rpart.cost = NULL,
     rm.NoUpgradeAndProgressed = TRUE,
     reduced.model = FALSE,
-    suffix = ""
+    suffix = ''
     ) {
     target <- match.arg(target);
     metric <- match.arg(metric);
@@ -96,9 +96,9 @@ AS.models <- function(
     }
 
     # Part of file name
-    model.id <- paste(target, metric, seed, sep = "_");
+    model.id <- paste(target, metric, seed, sep = '_');
     if(!is.null(suffix)) {
-        model.id <- paste(model.id, suffix, sep = "_");
+        model.id <- paste(model.id, suffix, sep = '_');
     }
 
     biokey.variables <- setdiff(biokey.variables, exclude.vars);
@@ -113,7 +113,7 @@ AS.models <- function(
     if(predict.missing) {
         X <- biodb[, biokey.variables];
         y.target <- as.character(biodb[, target]);
-        y.target[missing.target] <- "Missing";
+        y.target[missing.target] <- 'Missing';
         y.target <- as.factor(y.target);
 
         y <- y.target;
@@ -175,13 +175,13 @@ AS.models <- function(
     }
 
     # Convert to dummy variables
-    dummy.formula <- paste0("~ ", paste0(biokey.variables, collapse = " + "))
+    dummy.formula <- paste0('~ ', paste0(biokey.variables, collapse = ' + '))
     X.dummy.ints <- predict(caret::dummyVars(dummy.formula, data = X.ints, fullRank = TRUE), newdata = X.ints)
 
-    print(paste("Fitting models for:", target, "optimizing", metric));
+    print(paste('Fitting models for:', target, 'optimizing', metric));
 
     if('xgb' %in% models) {
-        print("Fitting XGB model...");
+        print('Fitting XGB model...');
         if(!is.null(seed)) set.seed(seed);
         xgb.fit <- caret::train(
             X.dummy.ints,
@@ -189,22 +189,22 @@ AS.models <- function(
             trControl = train.control,
             tuneGrid = xgb.grid,
             metric = metric,
-            method = "xgbTree"
+            method = 'xgbTree'
         )
 
-        print("Completed fitting XGB model...");
+        print('Completed fitting XGB model...');
 
-        model.file <- paste('xgb', model.id, 'model.RDS', sep = "_");
-        print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
+        model.file <- paste('xgb', model.id, 'model.RDS', sep = '_');
+        print(paste0('Saving file to: ',  here::here(paste0('models/', model.file))));
         saveRDS(object = xgb.fit, file = here::here(paste0('models/', model.file)));
     }
 
     if('rpart' %in% models) {
         if(!is.null(rpart.cost)) {
-            print("Fitting rpart model with cost matrix...");
+            print('Fitting rpart model with cost matrix...');
             print(rpart.cost)
         } else {
-            print("Fitting rpart model ...");
+            print('Fitting rpart model ...');
         }
 
 
@@ -218,17 +218,17 @@ AS.models <- function(
             tuneLength = 30,
             parms = list(loss = rpart.cost)
         )
-        print("Completed fitting rpart model...");
+        print('Completed fitting rpart model...');
 
-        model.file <- paste('rpart', model.id, 'model.RDS', sep = "_");
-        # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
+        model.file <- paste('rpart', model.id, 'model.RDS', sep = '_');
+        # print(paste0('Saving file to: ',  here::here(paste0('models/', model.file))));
         saveRDS(object = rpart.fit, file = here::here(paste0('models/', model.file)));
     }
 
     if('gbm' %in% models) {
         if(!is.null(seed)) set.seed(seed);
 
-        print("Fitting gbm model");
+        print('Fitting gbm model');
         gbm.fit <- caret::train(
             X,
             y,
@@ -238,10 +238,10 @@ AS.models <- function(
             tuneGrid = gbm.grid,
             verbose = FALSE
         )
-        print("Completed fitting gbm model...");
+        print('Completed fitting gbm model...');
 
-        model.file <- paste('gbm', model.id, 'model.RDS', sep = "_");
-        # print(paste0("Saving file to: ",  here::here(paste0('models/', model.file))));
+        model.file <- paste('gbm', model.id, 'model.RDS', sep = '_');
+        # print(paste0('Saving file to: ',  here::here(paste0('models/', model.file))));
         saveRDS(object = gbm.fit, file = here::here(paste0('models/', model.file)));
     }
 
@@ -296,7 +296,7 @@ F_beta <- function(precision, recall, beta = 1) {
 squash.importance <- function(importance, FUN = 'sum') {
     df <- importance
     df$row.names <- row.names(df)
-    df$row.names <- gsub("(.*)\\..*", "\\1", df$row.names)
+    df$row.names <- gsub('(.*)\\..*', '\\1', df$row.names)
 
     agg.df <- aggregate(df$Overall, by = list(vars = df$row.names), FUN=FUN)
     res <-data.frame(Overall = agg.df[, 2])
@@ -307,30 +307,52 @@ squash.importance <- function(importance, FUN = 'sum') {
 #' Compute the variable importance for GBM, XGB, rpart
 #'
 #' @param x
+#' @param onlyImportance
 #' @param squash
 #'
 #' @return
 #' @export
 #'
 #' @examples
-var.imp <- function(x, squash = TRUE) {
+var.imp <- function(x, onlyImportance = TRUE, squash = TRUE) {
     stopifnot('train' == class(x));
     if('gbm' == x$method) {
         gbm.sum <- gbm::summary.gbm(x$finalModel, plotit = FALSE);
+        importance <- data.frame(Overall = gbm.sum[,2], row.names = gbm.sum[,1]);
         res <- list(
             model = 'gbm',
             calledFrom = 'summary.gbm',
-            importance = data.frame(Overall = gbm.sum[,2], row.names = gbm.sum[,1])
-            );
+            importance = importance
+        );
         class(res) <- 'varImp.train';
-        res
     } else {
         res <- caret::varImp(x);
     }
-    row.names(res$importance) <- gsub("(.*)\\.1", "\\1", row.names(res$importance));
+    row.names(res$importance) <- gsub('(.*)\\.1', '\\1', row.names(res$importance));
     if(squash) {
-        res$importance <- squash.importance(res$importance)
+        res$importance <- squash.importance(res$importance);
     }
+    res$importance$variable = row.names(res$importance);
+    if(onlyImportance) res <- res$importance;
+    res
+}
+
+#' Title
+#'
+#' @param x list
+#' @param onlyImportance
+#' @param squash
+#'
+#' @return
+#' @export
+#'
+#' @examples
+var.imp.combine <-  function(x) {
+    res <- Reduce(function(...) merge(..., by = 'variable', all = TRUE), lapply(x, var.imp));
+    rownames(res) <- res$variable;
+    if(!is.null(names(x))) {
+        colnames(res) <- c('variable', names(x));
+        }
     res
 }
 
@@ -346,11 +368,11 @@ var.imp <- function(x, squash = TRUE) {
 compare.var.imp <- function(x, include.ranks = FALSE) {
     model.varImp <- lapply(x, function(x) var.imp(x)$importance)
     if(is.null(names(x))) {
-        names(x) <- unlist(lapply(x, `[[`, "method"));
+        names(x) <- unlist(lapply(x, `[[`, 'method'));
         }
 
     all.varnames <- unlist(lapply(model.varImp, rownames));
-    all.varnames <- unique(gsub("(.*)\\.1", "\\1", all.varnames));
+    all.varnames <- unique(gsub('(.*)\\.1', '\\1', all.varnames));
     var.importance <- data.frame(variable = all.varnames);
     rownames(var.importance) <- all.varnames;
     for(model.name in names(model.varImp)) {
@@ -360,7 +382,7 @@ compare.var.imp <- function(x, include.ranks = FALSE) {
         }
     if(include.ranks) {
         ranks <- as.data.frame(lapply(var.importance[, -1] * -1, rank));
-        names(ranks) <- paste0(names(ranks), ".rank");
+        names(ranks) <- paste0(names(ranks), '.rank');
         ranks$mean.rank <- rowMeans(ranks);
         var.importance <- cbind.data.frame(var.importance, ranks);
         }
