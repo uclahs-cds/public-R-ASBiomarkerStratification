@@ -1,15 +1,11 @@
 ---
-title: 'Active Surveillance Progression Prediction Variable Selection'
+title: 'Active Surveillance Progression - RSI lesion signal/PI-RADS comparison'
 author: 'Stefan Eng '
 output:
   bookdown::pdf_document2:
     template: ../boutros_template.tex
     keep_tex: true
   html_notebook: default
-bibliography:  bibliography.bib
-csl: european-urology.csl
-nocite: |
-  @BPG
 ---
 
 ```{r setup, include=FALSE}
@@ -50,10 +46,7 @@ valid.patients <- biodb$NoUpgradeAndProgressed == 0 | is.na(biodb$NoUpgradeAndPr
 biodb.valid <- biodb[valid.patients, ];
 ```
 
-# Introduction
-Variable selection
-
-```{r}
+```{r, cache = TRUE}
 seed <- 1313;
 targets <- c(
     'BiopsyUpgraded',
@@ -62,92 +55,77 @@ targets <- c(
 metric <- 'PR-AUC';
 method <- 'gbm';
 model.names <- c('reduced_both', 'reduced_only_RSIlesionSignal', 'reduced_only_RSIlesionPIRADS');
+model.nice.names <- c(
+  'Both RSI Signal and PI-RADS',
+  'Only RSI lesion Signal',
+  'Only RSI lesion PI-RADS'
+)
 models <- lapply(targets, function(x) {
     model.id <- paste(x, metric, seed, sep = "_");
     model.id <- paste(model.id, model.names, sep = "_");
   
     model.files <- here(paste('models/gbm', model.id, 'model.RDS', sep = "_"));  
-    names(model.files) <- model.names;
+    names(model.files) <- model.nice.names;
     lapply(model.files, readRDS);
 })
 names(models) <- targets;
 
-# Compare the models with resampling
-summary(resamples(models$BiopsyUpgraded))
-
-var.imp.combine(models$BiopsyUpgraded)
-```
-
-```{r}
-seed <- 2626;
-targets <- c(
-    'BiopsyUpgraded',
-    'Prostatectomy',
-    'ProgressedToTreatment');
-metric <- 'PR-AUC';
-
-full.models <- lapply(targets, function(tg) {
-    readRDS(here(paste0('models/gbm_', tg, '_', metric, '_', seed, '_model.RDS')))
-    })
-names(full.models) <- targets;
-
-# reduced.seed <- 111111;
-# reduced.models <- lapply(targets, function(tg) {
-#     readRDS(here(paste0('models/gbm_', tg, '_', metric, '_', reduced.seed, '_model.RDS')))
-#     })
-# names(reduced.models) <- targets;
-
-reduced.PIRADS.seed <- 222222;
-reduced.PIRADS.models <- lapply(targets, function(tg) {
-    readRDS(here(paste0('models/gbm_', tg, '_', metric, '_', reduced.PIRADS.seed, '_model.RDS')))
-    })
-names(reduced.PIRADS.models) <- targets;
-```
-
-This is questionable
-```{r}
-lapply(reduced.PIRADS.models, var.imp)
-lapply(reduced.models, var.imp)
-lapply(full.models, var.imp)
-```
-
-```{r}
-reduced.models.roc <- lapply(reduced.models, function(m) {
+models.roc <- lapply(models, function(x) {
+  lapply(x, function(m) {
       bestPreds <- with(m, merge(pred, bestTune));
       pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
   })
-
-reduced.PIRADS.models.roc <- lapply(reduced.PIRADS.models, function(m) {
-      bestPreds <- with(m, merge(pred, bestTune));
-      pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
-  })
-
-full.models.roc <- lapply(full.models, function(m) {
-      bestPreds <- with(m, merge(pred, bestTune));
-      pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
-  })
-
-reduced.models.roc
-full.models.roc
-
-optimal.thresholds.youden <- lapply(reduced.models.roc, function(rocs) {
-    as.numeric(coords(rocs, 'best')[1])
 })
-
-thresholds.info.list <- lapply(names(optimal.thresholds.youden), function(x) {
-    model <- reduced.models[[x]]
-    threshold <- optimal.thresholds.youden[[x]]
-    
-    cbind(target = x, colMeans(threshold.summary.stats(model, threshold), na.rm = TRUE))
-    })
-
-thresholds.info <- do.call(rbind.data.frame, thresholds.info.list);
 ```
 
+```{r prediction-variables}
+var.names <- models$BiopsyUpgraded[["Both RSI Signal and PI-RADS"]]$finalModel$var.name
 
-## Compare the models
-```{r}
-resamps <- resamples(list(full = full.models$BiopsyUpgraded, reduced = reduced.PIRADS.models$BiopsyUpgraded))
-summary(resamps)
+kable(
+  var.names,
+  col.names = 'Variables',
+  booktabs = T,
+  caption = 'Variables used in prediction') %>%
+  kable_styling(position =  'center')
 ```
 
+```{r, cache=TRUE}
+summary.df <- summarize.models(models, models.roc)
+```
+
+```{r summary-table}
+cols <- c("target", "model", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
+
+model.lookup <- list(
+  'reduced_both' = 'Both RSI Signal and PI-RADS',
+  'reduced_only_RSIlesionSignal' = 'Only RSI lesion Signal',
+  'reduced_only_RSIlesionPIRADS' = 'Only RSI lesion PI-RADS'
+)
+
+thresholds.table <- summary.df[, cols]
+# thresholds.table$model <- unlist(model.lookup[as.character(thresholds.table$model)])
+# Break camel case into newlines
+thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = "\n"), align = "c")
+num.cols <- 4:length(cols)
+thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 2))
+
+kable(thresholds.table,
+  digits = 2,
+  row.names = FALSE,
+  caption = "Cross-validation summary statistics for the different targets and models comparing RSI lesion signal and RSI lesion PI-RADS",
+  escape = F) %>%
+  kable_styling() %>%
+  column_spec(1:2, width_min = "7em", width = "7em") %>%
+  collapse_rows(columns = 1:2)
+```
+
+```{r variable-importance}
+bx.upgrade.var.imp <- var.imp.combine(models$BiopsyUpgraded)
+
+kable(x = bx.upgrade.var.imp[order(bx.upgrade.var.imp[,2], decreasing = TRUE), ],
+      digits = 2,
+      row.names = FALSE,
+      caption = "Variable importance for Biopsy Upgraded") %>%
+  kable_styling() %>%
+  column_spec(2:4, width_min = "5em", width = "5em")
+```

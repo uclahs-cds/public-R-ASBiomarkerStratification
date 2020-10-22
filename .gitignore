@@ -52,3 +52,6 @@ docs/
 
 # translation temp files
 po/*~
+
+*.tex
+*.pdf
