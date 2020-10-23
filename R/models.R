@@ -72,7 +72,7 @@ AS.models <- function(
             # 'StudyHighestISUP', 'HighestPIRADS',
             'PreviousISUP',
             'GeneticRiskScore',
-            'TNFaAverage', 'TNFaSTD', # Tumor necrosis factor
+            'TNFaAverage',
             #'GeneticRiskCategory', Don't need since genetic risk score is continuous version of this
             'GlobalScreeningArray', # This is just an indicator if any of the follow are > 0
             'GSAPositives', 'BRCAMutation',
@@ -244,14 +244,6 @@ AS.models <- function(
         # print(paste0('Saving file to: ',  here::here(paste0('models/', model.file))));
         saveRDS(object = gbm.fit, file = here::here(paste0('models/', model.file)));
     }
-
-    list()
-    # list(
-    #     rpart.fit,
-    #     # rpart.cost3.fit,
-    #     # xgb.fit = xgb.fit,
-    #     gbm.fit = gbm.fit
-    #     )
     }
 
 custom.summary <- function (data, lev = NULL, model = NULL) {

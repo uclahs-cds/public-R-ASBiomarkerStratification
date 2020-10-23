@@ -54,8 +54,9 @@ targets <- c(
     'ProgressedToTreatment');
 metric <- 'PR-AUC';
 method <- 'gbm';
-model.names <- c('reduced_both', 'reduced_only_RSIlesionSignal', 'reduced_only_RSIlesionPIRADS');
+model.names <- c('full', 'reduced_both', 'reduced_only_RSIlesionSignal', 'reduced_only_RSIlesionPIRADS');
 model.nice.names <- c(
+  'Full Model',
   'Both RSI Signal and PI-RADS',
   'Only RSI lesion Signal',
   'Only RSI lesion PI-RADS'
@@ -79,13 +80,24 @@ models.roc <- lapply(models, function(x) {
 ```
 
 ```{r prediction-variables}
+var.names <- models$BiopsyUpgraded[["Full Model"]]$finalModel$var.name
+
+kable(
+  var.names,
+  col.names = 'Variables',
+  booktabs = T,
+  caption = 'Variables used in prediction for the full model') %>%
+  kable_styling(position =  'center')
+```
+
+```{r prediction-variables-reduced}
 var.names <- models$BiopsyUpgraded[["Both RSI Signal and PI-RADS"]]$finalModel$var.name
 
 kable(
   var.names,
   col.names = 'Variables',
   booktabs = T,
-  caption = 'Variables used in prediction') %>%
+  caption = 'Variables used in prediction for the reduced model') %>%
   kable_styling(position =  'center')
 ```
 
@@ -96,14 +108,7 @@ summary.df <- summarize.models(models, models.roc)
 ```{r summary-table}
 cols <- c("target", "model", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
 
-model.lookup <- list(
-  'reduced_both' = 'Both RSI Signal and PI-RADS',
-  'reduced_only_RSIlesionSignal' = 'Only RSI lesion Signal',
-  'reduced_only_RSIlesionPIRADS' = 'Only RSI lesion PI-RADS'
-)
-
 thresholds.table <- summary.df[, cols]
-# thresholds.table$model <- unlist(model.lookup[as.character(thresholds.table$model)])
 # Break camel case into newlines
 thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = "\n"), align = "c")
 num.cols <- 4:length(cols)
@@ -127,5 +132,5 @@ kable(x = bx.upgrade.var.imp[order(bx.upgrade.var.imp[,2], decreasing = TRUE), ]
       row.names = FALSE,
       caption = "Variable importance for Biopsy Upgraded") %>%
   kable_styling() %>%
-  column_spec(2:4, width_min = "5em", width = "5em")
+  column_spec(2:5, width_min = "5em", width = "5em")
 ```

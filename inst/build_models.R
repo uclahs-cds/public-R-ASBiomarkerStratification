@@ -14,10 +14,25 @@ metrics <- c(#'ROC-AUC'
              'PR-AUC'
              );
 targets <- c(
-    'BiopsyUpgraded', # This needs some work... do we want to predict the missing values as well?
+    'BiopsyUpgraded',
     'Prostatectomy',
     'ProgressedToTreatment'
     );
+
+lapply(targets, function(tg) {
+    lapply(metrics,
+           AS.models,
+           biodb = biodb,
+           target = tg,
+           train.control = train.control,
+           predict.missing = FALSE,
+           seed = seed,
+           models = c('gbm'),
+           rm.NoUpgradeAndProgressed = TRUE,
+           reduced.model = FALSE,
+           suffix = 'full'
+    );
+});
 
 lapply(targets, function(tg) {
     lapply(metrics,
