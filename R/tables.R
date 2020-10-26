@@ -26,3 +26,13 @@ table1.to.kable <- function(tb1, group, ...) {
 
     add_indent(k1, 1:nrow(rt.nogroup))
 }
+
+euro.urology.table1 <- function(variables, data, cohort) {
+    for(v in variables) {
+        feature <- data[[v]]
+        if(is.numeric(data[[v]])) {
+            quartiles <- quantile(feature, probs = c(.25, .75, .5), na.rm = TRUE)
+            print(sprintf("%.02f (%.02f, %.02f)", quartiles[1], quartiles[2], quartiles[3]))
+        }
+    }
+}
