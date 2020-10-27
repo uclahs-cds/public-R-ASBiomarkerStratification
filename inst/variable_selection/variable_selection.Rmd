@@ -54,7 +54,7 @@ targets <- c(
     'ProgressedToTreatment');
 metric <- 'PR-AUC';
 method <- 'gbm';
-model.names <- c('full', 'reduced_both', 'reduced_only_RSIlesionSignal', 'reduced_only_RSIlesionPIRADS');
+model.names <- c('everything', 'reduced_both', 'reduced_only_RSIlesionSignal', 'reduced_only_RSIlesionPIRADS');
 model.nice.names <- c(
   'Full Model',
   'Both RSI Signal and PI-RADS',

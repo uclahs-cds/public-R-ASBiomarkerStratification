@@ -177,4 +177,19 @@ default.load.data <- function(onlyBiodb = FALSE) {
   do.call('load.data.AS', c(as.list(file.paths), onlyBiodb));
   }
 
-
+#' Read in the biomarker categories
+#'
+#' @param file.name
+#'
+#' @return
+#' @export
+#'
+#' @examples
+load.biomarker.categories <- function(file.name = 'biomarkers_categories.xlsx') {
+  xlsx::read.xlsx(
+    here::here(paste0('data/', file.name)),
+    sheetIndex = 1,
+    header = TRUE,
+    stringsAsFactors = FALSE
+  )
+}

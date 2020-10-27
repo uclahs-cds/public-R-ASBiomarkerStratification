@@ -1,0 +1,122 @@
+---
+title: 'Active Surveillance Progression - Sequential Testing'
+author: 'Stefan Eng '
+output:
+  bookdown::pdf_document2:
+    template: ../boutros_template.tex
+    keep_tex: true
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.plotting.general);
+library(kableExtra);
+library(gridExtra);
+library(magrittr);
+library(here);
+library(caret);
+library(pROC);
+library(rpart.plot);
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '60%', fig.pos = 'H');
+
+axis.cex <- .7
+lab.cex <- .8
+strip.cex <- 0.45
+
+km.arguments <- list(
+  xaxis.cex = axis.cex,
+  yaxis.cex = axis.cex,
+  main.cex = 1.4,
+  xlab.cex = lab.cex,
+  ylab.label = 'Estimated survival probability',
+  ylab.cex = lab.cex,
+  risktable.fontsize = 14,
+  key.groups.cex = 1,
+  key.stats.cex = 1,
+  key.stats.y.pos = 0.5
+  );
+
+as.data <- default.load.data();
+biodb <- as.data$biodb;
+
+valid.patients <- biodb$NoUpgradeAndProgressed == 0 | is.na(biodb$NoUpgradeAndProgressed);
+
+biodb.valid <- biodb[valid.patients, ];
+```
+
+```{r, cache = TRUE}
+biodb <- default.load.data(onlyBiodb = TRUE);
+# roc.res <- roc(biodb$BiopsyUpgraded, predictor = biodb$RSIlesionSignal, algorithm = 0)
+
+# Biomarkers and categories
+biomarkers <- load.biomarker.categories()
+
+target <- 'BiopsyUpgraded'
+metric <- 'PR-AUC'
+seed <- 1313
+
+model.id <- paste('sequential', target, metric, seed, sep = '_');
+model.file <- paste(model.id, 1:4, 'model.RDS', sep = '_');
+model.path <- here::here(paste0('models/sequential/', model.file));
+
+models <- lapply(model.path, readRDS);
+
+names(models) <- c('Demographics', 'Blood, Urine, Genetics', 'MRI Features', 'Post MRI + Biomarkers');
+
+models.roc <- lapply(models, function(m) {
+    bestPreds <- with(m, merge(pred, bestTune));
+    pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
+})
+
+best.thres <- lapply(models.roc, function(x) {
+  as.numeric(coords(x, 'best', transpose = TRUE)[1])
+})
+```
+
+```{r variable-categories}
+kable(
+  biomarkers[biomarkers$clinically.useful == 1, c('variable', 'category', 'order')],
+  row.names = FALSE,
+  col.names = c('Variables', 'Category', 'Group'),
+  booktabs = T,
+  caption = 'Variables and categories used in each stage of the sequential models. ') %>%
+  kable_styling(position =  'center')
+```
+
+```{r summary-table}
+summary.df <- summarize.seq.models(models, models.roc)
+cols <- c("group", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
+
+thresholds.table <- summary.df[, cols]
+thresholds.table$group <- names(models)
+
+kable(thresholds.table,
+  digits = 2,
+  row.names = FALSE,
+  caption = "Cross-validation summary statistics for sequential Biopsy Upgraded models",
+  escape = F) %>%
+  kable_styling()
+```
+
+```{r variable-importance}
+gbm.seq.var.imp <- merge(
+  var.imp.combine(models),
+  biomarkers
+)[, c("variable", "category", "Demographics", "Blood, Urine, Genetics", "MRI Features",
+      "Post MRI + Biomarkers")]
+
+order.args <- as.list(gbm.seq.var.imp[, 3:ncol(gbm.seq.var.imp)])
+order.args$decreasing <- TRUE
+order.var.imp <- do.call(order, order.args)
+
+gbm.seq.var.imp <- gbm.seq.var.imp[order.var.imp, ]
+
+kable(x = gbm.seq.var.imp,
+      digits = 2,
+      row.names = FALSE,
+      caption = "Sequential Variable importance for Biopsy Upgraded") %>%
+  kable_styling()  %>%
+  column_spec(2:6, width_min = "6em", width = "6em")
+```

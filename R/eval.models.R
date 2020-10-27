@@ -222,7 +222,7 @@ summarize.models <- function(models, models.roc = NULL) {
         res <- lapply(names(target.list), function(y) {
             m <- target.list[[y]]
             m.roc <- models.roc[[x]][[y]]
-            threshold.roc <- as.numeric(coords(m.roc, 'best')[1])
+            threshold.roc <- as.numeric(coords(m.roc, 'best', transpose = TRUE)[1])
 
             thres.res <- colMeans(threshold.summary.stats(m, threshold.roc), na.rm = TRUE);
             thres.res$model <- y;
@@ -233,6 +233,37 @@ summarize.models <- function(models, models.roc = NULL) {
         })
 
         do.call(rbind.data.frame, res);
+    })
+
+    do.call(rbind.data.frame, thresholds.info.list);
+}
+
+#' Title
+#'
+#' @param models
+#' @param models.roc
+#'
+#' @return
+#' @export
+#'
+#' @examples
+summarize.seq.models <- function(models, models.roc = NULL) {
+    if(is.null(models.roc)) {
+        models.roc <- lapply(models, function(m) {
+            bestPreds <- with(m, merge(pred, bestTune));
+            pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
+        })
+    }
+
+    thresholds.info.list <- lapply(seq_along(models), function(x) {
+        m <- models[[x]]
+        m.roc <- models.roc[[x]]
+        threshold.roc <- as.numeric(coords(m.roc, 'best', transpose = TRUE)[1])
+
+        thres.res <- colMeans(threshold.summary.stats(m, threshold.roc), na.rm = TRUE);
+        thres.res$group <- x;
+        thres.res$threshold <- threshold.roc;
+        thres.res
     })
 
     do.call(rbind.data.frame, thresholds.info.list);

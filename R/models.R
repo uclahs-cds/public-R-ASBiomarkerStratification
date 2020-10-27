@@ -6,11 +6,13 @@
 #' @param metric
 #' @param models
 #' @param exclude.vars
+#' @param include.vars Include additional variables for the models
 #' @param predict.missing
 #' @param seed
 #' @param rpart.cost
 #' @param rm.NoUpgradeAndProgressed
-#' @param reduced.model
+#' @param reduced.model Use the reduced set of features for the model
+#' @param baseline.model Use the clinically relevant demographic features for the model
 #'
 #' @return
 #' @export
@@ -24,18 +26,28 @@ AS.models <- function(
                'Sens', 'Spec'),
     models = c('xgb', 'gbm', 'rpart'),
     exclude.vars = NULL,
+    include.vars = NULL,
     predict.missing = FALSE,
     seed = NULL,
     rpart.cost = NULL,
     rm.NoUpgradeAndProgressed = TRUE,
     reduced.model = FALSE,
+    baseline.model = FALSE,
     suffix = ''
     ) {
     target <- match.arg(target);
     metric <- match.arg(metric);
     models <- match.arg(models, several.ok = TRUE);
 
-    if(reduced.model) {
+    if(baseline.model) {
+        biokey.variables <- c(
+            'Age',
+            'BMI',
+            'Race',
+            'Hispanic'
+            )
+    }
+    else if(reduced.model) {
         biokey.variables <- c(
             'Age',
             'BMI',
@@ -102,6 +114,10 @@ AS.models <- function(
     }
 
     biokey.variables <- setdiff(biokey.variables, exclude.vars);
+
+    if(!is.null(include.vars)) {
+        biokey.variables <- union(biokey.variables, include.vars)
+    }
 
     missing.target <- is.na(biodb[, target]);
 
@@ -246,6 +262,17 @@ AS.models <- function(
     }
     }
 
+
+#' Title
+#'
+#' @param data
+#' @param lev
+#' @param model
+#'
+#' @return
+#' @export
+#'
+#' @examples
 custom.summary <- function (data, lev = NULL, model = NULL) {
     if(length(lev) == 2) {
         two.class.sum <- caret::twoClassSummary(data, lev, model);
