@@ -14,25 +14,10 @@ metrics <- c(#'ROC-AUC'
              'PR-AUC'
              );
 targets <- c(
-    'BiopsyUpgraded',
-    'Prostatectomy',
-    'ProgressedToTreatment'
+    'BiopsyUpgraded'#,
+    #'Prostatectomy',
+    # 'ProgressedToTreatment'
     );
-
-lapply(targets, function(tg) {
-    lapply(metrics,
-           AS.models,
-           biodb = biodb,
-           target = tg,
-           train.control = train.control,
-           predict.missing = FALSE,
-           seed = seed,
-           models = c('gbm'),
-           rm.NoUpgradeAndProgressed = TRUE,
-           reduced.model = FALSE,
-           suffix = 'full'
-    );
-});
 
 lapply(targets, function(tg) {
     lapply(metrics,
@@ -97,52 +82,52 @@ lapply(targets, function(tg) {
 });
 
 # Baseline models
-lapply(targets, function(tg) {
-    lapply(metrics,
-           AS.models,
-           biodb = biodb,
-           target = tg,
-           train.control = train.control,
-           predict.missing = FALSE,
-           seed = seed,
-           models = c('gbm'),
-           rm.NoUpgradeAndProgressed = TRUE,
-           baseline.model = TRUE,
-           suffix = 'baseline'
-    );
-});
-
-# Baseline + RSI lesion signal
-lapply(targets, function(tg) {
-    lapply(metrics,
-           AS.models,
-           biodb = biodb,
-           target = tg,
-           train.control = train.control,
-           predict.missing = FALSE,
-           seed = seed,
-           models = c('gbm'),
-           rm.NoUpgradeAndProgressed = TRUE,
-           baseline.model = TRUE,
-           include.vars = 'RSIlesionSignal',
-           suffix = 'baseline_RSIlesionSignal'
-    );
-});
-
-# Baseline + RSI PI-RADS
-lapply(targets, function(tg) {
-    lapply(metrics,
-           AS.models,
-           biodb = biodb,
-           target = tg,
-           train.control = train.control,
-           predict.missing = FALSE,
-           seed = seed,
-           models = c('gbm'),
-           rm.NoUpgradeAndProgressed = TRUE,
-           baseline.model = TRUE,
-           include.vars = 'RSIlesionPIRADS',
-           suffix = 'baseline_RSIlesionPIRADS'
-    );
-});
-
+# lapply(targets, function(tg) {
+#     lapply(metrics,
+#            AS.models,
+#            biodb = biodb,
+#            target = tg,
+#            train.control = train.control,
+#            predict.missing = FALSE,
+#            seed = seed,
+#            models = c('gbm'),
+#            rm.NoUpgradeAndProgressed = TRUE,
+#            baseline.model = TRUE,
+#            suffix = 'baseline'
+#     );
+# });
+#
+# # Baseline + RSI lesion signal
+# lapply(targets, function(tg) {
+#     lapply(metrics,
+#            AS.models,
+#            biodb = biodb,
+#            target = tg,
+#            train.control = train.control,
+#            predict.missing = FALSE,
+#            seed = seed,
+#            models = c('gbm'),
+#            rm.NoUpgradeAndProgressed = TRUE,
+#            baseline.model = TRUE,
+#            include.vars = 'RSIlesionSignal',
+#            suffix = 'baseline_RSIlesionSignal'
+#     );
+# });
+#
+# # Baseline + RSI PI-RADS
+# lapply(targets, function(tg) {
+#     lapply(metrics,
+#            AS.models,
+#            biodb = biodb,
+#            target = tg,
+#            train.control = train.control,
+#            predict.missing = FALSE,
+#            seed = seed,
+#            models = c('gbm'),
+#            rm.NoUpgradeAndProgressed = TRUE,
+#            baseline.model = TRUE,
+#            include.vars = 'RSIlesionPIRADS',
+#            suffix = 'baseline_RSIlesionPIRADS'
+#     );
+# });
+#

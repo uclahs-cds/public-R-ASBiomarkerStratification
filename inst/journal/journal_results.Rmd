@@ -48,11 +48,11 @@ valid.patients <- biodb$NoUpgradeAndProgressed == 0 | is.na(biodb$NoUpgradeAndPr
 
 biodb.valid <- biodb[valid.patients, ];
 
-reduced.vars <- biokey.variables <- c(
+reduced.vars <- c(
             'Age',
             'BMI',
             'Race',
-            'Hispanic',
+            'Ethnicity',
             'ProstateVolume',
             'PCA3',
             'T2ERG',
@@ -71,18 +71,13 @@ reduced.vars <- biokey.variables <- c(
 ## Demographcs
 
 ```{r bx-biomarker-summary}
-tab.form <- as.formula(paste(
-  "~",
-  paste0(reduced.vars, collapse = " + "),
-  "|",
-  "BiopsyUpgraded"
-  ))
+#library(dplyr)
+#library(magrittr)
+library(gtsummary)
 
-#tab.form <- "~ p2PSA +  freePSA + PSAHyb + PSADensity + SOCPSA + PHI + PHIDensity + ProstateVolume + TNFaAverage"
-t1.bx <- table1::table1(tab.form, data = biodb, overall = FALSE);
-
-table1.to.kable(t1.bx, caption = "Characteristics of patients by whether biopsy was upgraded.") %>%
-  add_header_above(c(' ' = 1, 'Biopsy Upgraded' = 2))
+attr(biodb$Ethnicity, 'label') <- 'Hispanic'
+tbl_summary(biodb[, c(reduced.vars, 'BiopsyUpgraded')], by = BiopsyUpgraded) %>%
+  add_p()
 ```
 
 ```{r, cache = TRUE}
@@ -93,7 +88,7 @@ targets <- c(
     'ProgressedToTreatment');
 metric <- 'PR-AUC';
 method <- 'gbm';
-model.names <- c('full', 'reduced_both', 'reduced_only_RSIlesionSignal', 'reduced_only_RSIlesionPIRADS');
+model.names <- c('everything', 'reduced_both', 'reduced_only_RSIlesionSignal', 'reduced_only_RSIlesionPIRADS');
 model.nice.names <- c(
   'Full Model',
   'Both RSI Signal and PI-RADS',

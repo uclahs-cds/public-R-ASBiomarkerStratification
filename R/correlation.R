@@ -62,7 +62,7 @@ create.heatmap.AS <- function(biodb, ...) {
         'PCA3',
         'T2ERG',
         'MiPS Cancer Risk',
-        'MiPS High Grade Cancer Risk',
+        'MiPS High Grade Risk',
         'PSA Hybrid',
         'free PSA',
         'PSA Density',
@@ -137,18 +137,15 @@ create.heatmap.AS <- function(biodb, ...) {
 
     sample.cov.legend <- list(
         legend = list(
-            colours = c('black'),
-            labels = c(''),
-            title = 'Patients Features'
-        ),
-        legend = list(
             colours = c(
+                'black',
                 'dodgerblue',
                 'gold',
                 'firebrick3',
                 'darkgreen'
             ),
             labels = c(
+                'Patient Features',
                 'Imaging',
                 'Urine',
                 'Blood/Urine',
@@ -185,27 +182,29 @@ create.heatmap.AS <- function(biodb, ...) {
     BoutrosLab.plotting.general::create.heatmap(
         x = simple.data,
         xaxis.lab = real.names.set,
-        xaxis.cex = 0.5,
+        xaxis.cex = 1,
         yaxis.lab = real.names.set,
-        yaxis.cex = 0.5,
-        colourkey.cex = 0.5,
+        yaxis.cex = 1,
+        colourkey.cex = 1,
         covariates = sample.covariate,
         covariates.top = top.covariate,
         covariate.legend = sample.cov.legend,
         legend.side = 'right',
-        legend.title.cex = .7,
-        legend.cex = .7,
+        legend.title.cex = 2,
+        legend.cex = 1.75,
         legend.title.just = 'left',
         legend.between.row = 0.1,
-        legend.border.padding = 0.5,
+        legend.border.padding = 3,
         colourkey.labels.at = seq(-1, 1, 0.2),
         at = key.scale,
-        axis.xlab.padding = 3,
+        axis.xlab.padding = 13,
         #  clustering.method = 'none',
         plot.dendrograms = 'right',
+        right.dendrogram.size = 5,
         height = 18,
-        width = 15,
+        width = 18,
         left.padding = 4,
+        bottom.padding = 3,
         resolution = 1000,
         ...
     );

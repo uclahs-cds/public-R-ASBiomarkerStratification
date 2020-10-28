@@ -38,64 +38,46 @@ AS.models <- function(
     target <- match.arg(target);
     metric <- match.arg(metric);
     models <- match.arg(models, several.ok = TRUE);
+    biomarkers <- load.biomarker.categories();
 
     if(baseline.model) {
-        biokey.variables <- c(
-            'Age',
-            'BMI',
-            'Race',
-            'Hispanic'
-            )
+        biokey.variables <- biomarkers$variable[biomarkers$clinically.useful == 1 & biomarkers$category == 'Demographics']
     }
     else if(reduced.model) {
-        biokey.variables <- c(
-            'Age',
-            'BMI',
-            'Race',
-            'Hispanic',
-            'ProstateVolume',
-            'PCA3',
-            'T2ERG',
-            'MiPSCancerRisk',
-            'MiPSHighGradeCancerRisk',
-            'PercentFreePSA',
-            'PHI',
-            'GeneticRiskScore',
-            'RSIlesionSignal',
-            'RSIlesionPIRADS',
-            'PSADensity',
-            'PHIDensity'
-            );
+        biokey.variables <- biomarkers$variable[biomarkers$clinically.useful == 1];
     } else {
-        biokey.variables <- c(
-            'Age',
-            'Race', # 'GeneticAncestry',
-            'Hispanic',
-            'Weight',
-            'Height',
-            'BMI', 'MRIResult', 'MRILesions',
-            'BiopsyResult',
-            'ProstateVolume',
-            # 'Observation',
-            'PCA3',
-            'T2ERG', 'MiPSCancerRisk', 'MiPSHighGradeCancerRisk', 'PSAHyb',
-            'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI',
-            # 'PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason', # Only use the ISUP grade group over Gleason
-            # 'StudyHighestISUP', 'HighestPIRADS',
-            'PreviousISUP',
-            'GeneticRiskScore',
-            'TNFaAverage',
-            #'GeneticRiskCategory', Don't need since genetic risk score is continuous version of this
-            'GlobalScreeningArray', # This is just an indicator if any of the follow are > 0
-            'GSAPositives', 'BRCAMutation',
-            'Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', # 'Mutation_MLH1', 'Mutation_PMS2', Not enough data
-            'RSInormalSignal',
-            'RSIlesionSignal',
-            'RSIlesionPIRADS',
-            'ADCnormalSignal', 'ADClesionSignal',
-            # 'RSIlesionPIRADS', 'RSIlesionCancer',  'RSIlesionUpgraded', 'RSIlesionISUP',
-            'PSADensity', 'PHIDensity'
-            );
+        biokey.variables <- biomarkers$variable;
+        #' biokey.variables <- c(
+        #'     'Age',
+        #'     'Race', # 'GeneticAncestry',
+        #'     'Ethnicity',
+        #'     'Weight',
+        #'     'Height',
+        #'     'BMI', 'MRIResult', 'MRILesions',
+        #'     'BiopsyResult',
+        #'     'ProstateVolume',
+        #'     # 'Observation',
+        #'     'PCA3',
+        #'     'T2ERG', 'MiPSCancerRisk', 'MiPSHighGradeCancerRisk',
+        #'     # 'PSAHyb', Use SOCPSA over hybrid
+        #'     'SOCPSA',
+        #'     'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI',
+        #'     # 'PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason', # Only use the ISUP grade group over Gleason
+        #'     # 'StudyHighestISUP', 'HighestPIRADS',
+        #'     'PreviousISUP',
+        #'     'GeneticRiskScore',
+        #'     'TNFaAverage',
+        #'     #'GeneticRiskCategory', Don't need since genetic risk score is continuous version of this
+        #'     'GlobalScreeningArray', # This is just an indicator if any of the follow are > 0
+        #'     'GSAPositives', 'BRCAMutation',
+        #'     'Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', # 'Mutation_MLH1', 'Mutation_PMS2', Not enough data
+        #'     'RSInormalSignal',
+        #'     'RSIlesionSignal',
+        #'     'RSIlesionPIRADS',
+        #'     'ADCnormalSignal', 'ADClesionSignal',
+        #'     # 'RSIlesionPIRADS', 'RSIlesionCancer',  'RSIlesionUpgraded', 'RSIlesionISUP',
+        #'     'PSADensity', 'PHIDensity'
+        #'     );
     }
 
     if('BiopsyUpgraded' == target) {
@@ -146,11 +128,7 @@ AS.models <- function(
         X <- biodb[!missing.target & valid.patients, biokey.variables]
     }
 
-    gbm.grid <-  expand.grid(interaction.depth = c(1, 5, 9),
-                            n.trees = seq(50, 1500, by = 50),
-                            shrinkage = c(0.001, 0.01, 0.1),
-                            n.minobsinnode = 10 # 20
-                            )
+    gbm.grid <- gbm.hyper.grid()
 
     xgb.grid <- expand.grid(
         nrounds = seq(from = 200, to = 1000, by = 50),
@@ -294,3 +272,17 @@ custom.summary <- function (data, lev = NULL, model = NULL) {
     }
 
 }
+
+
+#' Title
+#'
+#' @return
+#' @export
+#'
+#' @examples
+gbm.hyper.grid <- function() {
+    expand.grid(interaction.depth = c(1, 3, 5),
+                n.trees = seq(200, 1300, by = 50),
+                shrinkage = c(0.001, 0.01, 0.1),
+                n.minobsinnode = 10)
+    }

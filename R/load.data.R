@@ -4,7 +4,11 @@ factor.ISUP <- function(x) {
 
 factor.Gleason <- function(x) {
   factor(x, levels = c("0+0", "3+3", "3+4", "4+3", "4+4", "5+5"), ordered = TRUE)
-  }
+}
+
+factor.PIRADS <- function(x) {
+  factor(x, levels = 0:5, ordered = TRUE)
+}
 
 mutation.dummy <- function(x) {
   mutation1 <- as.integer(x["Mutation1"]);
@@ -40,11 +44,11 @@ load.data.AS <- function(biomark.path,
                          genetics.path,
                          biomark.categories.path,
                          onlyBiodb = FALSE) {
-  factor.cols <- c('Race', 'MRIResult', 'HighestPIRADS',
+  factor.cols <- c('Race', 'MRIResult',
+                   'Ethnicity',
                    'BiopsyResult','Observation',
                    'GeneticAncestry', 'GeneticRiskCategory',
                    # 'Mutation1', 'Mutation.2', 'GlobalScreeningArray', 'BRCAMutation',
-                   'RSIlesionPIRADS',
                    'RSIlesionCancer',  'RSIlesionUpgraded',
                    'RSIlesionObservation',
                    'ProgressedToTreatment', 'BiopsyUpgraded',
@@ -54,6 +58,7 @@ load.data.AS <- function(biomark.path,
 
   ISUP.cols <- c('PreviousISUP',  'RSIlesionISUP', 'StudyHighestISUP');
   Gleason.cols <- c('PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason');
+  PIRADS.cols <- c('RSIlesionPIRADS', 'HighestPIRADS');
 
   mutation.cols <- c("Mutation1", "Mutation.2");
 
@@ -83,6 +88,7 @@ load.data.AS <- function(biomark.path,
   # Convert ISUP and Gleason to factors with pre-specified levels
   biodb[,ISUP.cols] <-  lapply(biodb[, ISUP.cols], factor.ISUP);
   biodb[,Gleason.cols] <-  lapply(biodb[, Gleason.cols], factor.Gleason);
+  biodb[,PIRADS.cols] <- lapply(biodb[, PIRADS.cols], factor.PIRADS);
 
   # Add PSA and PHI Density
   biodb$PSADensity <- biodb$PSAHyb / biodb$ProstateVolume;
@@ -94,7 +100,7 @@ load.data.AS <- function(biomark.path,
 
   # Update levels
   levels(biodb$Race) <- c('White', 'African-American', 'Asian');
-  # levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
+  levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
   levels(biodb$GeneticAncestry) <- c('European', 'African', 'East Asian', 'Native American');
   levels(biodb$GeneticRiskCategory) <- c('Low', 'Normal', 'High');
   # levels(biodb$MRIResult) <- c('No Legion', 'Legion Found');
@@ -113,8 +119,6 @@ load.data.AS <- function(biomark.path,
 
   # Rename Ethnicity to Hispanic
   biodb$Hispanic <- as.factor(biodb$Ethnicity);
-  # Remove old Ethnicity column
-  biodb$Ethnicity <- NULL;
 
   attr(biodb$Weight, 'label') <- "Weight (kg)";
   attr(biodb$Height, 'label') <- "Height (cm)";
@@ -168,7 +172,7 @@ load.data.AS <- function(biomark.path,
 #' @export
 default.load.data <- function(onlyBiodb = FALSE) {
   file.names <- c(
-    'MRI DOD Biomarkers Database_Boutros - 2020.10.2.xlsx',
+    'MRI DOD Biomarkers Database_Boutros - 2020.10.28.xlsx',
     'MRI DOD Biomarkers Database_Boutros - Key.xlsx',
     'MRI DOD Biomarkers Genetics_Boutros - 2019.11.12.xlsx',
     'MRI DOD Biomarkers Category_Boutros.xlsx'

@@ -46,7 +46,7 @@ valid.patients <- biodb$NoUpgradeAndProgressed == 0 | is.na(biodb$NoUpgradeAndPr
 biodb.valid <- biodb[valid.patients, ];
 ```
 
-```{r, cache = TRUE}
+```{r}
 biodb <- default.load.data(onlyBiodb = TRUE);
 # roc.res <- roc(biodb$BiopsyUpgraded, predictor = biodb$RSIlesionSignal, algorithm = 0)
 

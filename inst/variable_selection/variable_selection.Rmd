@@ -46,7 +46,7 @@ valid.patients <- biodb$NoUpgradeAndProgressed == 0 | is.na(biodb$NoUpgradeAndPr
 biodb.valid <- biodb[valid.patients, ];
 ```
 
-```{r, cache = TRUE}
+```{r}
 seed <- 1313;
 targets <- c(
     'BiopsyUpgraded',
@@ -101,11 +101,8 @@ kable(
   kable_styling(position =  'center')
 ```
 
-```{r, cache=TRUE}
+```{r}
 summary.df <- summarize.models(models, models.roc)
-```
-
-```{r summary-table}
 cols <- c("target", "model", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
 
 thresholds.table <- summary.df[, cols]

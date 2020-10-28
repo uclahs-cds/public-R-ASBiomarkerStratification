@@ -12,17 +12,7 @@ train.control <- trainControl(
   summaryFunction = custom.summary
 )
 
-# gbm.grid <-  expand.grid(interaction.depth = c(1, 5, 7),
-#                          n.trees = seq(50, 1500, by = 50),
-#                          shrinkage = c(0.001, 0.01, 0.1),
-#                          n.minobsinnode = 10 # 20
-# )
-
-gbm.grid <- expand.grid(interaction.depth = c(1, 3),
-                        n.trees = seq(50, 1500, by = 50),
-                        shrinkage = c(0.001, 0.01),
-                        n.minobsinnode = 10 # 20
-)
+gbm.grid <- gbm.hyper.grid()
 
 biodb <- default.load.data(onlyBiodb = TRUE);
 # roc.res <- roc(biodb$BiopsyUpgraded, predictor = biodb$RSIlesionSignal, algorithm = 0)
