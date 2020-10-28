@@ -1,4 +1,4 @@
-#' Title
+#' Creates a correlation heatmap for the AS cohort
 #'
 #' @param biodb
 #' @param ...
@@ -81,13 +81,6 @@ create.heatmap.AS <- function(biodb, ...) {
     );
 
 
-    # Adding PSA Density and PHI Density:
-    biodb.added <- data.frame(
-        biodb,
-        PSADensity = biodb$freePSA/biodb$ProstateVolume,
-        PHIDensity = biodb$PHI/biodb$ProstateVolume
-    );
-
     # Computing the Correlations for heatmap:
     heatmap.data <- vector(
         mode = "list",
@@ -96,8 +89,8 @@ create.heatmap.AS <- function(biodb, ...) {
 
     for (i in 1:length(variables) ){
         for (j in 1:length(variables)  ){
-            biodbA <- as.numeric(biodb.added[, variables[i] ]);
-            biodbB <- as.numeric(biodb.added[, variables[j] ]);
+            biodbA <- as.numeric(biodb[, variables[i] ]);
+            biodbB <- as.numeric(biodb[, variables[j] ]);
             heatmap.data[[i]] <- c(
                 heatmap.data[[i]],
                 cor(

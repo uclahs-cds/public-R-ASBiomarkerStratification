@@ -14,7 +14,7 @@ nocite: |
 ```{r setup, include=FALSE}
 library(ProstateCancer.ASBiomarkerSynergy);
 library(BoutrosLab.plotting.general);
-library(kableExtra);
+library(flextable);
 library(gridExtra);
 library(magrittr);
 library(here);
@@ -84,16 +84,17 @@ tbl_summary(biodb[, c(reduced.vars, 'BiopsyUpgraded')], by = BiopsyUpgraded) %>%
 seed <- 1313;
 targets <- c(
     'BiopsyUpgraded',
-    'Prostatectomy',
-    'ProgressedToTreatment');
+    #'Prostatectomy',
+    'ProgressedToTreatment'
+    );
 metric <- 'PR-AUC';
 method <- 'gbm';
 model.names <- c('everything', 'reduced_both', 'reduced_only_RSIlesionSignal', 'reduced_only_RSIlesionPIRADS');
 model.nice.names <- c(
   'Full Model',
-  'Both RSI Signal and PI-RADS',
-  'Only RSI lesion Signal',
-  'Only RSI lesion PI-RADS'
+  'CR + RSI lesion signal and PI-RADS',
+  'CR + RSI lesion signal',
+  'CR + PI-RADS'
 )
 models <- lapply(targets, function(x) {
     model.id <- paste(x, metric, seed, sep = "_");
@@ -111,6 +112,12 @@ models.roc <- lapply(models, function(x) {
       pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
   })
 })
+
+optimal.thresholds <- lapply(models.roc, function(rocs) {
+  lapply(rocs, function(r) {
+      as.numeric(coords(r, 'best')[1])
+  })
+})
 ```
 
 ```{r prediction-variables}
@@ -125,7 +132,7 @@ kable(
 ```
 
 ```{r prediction-variables-reduced}
-var.names <- models$BiopsyUpgraded[["Both RSI Signal and PI-RADS"]]$finalModel$var.name
+var.names <- models$BiopsyUpgraded[[model.nice.names[[2]]]]$finalModel$var.name
 
 kable(
   var.names,
@@ -135,27 +142,23 @@ kable(
   kable_styling(position =  'center')
 ```
 
-```{r, cache=TRUE}
-summary.df <- summarize.models(models, models.roc)
-```
-
-```{r summary-table}
-cols <- c("target", "model", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
+```{r summary-table-bx}
+summary.df <- summarize.models(models['BiopsyUpgraded'], models.roc['BiopsyUpgraded'])
+cols <- c("model", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
 
 thresholds.table <- summary.df[, cols]
 # Break camel case into newlines
-thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = "\n"), align = "c")
-num.cols <- 4:length(cols)
+# thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = "\n"), align = "c")
+num.cols <- 2:length(cols)
 thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 2))
 
-kable(thresholds.table,
-  digits = 2,
-  row.names = FALSE,
-  caption = "Cross-validation summary statistics for the different targets and models comparing RSI lesion signal and RSI lesion PI-RADS",
-  escape = F) %>%
-  kable_styling() %>%
-  column_spec(1:2, width_min = "7em", width = "7em") %>%
-  collapse_rows(columns = 1:2)
+upgrade.table <- flextable(thresholds.table) %>%
+  add_footer_lines('CR = Clinically relevant variables') %>%
+  set_caption('Models comparison between the full model, and clinically relevant models with RSI lesion signal and PI-RADS. Including RSI lesion signal improves the model greatly while adding RSI PI-RADS does not have much effect if RSI lesion signal is in the model. All of the statistics are averaged over the cross-validation folds and repetitions.') %>%
+  autofit()
+upgrade.table
+
+save_as_docx(upgrade.table, path = here('euro_urology/tables/upgrade_table.docx'))
 ```
 
 ```{r variable-importance}
@@ -167,4 +170,31 @@ kable(x = bx.upgrade.var.imp[order(bx.upgrade.var.imp[,2], decreasing = TRUE), ]
       caption = "Variable importance for Biopsy Upgraded") %>%
   kable_styling() %>%
   column_spec(2:5, width_min = "5em", width = "5em")
+```
+
+
+
+```{r cutpoint-days-prog-bx, fig.cap = 'Days to progression from biopsy for the prediction groups'}
+prog.gbm.preds <- ifelse(predict(models$ProgressedToTreatment$`Full Model`, type = 'prob')[, 'yes'] > optimal.thresholds$ProgressedToTreatment$`Full Model`, 1, 0)
+
+progression.surv.bx.valid <- do.call(
+    what = survival::Surv,
+    args = surv.format(biodb.valid$DaysBxToProgression, biodb.valid$DaysBxToLastReview)
+    );
+
+patient.groups <- as.factor(prog.gbm.preds[!is.na(progression.surv.bx.valid)]);
+levels(patient.groups) <- c('No progression prediction', 'Predict progression');
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      # Is this right to remove the missing values?
+      survival.object = progression.surv.bx.valid[!is.na(progression.surv.bx.valid)],
+      patient.groups = patient.groups,
+      main = 'Overall Days-to-Progression from Biopsy',
+      xlab.label = 'Time to upgrade since biopsy (Days)'
+      )
+    )
+  )
 ```
