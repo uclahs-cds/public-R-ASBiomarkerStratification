@@ -16,12 +16,13 @@ library(ProstateCancer.ASBiomarkerSynergy);
 library(survival);
 library(BoutrosLab.plotting.general);
 library(flextable);
-library(gridExtra);
+# library(gridExtra);
 library(magrittr);
 library(here);
-library(caret);
-library(pROC);
-library(rpart.plot);
+#library(caret);
+#library(pROC);
+#library(rpart.plot);
+library(gtsummary);
 
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.width = '60%', fig.pos = 'H');
 
@@ -35,8 +36,12 @@ biodb <- as.data$biodb;
 valid.patients <- biodb$NoUpgradeAndProgressed == 0 | is.na(biodb$NoUpgradeAndProgressed);
 
 biodb.valid <- biodb[valid.patients, ];
+```
 
-reduced.vars <- c(
+## Demographcs
+
+```{r bx-biomarker-summary}
+demo.vars <- c(
             'Age',
             'BMI',
             'Race',
@@ -45,7 +50,6 @@ reduced.vars <- c(
             'PCA3',
             'T2ERG',
             'MiPSCancerRisk',
-            'MiPSHighGradeCancerRisk',
             'PercentFreePSA',
             'PHI',
             'GeneticRiskScore',
@@ -54,17 +58,12 @@ reduced.vars <- c(
             'PSADensity',
             'PHIDensity'
             );
-```
 
-## Demographcs
-
-```{r bx-biomarker-summary}
-#library(dplyr)
-#library(magrittr)
-library(gtsummary)
-
-attr(biodb$Ethnicity, 'label') <- 'Hispanic'
-tbl_summary(biodb[, c(reduced.vars, 'BiopsyUpgraded')], by = BiopsyUpgraded) %>%
+# attr(biodb$Ethnicity, 'label') <- 'Ethnicity'
+tbl_summary(
+  data = biodb[, c(demo.vars, 'BiopsyUpgraded')],
+  by = BiopsyUpgraded,
+  missing = "no") %>%
   add_p()
 ```
 
@@ -107,6 +106,15 @@ optimal.thresholds <- lapply(models.roc, function(rocs) {
   })
 })
 ```
+
+## ROC/PR Curves
+```{r}
+tiff(filename = here('euro_urology/figures/roc-pr_curves.tiff'), width = 10, height = 8, res = 300, units = 'in')
+roc.pr.plot(models.roc$BiopsyUpgraded)
+dev.off()
+```
+
+## MISC
 
 ```{r prediction-variables}
 var.names <- models$BiopsyUpgraded[["Full Model"]]$finalModel$var.name
