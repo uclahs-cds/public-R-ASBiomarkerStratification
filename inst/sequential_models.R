@@ -31,8 +31,17 @@ valid.patients <- (! (biodb$NoUpgradeAndProgressed == 1) | is.na(biodb$NoUpgrade
 useful.biomarkers <- biomarkers[biomarkers$clinically.useful == 1, ]
 
 # List of data frame with the sequential data frames
-X <- lapply(seq(1, max(useful.biomarkers$order)), function(i) {
-  bio.vars <- useful.biomarkers$variable[useful.biomarkers$order <= i]
+# X <- lapply(seq(1, max(useful.biomarkers$order)), function(i) {
+#   bio.vars <- useful.biomarkers$variable[useful.biomarkers$order <= i]
+#   biodb[!missing.target & valid.patients, bio.vars, drop = FALSE]
+# })
+
+# Separate blood, urine, genetics
+biocategories <- unique(biomarkers$category)
+
+X <- lapply(seq_along(biocategories), function(i) {
+  bio.cats <- biocategories[1:i];
+  bio.vars <- useful.biomarkers$variable[useful.biomarkers$category %in% bio.cats]
   biodb[!missing.target & valid.patients, bio.vars, drop = FALSE]
 })
 
@@ -42,8 +51,13 @@ levels(y) <- c('no', 'yes');
 
 # Save the models to file
 # seq.id <- c('demographics', 'pre-MRI', 'MRI', 'Post-MRI');
-model.id <- paste('sequential', target, metric, seed, sep = '_');
-model.file <- paste(model.id, 1:4, 'model.RDS', sep = '_');
+if(length(X) == 6) {
+  model.id <- paste('sequential6', target, metric, seed, sep = '_');
+} else {
+  model.id <- paste('sequential4', target, metric, seed, sep = '_');
+}
+
+model.file <- paste(model.id, 1:length(X), 'model.RDS', sep = '_');
 
 gbm.seq.models <- lapply(seq_along(X), function(i) {
   x <- X[[i]];
@@ -63,5 +77,12 @@ gbm.seq.models <- lapply(seq_along(X), function(i) {
   mod
 })
 
-names(gbm.seq.models) <- c('Demographics', 'Blood/Urine/Genetics', 'MRI Features', 'Post MRI + Biomarkers');
+if(length(gbm.seq.models) == 4) {
+  names(gbm.seq.models) <- c('Demographics', 'Blood/Urine/Genetics', 'MRI Features', 'Post MRI + Biomarkers');
+}
+if(length(gbm.seq.models) == 6) {
+  names(gbm.seq.models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Post MRI + Biomarkers');
+}
+
+
 
