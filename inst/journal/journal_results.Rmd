@@ -13,6 +13,7 @@ nocite: |
 
 ```{r setup, include=FALSE}
 library(ProstateCancer.ASBiomarkerSynergy);
+library(survival);
 library(BoutrosLab.plotting.general);
 library(flextable);
 library(gridExtra);
@@ -129,6 +130,17 @@ kable(
   kable_styling(position =  'center')
 ```
 
+Cohort (training set) predictions
+```{r}
+bx.preds <- rep(NA, nrow(biodb.valid))
+bx.preds[!is.na(biodb.valid$BiopsyUpgraded)] <- ifelse(predict(models$BiopsyUpgraded$`Full Model`, type = 'prob')[, 'yes'] > optimal.thresholds$BiopsyUpgraded$`Full Model`, 1, 0)
+
+bx.preds.factor <- as.factor(bx.preds)
+levels(bx.preds.factor) <- c('no', 'yes')
+
+confusionMatrix(bx.preds.factor, biodb.valid$BiopsyUpgraded)
+```
+
 ```{r summary-table-bx}
 summary.df <- summarize.models(models['BiopsyUpgraded'], models.roc['BiopsyUpgraded'])
 cols <- c("model", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
@@ -141,7 +153,7 @@ thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x)
 
 upgrade.table <- flextable(thresholds.table) %>%
   add_footer_lines('CR = Clinically relevant variables') %>%
-  set_caption('Models comparison between the full model, and clinically relevant models with RSI lesion signal and PI-RADS. Including RSI lesion signal improves the model greatly while adding RSI PI-RADS does not have much effect if RSI lesion signal is in the model. All of the statistics are averaged over the cross-validation folds and repetitions.') %>%
+  set_caption('Models comparison between the full model, and clinically relevant models with RSI lesion signal and PI-RADS. Including RSI lesion signal improves the model greatly while adding RSI PI-RADS does not have much effect if RSI lesion signal is in the model. All of the statistics are over the cross-validation 10-folds and 5 repetitions (N = 480).') %>%
   autofit()
 upgrade.table
 
@@ -149,7 +161,7 @@ save_as_docx(upgrade.table, path = here('euro_urology/tables/upgrade_table.docx'
 ```
 
 ```{r variable-importance}
-bx.upgrade.var.imp <- var.imp.combine(models$BiopsyUpgraded)
+bx.upgrade.var.imp <- var.imp.combine(models$BiopsyUpgraded, order = TRUE)
 
 kable(x = bx.upgrade.var.imp[order(bx.upgrade.var.imp[,2], decreasing = TRUE), ],
       digits = 2,
@@ -171,19 +183,20 @@ km.arguments <- list(
   risktable.fontsize = 10,
   key.groups.cex = 1,
   key.stats.cex = 1,
-  key.stats.y.pos = 0.5
+  key.stats.y.pos = 0.5,
+  return.statistics = FALSE
   );
-
-bx.gbm.preds <- rep(NA, nrow(biodb.valid))
-bx.gbm.preds[!is.na(biodb.valid$BiopsyUpgraded)] <- ifelse(predict(models$BiopsyUpgraded$`Full Model`, type = 'prob')[, 'yes'] > optimal.thresholds$BiopsyUpgraded$`Full Model`, 1, 0)
 
 upgrade.surv.valid <- do.call(
     what = survival::Surv,
     args = surv.format(biodb.valid$DaysDxToUpgrade, biodb.valid$DaysDxToLastReview)
     );
 
-patient.groups <- as.factor(bx.gbm.preds[!is.na(upgrade.surv.valid)]);
+patient.groups <- as.factor(bx.preds[!is.na(upgrade.surv.valid)]);
 levels(patient.groups) <- c('No upgrade prediction', 'Predict upgrade');
+
+survival::survfit(upgrade.surv.valid ~ patient.groups)
+summary(survival::survfit(upgrade.surv.valid ~ patient.groups))
 
 do.call(
   what = BoutrosLab.plotting.survival::create.km.plot,
@@ -194,7 +207,41 @@ do.call(
       patient.groups = patient.groups,
       main = 'Overall Days-to-Upgrade from Diagnosis',
       xlab.label = 'Days to upgrade since diagnosis',
-      ylab.label = 'Upgrade-free survival'
+      ylab.label = 'Upgrade-free survival',
+      filename = here('euro_urology/figures/km_dx-to-upgrade.tiff')
+      )
+    )
+  )
+```
+
+Cross-validated curves. Not really working as intended.
+```{r, eval = FALSE}
+cv.best.preds <- with(models$BiopsyUpgraded$`Full Model`, merge(pred, bestTune));
+cv.biodb.valid <- biodb.valid[cv.best.preds$rowIndex, ];
+  
+cv.upgrade.surv.valid <- do.call(
+    what = survival::Surv,
+    args = surv.format(cv.biodb.valid$DaysDxToUpgrade, cv.biodb.valid$DaysDxToLastReview)
+    );
+
+cv.patient.groups <- as.factor(ifelse(cv.best.preds$yes > optimal.thresholds$BiopsyUpgraded$`Full Model`, 'yes', 'no'))
+levels(cv.patient.groups) <- c('No upgrade prediction', 'Predict upgrade');
+
+survdiff(cv.upgrade.surv.valid ~ cv.patient.groups)
+plot(survival::survfit(cv.upgrade.surv.valid ~ cv.patient.groups))
+coxph(cv.upgrade.surv.valid ~ cv.patient.groups)
+
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      survival.object = cv.upgrade.surv.valid,
+      patient.groups = cv.patient.groups,
+      main = 'Overall Days-to-Upgrade from Diagnosis',
+      xlab.label = 'Days to upgrade since diagnosis',
+      ylab.label = 'Upgrade-free survival',
+      ph.assumption.check = "ignore"
       )
     )
   )
