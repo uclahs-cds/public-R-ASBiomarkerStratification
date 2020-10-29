@@ -66,7 +66,7 @@ flatten.ConfusionMatrix <- function(...) {
     cbind.data.frame(t(res$overall), t(res$byClass))
 }
 
-#' Title
+#' Compute the threshold summary stats per fold
 #'
 #' @param model
 #' @param threshold
@@ -75,13 +75,17 @@ flatten.ConfusionMatrix <- function(...) {
 #' @export
 #'
 #' @examples
-threshold.summary.stats <- function(model, threshold) {
+threshold.summary.stats <- function(model, threshold, per.fold = FALSE) {
     pred_best <- with(model,
                       merge(pred, bestTune))
     pred_best$thres.preds <- as.factor(ifelse(pred_best[, 'yes'] > threshold, 'yes', 'no'))
-    fold.split <- split(pred_best, pred_best$Resample)
-    res <- lapply(fold.split, function(x) flatten.ConfusionMatrix(x$thres.preds, reference = x$obs, positive = 'yes', mode = 'everything'))
-    do.call(rbind.data.frame, res)
+    if(per.fold) {
+        fold.split <- split(pred_best, pred_best$Resample)
+        res <- lapply(fold.split, function(x) flatten.ConfusionMatrix(x$thres.preds, reference = x$obs, positive = 'yes', mode = 'everything'))
+        do.call(rbind.data.frame, res)
+    } else {
+        flatten.ConfusionMatrix(pred_best$thres.preds, reference = pred_best$obs, positive = 'yes', mode = 'everything')
+    }
 }
 
 #' Computes F_beta score
@@ -153,11 +157,22 @@ var.imp <- function(x, onlyImportance = TRUE, squash = TRUE) {
 #' @export
 #'
 #' @examples
-var.imp.combine <-  function(x) {
+var.imp.combine <-  function(x, order = FALSE, rev.cols = FALSE) {
+    if(rev.cols) {
+        x <- x[rev(names(x))];
+        }
     res <- Reduce(function(...) merge(..., by = 'variable', all = TRUE), lapply(x, var.imp));
     rownames(res) <- res$variable;
+
     if(!is.null(names(x))) {
         colnames(res) <- c('variable', names(x));
+    }
+
+    if(order) {
+        order.args <- as.list(res[, names(x)])
+        order.args$decreasing <- TRUE
+        res.order <- do.call('order', order.args)
+        res <- res[res.order, ]
     }
 
     res
@@ -224,7 +239,7 @@ summarize.models <- function(models, models.roc = NULL) {
             m.roc <- models.roc[[x]][[y]]
             threshold.roc <- as.numeric(coords(m.roc, 'best', transpose = TRUE)[1])
 
-            thres.res <- colMeans(threshold.summary.stats(m, threshold.roc), na.rm = TRUE);
+            thres.res <- threshold.summary.stats(m, threshold.roc, per.fold = FALSE);
             thres.res$model <- y;
             thres.res$target <- x;
             thres.res$threshold <- threshold.roc;
@@ -260,7 +275,7 @@ summarize.seq.models <- function(models, models.roc = NULL) {
         m.roc <- models.roc[[x]]
         threshold.roc <- as.numeric(coords(m.roc, 'best', transpose = TRUE)[1])
 
-        thres.res <- colMeans(threshold.summary.stats(m, threshold.roc), na.rm = TRUE);
+        thres.res <- threshold.summary.stats(m, threshold.roc, per.fold = FALSE);
         thres.res$group <- x;
         thres.res$threshold <- threshold.roc;
         thres.res
