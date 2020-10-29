@@ -28,19 +28,6 @@ axis.cex <- .7
 lab.cex <- .8
 strip.cex <- 0.45
 
-km.arguments <- list(
-  xaxis.cex = axis.cex,
-  yaxis.cex = axis.cex,
-  main.cex = 1.4,
-  xlab.cex = lab.cex,
-  ylab.label = 'Estimated survival probability',
-  ylab.cex = lab.cex,
-  risktable.fontsize = 14,
-  key.groups.cex = 1,
-  key.stats.cex = 1,
-  key.stats.y.pos = 0.5
-  );
-
 as.data <- default.load.data();
 biodb <- as.data$biodb;
 
@@ -172,17 +159,56 @@ kable(x = bx.upgrade.var.imp[order(bx.upgrade.var.imp[,2], decreasing = TRUE), ]
   column_spec(2:5, width_min = "5em", width = "5em")
 ```
 
+## Time-to-event
+```{r cutpoint-days-upgrade-dx, fig.cap='Days to biopsy upgrade from diagnosis for the prediction groups.'}
+km.arguments <- list(
+  xaxis.cex = axis.cex,
+  yaxis.cex = axis.cex,
+  main.cex = 1.4,
+  xlab.cex = lab.cex,
+  ylab.cex = lab.cex,
+  show.risktable = FALSE,
+  risktable.fontsize = 10,
+  key.groups.cex = 1,
+  key.stats.cex = 1,
+  key.stats.y.pos = 0.5
+  );
 
+bx.gbm.preds <- rep(NA, nrow(biodb.valid))
+bx.gbm.preds[!is.na(biodb.valid$BiopsyUpgraded)] <- ifelse(predict(models$BiopsyUpgraded$`Full Model`, type = 'prob')[, 'yes'] > optimal.thresholds$BiopsyUpgraded$`Full Model`, 1, 0)
+
+upgrade.surv.valid <- do.call(
+    what = survival::Surv,
+    args = surv.format(biodb.valid$DaysDxToUpgrade, biodb.valid$DaysDxToLastReview)
+    );
+
+patient.groups <- as.factor(bx.gbm.preds[!is.na(upgrade.surv.valid)]);
+levels(patient.groups) <- c('No upgrade prediction', 'Predict upgrade');
+
+do.call(
+  what = BoutrosLab.plotting.survival::create.km.plot,
+  args = c(
+    km.arguments,
+    list(
+      survival.object = upgrade.surv.valid,
+      patient.groups = patient.groups,
+      main = 'Overall Days-to-Upgrade from Diagnosis',
+      xlab.label = 'Days to upgrade since diagnosis',
+      ylab.label = 'Upgrade-free survival'
+      )
+    )
+  )
+```
 
 ```{r cutpoint-days-prog-bx, fig.cap = 'Days to progression from biopsy for the prediction groups'}
 prog.gbm.preds <- ifelse(predict(models$ProgressedToTreatment$`Full Model`, type = 'prob')[, 'yes'] > optimal.thresholds$ProgressedToTreatment$`Full Model`, 1, 0)
 
-progression.surv.bx.valid <- do.call(
+progression.surv.dx.valid <- do.call(
     what = survival::Surv,
-    args = surv.format(biodb.valid$DaysBxToProgression, biodb.valid$DaysBxToLastReview)
+    args = surv.format(biodb.valid$DaysDxToProgression, biodb.valid$DaysDxToLastReview)
     );
 
-patient.groups <- as.factor(prog.gbm.preds[!is.na(progression.surv.bx.valid)]);
+patient.groups <- as.factor(prog.gbm.preds[!is.na(progression.surv.dx.valid)]);
 levels(patient.groups) <- c('No progression prediction', 'Predict progression');
 do.call(
   what = BoutrosLab.plotting.survival::create.km.plot,
@@ -190,10 +216,11 @@ do.call(
     km.arguments,
     list(
       # Is this right to remove the missing values?
-      survival.object = progression.surv.bx.valid[!is.na(progression.surv.bx.valid)],
+      survival.object = progression.surv.dx.valid[!is.na(progression.surv.dx.valid)],
       patient.groups = patient.groups,
-      main = 'Overall Days-to-Progression from Biopsy',
-      xlab.label = 'Time to upgrade since biopsy (Days)'
+      main = 'Overall Days-to-Progression from Diagnosis',
+      xlab.label = 'Days to progression since diagnosis',
+      ylab.label = 'Progression-free survival'
       )
     )
   )
