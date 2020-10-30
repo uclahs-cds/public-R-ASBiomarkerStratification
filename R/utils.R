@@ -47,12 +47,30 @@ moving.avg <- function(x, order, center = TRUE) {
     return(stats::filter(x, w))
 }
 
-# From fishmethods
-combinevar <- function(xbar = NULL,s_squared = NULL,n = NULL) {
-    if(length(xbar)!=length(s_squared)|length(xbar)!=length(n)|
-       length(s_squared)!=length(n)) stop ("Vector lengths are different.")
-    sum_of_squares <- sum((n-1)*s_squared + n*xbar^2)
-    grand_mean <- sum(n*xbar)/sum(n)
-    combined_var <- (sum_of_squares - sum(n)*grand_mean^2)/(sum(n)-1)
-    return(c(grand_mean,combined_var))
+label <- function(x) {
+    attr(x, 'label');
+    }
+
+`label<-` <- function(x, value) {
+    attr(x, 'label') <- value;
+    x;
+    }
+
+`%||%` <- function (x, y) {
+    if (is.null(x)) y
+    else x
+}
+
+label.or.name <- function(x) {
+    mc <- match.call()
+    if(typeof(x) == 'list') {
+        res <- names(x)
+        # Nulls are dropped
+        labs <- lapply(x, label)
+        cond <- ! unlist(lapply(labs, is.null))
+        res[cond] <- unlist(labs)
+        res
+    } else {
+        label(x) %||% mc$x
+    }
 }

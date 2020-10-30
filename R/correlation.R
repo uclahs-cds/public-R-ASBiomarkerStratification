@@ -44,42 +44,7 @@ create.heatmap.AS <- function(biodb, ...) {
         "Mutation_BRCA1", "Mutation_BRCA2", "Mutation_ATM", "Mutation_MLH1", "Mutation_PMS2"
     );
 
-
-    real.names.set <- c(
-        'Age',
-        'Weight',
-        'Height',
-        'BMI',
-        'Prostate Volume',
-        'MRI Result',
-        'MRI Lesions',
-        'Highest PIRADS',
-        'Biopsy Result',
-        'ADC normal Signal',
-        'ADC lesion Signal',
-        'RSI lesion Signal',
-        'RSI normal Signal',
-        'PCA3',
-        'T2ERG',
-        'MiPS Cancer Risk',
-        'MiPS High Grade Risk',
-        'PSA Hybrid',
-        'free PSA',
-        'PSA Density',
-        'p2PSA',
-        'Percent Free PSA',
-        'PHI',
-        'PHI Density',
-        'SOCPSA',
-        'TNFa Average',
-        'Genetic Risk Score',
-        'Genetic Risk Category',
-        'Global Screening Array',
-        'GSA Positives',
-        'BRCA Mutation',
-        "BRCA1 Mutation", "BRCA2 Mutation", "ATM Mutation", "MLH1 Mutation", "PMS2 Mutation"
-    );
-
+    labels <- label.or.name(biodb[, variables])
 
     # Computing the Correlations for heatmap:
     heatmap.data <- vector(
@@ -174,9 +139,9 @@ create.heatmap.AS <- function(biodb, ...) {
     # Plotting Heatmap:
     BoutrosLab.plotting.general::create.heatmap(
         x = simple.data,
-        xaxis.lab = real.names.set,
+        xaxis.lab = labels,
         xaxis.cex = 1,
-        yaxis.lab = real.names.set,
+        yaxis.lab = labels,
         yaxis.cex = 1,
         colourkey.cex = 1,
         covariates = sample.covariate,
@@ -196,7 +161,7 @@ create.heatmap.AS <- function(biodb, ...) {
         right.dendrogram.size = 5,
         height = 18,
         width = 18,
-        left.padding = 4,
+        left.padding = 5,
         bottom.padding = 3,
         resolution = 1000,
         ...

@@ -1,5 +1,7 @@
 factor.ISUP <- function(x) {
-  factor(x, levels = 0:5, ordered = TRUE)
+  x <- as.factor(x)
+  levels(x) <- c('No cancer', 'Low', 'Intermediate favorable', 'Intermediate unfavorable', 'High', 'Very High');
+  x
   }
 
 factor.Gleason <- function(x) {
@@ -91,7 +93,7 @@ load.data.AS <- function(biomark.path,
   biodb[,PIRADS.cols] <- lapply(biodb[, PIRADS.cols], factor.PIRADS);
 
   # Add PSA and PHI Density
-  biodb$PSADensity <- biodb$PSAHyb / biodb$ProstateVolume;
+  biodb$PSADensity <- biodb$SOCPSA / biodb$ProstateVolume;
   biodb$PHIDensity = biodb$PHI / biodb$ProstateVolume;
 
   # TODO: Add all other binary variables as logical
@@ -103,9 +105,9 @@ load.data.AS <- function(biomark.path,
   levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
   levels(biodb$GeneticAncestry) <- c('European', 'African', 'East Asian', 'Native American');
   levels(biodb$GeneticRiskCategory) <- c('Low', 'Normal', 'High');
-  # levels(biodb$MRIResult) <- c('No Legion', 'Legion Found');
+  levels(biodb$MRIResult) <- c('No Legion', 'Legion Found');
   levels(biodb$HighestPIRADS) <- c('No lesion', 'Very low', 'Low', 'Intermediate', 'High', 'Very high');
-  # levels(biodb$BiopsyResult) <- c('Negative', 'Positive');
+  levels(biodb$BiopsyResult) <- c('Negative', 'Positive');
   levels(biodb$Observation) <- c('MRI Positive/Biopsy Positive', 'MRI Positive/Biopsy Negative',
                                  'MRI Negative/Biopsy Positive', 'MRI Negative/Biopsy Negative');
 
@@ -120,11 +122,41 @@ load.data.AS <- function(biomark.path,
   # Rename Ethnicity to Hispanic
   biodb$Hispanic <- as.factor(biodb$Ethnicity);
 
-  attr(biodb$Weight, 'label') <- "Weight (kg)";
-  attr(biodb$Height, 'label') <- "Height (cm)";
-  attr(biodb$ProstateVolume, 'label') <- "Prostate Volume (cm^3)";
-  attr(biodb$p2PSA, 'label') <- "[-2]proPSA";
-  attr(biodb$freePSA, 'label') <- "free PSA";
+  label(biodb$Weight) <- 'Weight (kg)';
+  label(biodb$Height) <-"Height (cm)";
+  label(biodb$ProstateVolume) <- "Prostate Volume (cm^3)";
+  label(biodb$p2PSA) <- "[-2]proPSA";
+  label(biodb$freePSA) <- "free PSA";
+  label(biodb$MRIResult) <- 'MRI Result';
+  label(biodb$MRILesions) <- 'MRI Lesions';
+  label(biodb$HighestPIRADS) <- 'Highest PIRADS';
+  label(biodb$BiopsyResult) <- 'Biopsy Result';
+  label(biodb$ADCnormalSignal) <- 'ADC normal Signal';
+  label(biodb$ADClesionSignal) <- 'ADC lesion Signal';
+  label(biodb$RSIlesionSignal) <- 'RSI lesion Signal';
+  label(biodb$RSInormalSignal) <- 'RSI normal Signal';
+  label(biodb$RSIlesionPIRADS) <- 'RSI lesion PI-RADS'
+  label(biodb$MiPSCancerRisk) <- 'MiPS Cancer Risk';
+  label(biodb$MiPSHighGradeCancerRisk) <- 'MiPS High Grade Risk';
+  label(biodb$SOCPSA) <- 'PSA';
+  label(biodb$PSAHyb) <- 'PSA Hybrid';
+  label(biodb$PSADensity) <- 'PSA Density';
+  label(biodb$PercentFreePSA) <- '% Free PSA';
+  label(biodb$PHIDensity) <- 'PHI Density';
+  label(biodb$TNFaAverage) <- 'TNFa';
+  label(biodb$GeneticRiskScore) <- 'Genetic Risk Score';
+  label(biodb$GeneticRiskCategory) <- 'Genetic Risk Category';
+  label(biodb$GlobalScreeningArray) <- 'Global Screening Array';
+  label(biodb$GSAPositives) <- 'GSA Positives';
+  label(biodb$BRCAMutation) <- 'BRCA Mutation';
+  label(biodb$Mutation_BRCA1) <- 'BRCA1 Mutation';
+  label(biodb$Mutation_BRCA2) <- 'BRCA2 Mutation';
+  label(biodb$Mutation_ATM) <- 'ATM Mutation';
+  label(biodb$Mutation_MLH1) <- 'MLH1 Mutation';
+  label(biodb$Mutation_PMS2) <- 'PMS2 Mutation';
+  label(biodb$PreviousISUP) <- 'Previous ISUP';
+  label(biodb$StudyHighestGleason) <- 'Study Highest Gleason';
+  label(biodb$StudyHighestISUP) <- 'Study Highest ISUP';
 
   biodb$PHI.computed <- with(biodb, {
     (p2PSA / freePSA) * sqrt(PSAHyb)

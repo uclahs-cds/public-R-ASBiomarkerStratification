@@ -47,6 +47,7 @@ demo.vars <- c(
             'Race',
             'Ethnicity',
             'ProstateVolume',
+            'SOCPSA',
             'PCA3',
             'T2ERG',
             'MiPSCancerRisk',
@@ -59,12 +60,45 @@ demo.vars <- c(
             'PHIDensity'
             );
 
+demo.vars <- c("Age",
+               "Race",
+               "Ethnicity",
+               "Weight",
+               "Height",
+  "BMI", "SOCPSA",
+  "PSADensity", 
+  "freePSA", "p2PSA", "PercentFreePSA", "PHI", "PHIDensity",
+  "MRIResult", "MRILesions",
+  "BiopsyResult",
+  "ProstateVolume",
+  "PreviousISUP",
+  "StudyHighestISUP",
+  "PCA3", "T2ERG", "MiPSCancerRisk",
+  "GeneticRiskScore",
+  "BRCAMutation", "TNFaAverage",
+  "RSInormalSignal",
+  "RSIlesionSignal",
+  "ADCnormalSignal",
+  "ADClesionSignal",
+  "RSIlesionPIRADS",
+  "ProgressedToTreatment",
+  "Prostatectomy",
+  "Mutation_BRCA1", "Mutation_BRCA2", "Mutation_ATM", "Mutation_MLH1",
+  "Mutation_PMS2"
+)
+
 # attr(biodb$Ethnicity, 'label') <- 'Ethnicity'
-tbl_summary(
-  data = biodb[, c(demo.vars, 'BiopsyUpgraded')],
+(demo.table <- tbl_summary(data = biodb[, c(demo.vars, 'BiopsyUpgraded')],
   by = BiopsyUpgraded,
-  missing = "no") %>%
-  add_p()
+  missing = "no",
+  label = RSIlesionPIRADS ~ 'RSI lesion PI-RADS') %>%
+  bold_labels() %>%
+  add_p() %>%
+  modify_spanning_header(c("stat_1", "stat_2") ~ "**Grade Group Upgrade**") %>%
+  as_flex_table())
+
+
+flextable::save_as_docx(demo.table, path = here::here('euro_urology/tables/demographics.docx'))
 ```
 
 ```{r, cache = TRUE}
@@ -105,6 +139,13 @@ optimal.thresholds <- lapply(models.roc, function(rocs) {
       as.numeric(coords(r, 'best')[1])
   })
 })
+```
+
+## Correlation heatmap
+```{r}
+create.heatmap.AS(biodb,
+                  filename = here('euro_urology/figures/corr_heatmap.tiff')
+                  )
 ```
 
 ## ROC/PR Curves
@@ -235,7 +276,6 @@ cv.patient.groups <- as.factor(ifelse(cv.best.preds$yes > optimal.thresholds$Bio
 levels(cv.patient.groups) <- c('No upgrade prediction', 'Predict upgrade');
 
 survdiff(cv.upgrade.surv.valid ~ cv.patient.groups)
-plot(survival::survfit(cv.upgrade.surv.valid ~ cv.patient.groups))
 coxph(cv.upgrade.surv.valid ~ cv.patient.groups)
 
 do.call(
@@ -274,7 +314,8 @@ do.call(
       patient.groups = patient.groups,
       main = 'Overall Days-to-Progression from Diagnosis',
       xlab.label = 'Days to progression since diagnosis',
-      ylab.label = 'Progression-free survival'
+      ylab.label = 'Progression-free survival',
+      filename = here('euro_urology/figures/km_dx-to-progression.tiff')
       )
     )
   )
@@ -330,4 +371,84 @@ thresholds.table[, 2:ncol(thresholds.table)] <- round(thresholds.table[, 2:ncol(
     width(~ Accuracy + Sensitivity + Specificity + Precision + F1, width = 1))
 
 save_as_docx(seq.table, path = here('euro_urology/tables/seq_table.docx'))
+```
+
+
+```{r}
+variables <- c(
+        'Age',
+        'Weight',
+        'Height',
+        'BMI',
+        'ProstateVolume',
+        'MRIResult',
+        'MRILesions',
+        'HighestPIRADS',
+        'BiopsyResult',
+        'ADCnormalSignal',
+        'ADClesionSignal',
+        'RSIlesionSignal',
+        'RSInormalSignal',
+        'PCA3',
+        'T2ERG',
+        'MiPSCancerRisk',
+        'MiPSHighGradeCancerRisk',
+        'PSAHyb',
+        'freePSA',
+        'PSADensity',
+        'p2PSA',
+        'PercentFreePSA',
+        'PHI',
+        'PHIDensity',
+        'SOCPSA',
+        'TNFaAverage',
+        'GeneticRiskScore',
+        'GeneticRiskCategory',
+        'GlobalScreeningArray',
+        'GSAPositives',
+        'BRCAMutation',
+        "Mutation_BRCA1", "Mutation_BRCA2", "Mutation_ATM", "Mutation_MLH1", "Mutation_PMS2"
+    );
+
+
+    real.names.set <- c(
+        'Age',
+        'Weight',
+        'Height',
+        'BMI',
+        'Prostate Volume',
+        'MRI Result',
+        'MRI Lesions',
+        'Highest PIRADS',
+        'Biopsy Result',
+        'ADC normal Signal',
+        'ADC lesion Signal',
+        'RSI lesion Signal',
+        'RSI normal Signal',
+        'PCA3',
+        'T2ERG',
+        'MiPS Cancer Risk',
+        'MiPS High Grade Risk',
+        'PSA Hybrid',
+        'free PSA',
+        'PSA Density',
+        'p2PSA',
+        'Percent Free PSA',
+        'PHI',
+        'PHI Density',
+        'SOCPSA',
+        'TNFa Average',
+        'Genetic Risk Score',
+        'Genetic Risk Category',
+        'Global Screening Array',
+        'GSA Positives',
+        'BRCA Mutation',
+        "BRCA1 Mutation",
+        "BRCA2 Mutation",
+        "ATM Mutation",
+        "MLH1 Mutation",
+        "PMS2 Mutation"
+    );
+
+
 ```
