@@ -41,7 +41,7 @@ demographics.boxplot <- function(biodb, y, x, cond = NULL, ...) {
 #'
 #' @examples
 roc.pr.plot <- function(models.roc, ...) {
-    opar <- par(pty="s", mfrow=c(1,2), mar = 0.1 + c(8, 6, 4, 2))
+    opar <- par(pty="s", mfrow=c(1,2), mar = 0.1 + c(8, 6, 4, 2), cex = 1.3, cex.axis = 1.1, cex.lab = 1.5)
     on.exit(par(opar))
 
     models.n <- length(models.roc);
@@ -61,6 +61,9 @@ roc.pr.plot <- function(models.roc, ...) {
         #print.thres.cex=.75,
         print.thres.pattern = "",
         print.thres.col= default.colours(models.n)[1],
+        cex.axis = par('cex.axis'),
+        cex.lab = par('cex.lab'),
+        #cex = par('cex'),
         # print.auc=TRUE,
         ...
     )
@@ -75,6 +78,9 @@ roc.pr.plot <- function(models.roc, ...) {
             # print.thres.cex=.75,
             print.thres.pattern = '', # "%.2f",
             print.thres.col= default.colours(models.n)[i],
+            cex.axis = par('cex.axis'),
+            cex.lab = par('cex.lab'),
+            # cex = par('cex'),
             # print.auc=TRUE,
             # print.auc.adj = c(0, i),
             ...
@@ -85,12 +91,22 @@ roc.pr.plot <- function(models.roc, ...) {
     # Plot the Precision-Recall curve
     plot(precision ~ recall,
          coords(models.roc[[1]], "all", ret = c("recall", "precision"), transpose = FALSE),
-         type="l", las = 1, col = default.colours(models.n)[1], lwd = 2, main = 'Precision-Recall Curve', ylim = c(0, 1), ...);
+         type="l", las = 1, col = default.colours(models.n)[1], lwd = 2, main = 'Precision-Recall Curve', ylim = c(0, 1),
+         ylab = 'Precision',
+         xlab = 'Recall',
+         cex.axis = par('cex.axis'),
+         cex.lab = par('cex.lab'),
+         cex = par('cex'), ...);
 
     for(i in 2:models.n) {
         lines(precision ~ recall,
               coords(models.roc[[i]], "all", ret = c("recall", "precision"), transpose = FALSE),
-              type="l", las = 1, col = default.colours(models.n)[i], lwd = 2, ...);
+              type="l", las = 1, col = default.colours(models.n)[i], lwd = 2,
+              ylab = 'Precision',
+              xlab = 'Recall',
+              cex.axis = par('cex.axis'),
+              cex.lab = par('cex.lab'),
+              cex = par('cex'), ...);
     }
 
     # models.auc <- unlist(lapply(models.roc, `[[`, i = 'auc'));
@@ -102,5 +118,5 @@ roc.pr.plot <- function(models.roc, ...) {
 
     legend.text <- paste0(names(models.roc), ': AUC = ', auc.ci.text);
 
-    legend(-1.5, -0.6, legend.text, cex = 0.8, col = default.colours(models.n), lwd = c(2, 2), inset = 0.02, xpd="NA");
+    legend(-2.2, -0.5, legend.text, cex = 1.1, col = default.colours(models.n), lwd = c(2, 2), inset = 0.02, xpd="NA");
 }

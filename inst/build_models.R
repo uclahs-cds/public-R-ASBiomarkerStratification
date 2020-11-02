@@ -14,9 +14,9 @@ metrics <- c(#'ROC-AUC'
              'PR-AUC'
              );
 targets <- c(
-    'BiopsyUpgraded'#,
+    'BiopsyUpgraded',
     #'Prostatectomy',
-    # 'ProgressedToTreatment'
+    'ProgressedToTreatment'
     );
 
 lapply(targets, function(tg) {

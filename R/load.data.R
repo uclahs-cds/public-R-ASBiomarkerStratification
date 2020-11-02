@@ -17,13 +17,16 @@ mutation.dummy <- function(x) {
   mutation2 <- as.integer(x["Mutation.2"]);
   if(is.na(mutation1) && is.na(mutation2)) {
     # Missing value, make all dummy variables missing as well
-    res <- list(Mutation_BRCA1 = NA, Mutation_BRCA2 = NA, Mutation_ATM = NA, Mutation_MLH1 = NA, Mutation_PMS2 = NA);
+    res <- list(Mutation_BRCA1 = NA, Mutation_BRCA2 = NA, Mutation_ATM = NA, Mutation_MLH1 = NA, Mutation_PMS2 = NA, Germline_variants = NA);
   }
   else {
-    res <- list(Mutation_BRCA1 = 0, Mutation_BRCA2 = 0, Mutation_ATM = 0, Mutation_MLH1 = 0, Mutation_PMS2 = 0);
-    # What happens when we do res[0] <- 1? Doesn't seem to do anything
+    res <- list(BRCA1 = 0, BRCA2 = 0, ATM = 0, MLH1 = 0, PMS2 = 0);
     if(mutation1 > 0) res[mutation1] <- 1
     if(mutation2 > 0) res[mutation2] <- 1
+    germline_variants <- paste0(names(res)[res > 0], collapse = " & ")
+    if(germline_variants == "") germline_variants <- 'None'
+    names(res) <- paste0('Mutation_', names(res))
+    res$Germline_variants <- germline_variants
     }
   res
   }
@@ -79,10 +82,18 @@ load.data.AS <- function(biomark.path,
                                  apply(biodb[, mutation.cols], 1, mutation.dummy)
                                  );
 
+
   biodb <- cbind.data.frame(biodb, mutation.dummy.vars);
 
   # Remove the old mutation columns
   biodb[, mutation.cols] <- NULL
+
+  biodb$Germline_variants <- relevel(
+    x = as.factor(biodb$Germline_variant),
+    ref = 'None')
+
+  #mutation.combinations <- unique(biodb[, c('Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', 'Mutation_MLH1', 'Mutation_PMS2')])
+  #rownames(mutation.combinations) <- NULL
 
   # Convert to factor
   biodb[,factor.cols] <- lapply(biodb[,factor.cols], as.factor);
@@ -149,14 +160,16 @@ load.data.AS <- function(biomark.path,
   label(biodb$GlobalScreeningArray) <- 'Global Screening Array';
   label(biodb$GSAPositives) <- 'GSA Positives';
   label(biodb$BRCAMutation) <- 'BRCA Mutation';
-  label(biodb$Mutation_BRCA1) <- 'BRCA1 Mutation';
-  label(biodb$Mutation_BRCA2) <- 'BRCA2 Mutation';
-  label(biodb$Mutation_ATM) <- 'ATM Mutation';
-  label(biodb$Mutation_MLH1) <- 'MLH1 Mutation';
-  label(biodb$Mutation_PMS2) <- 'PMS2 Mutation';
+  label(biodb$Mutation_BRCA1) <- 'BRCA1';
+  label(biodb$Mutation_BRCA2) <- 'BRCA2';
+  label(biodb$Mutation_ATM) <- 'ATM';
+  label(biodb$Mutation_MLH1) <- 'MLH1';
+  label(biodb$Mutation_PMS2) <- 'PMS2';
+  label(biodb$Germline_variants) <- 'Deleterious germline variants';
   label(biodb$PreviousISUP) <- 'Previous ISUP';
   label(biodb$StudyHighestGleason) <- 'Study Highest Gleason';
   label(biodb$StudyHighestISUP) <- 'Study Highest ISUP';
+  label(biodb$ProgressedToTreatment) <- 'Progressed to Treatment';
 
   biodb$PHI.computed <- with(biodb, {
     (p2PSA / freePSA) * sqrt(PSAHyb)
@@ -204,7 +217,7 @@ load.data.AS <- function(biomark.path,
 #' @export
 default.load.data <- function(onlyBiodb = FALSE) {
   file.names <- c(
-    'MRI DOD Biomarkers Database_Boutros - 2020.10.28.xlsx',
+    'MRI DOD Biomarkers Database_Boutros - 2020.11.2.xlsx',
     'MRI DOD Biomarkers Database_Boutros - Key.xlsx',
     'MRI DOD Biomarkers Genetics_Boutros - 2019.11.12.xlsx',
     'MRI DOD Biomarkers Category_Boutros.xlsx'

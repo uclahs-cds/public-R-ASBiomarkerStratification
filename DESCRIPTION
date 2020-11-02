@@ -18,7 +18,10 @@ Imports:
     pROC,
     xlsx,
     here,
-    caret
+    caret,
+    gbm,
+    flextable,
+    gtsummary
 Suggests:
     BoutrosLab.plotting.survival,
     BoutrosLab.statistics.survival,
