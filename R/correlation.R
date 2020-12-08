@@ -1,3 +1,100 @@
+# variables to be used for heatmap
+cor.variables <- c(
+    'Age',
+    'Weight',
+    'Height',
+    'BMI',
+    'ProstateVolume',
+    'HighestPIRADS',
+    'ADClesionSignal',
+    'RSIlesionSignal',
+    'PCA3',
+    'T2ERG',
+    'MiPSCancerRisk',
+    'MiPSHighGradeCancerRisk',
+    'PSAHyb',
+    'freePSA',
+    'PSADensity',
+    'p2PSA',
+    'PercentFreePSA',
+    'PHI',
+    'PHIDensity',
+    'SOCPSA',
+    'TNFaAverage',
+    'GeneticRiskScore',
+    'GlobalScreeningArray',
+    'GSAPositives',
+    'BRCAMutation',
+    "Mutation_BRCA1", "Mutation_BRCA2", "Mutation_ATM", "Mutation_MLH1", "Mutation_PMS2"
+);
+
+create.forestplot <- function(biodb, ...) {
+    # Compute the univariate effect-sizes (AUROC)
+    uni.auc.ci <- lapply(biodb[, cor.variables], function(predictor) {
+        pROC::ci.auc(
+            roc(response = biodb$BiopsyUpgraded,
+                predictor= predictor,
+                plot = FALSE,
+                direction = '<',
+                levels = c('no', 'yes')))
+    })
+
+    labels <- label.or.name(biodb[, cor.variables])
+
+    segplot.data <- as.data.frame(do.call(rbind, uni.auc.ci))
+    colnames(segplot.data) <- c('min', 'point', 'max')
+    segplot.data$variable <- as.factor(labels)
+    segplot.data$significant <- segplot.data$min > 0.5
+
+    sig.colours <- c("grey", "darkorange1")
+
+    legend <- list(
+        inside = list(
+            fun = draw.key,
+            args = list(
+                key = list(
+                    points = list(
+                        col = rev(sig.colours),
+                        pch = 19,
+                        lty = 1,
+                        cex = 1.25
+                    ),
+                    text = list(
+                        lab = c("p < 0.05", "p >= 0.05")
+                    ),
+                    padding.text = 1,
+                    cex = 1.25
+                )
+            ),
+            x = 0.8,
+            y = 0.15,
+            corner = c(0,1)
+        )
+    )
+
+    create.segplot(
+        formula = reorder(variable, point) ~ min + max,
+        data = segplot.data,
+        xlimits = c(0, 1),
+        level = segplot.data$significant,
+        col.regions = c("grey", "darkorange1"),
+        centers = segplot.data$point,
+        xat = seq(0, 1, by = 0.2),
+        abline.col = "lightgrey",
+        abline.lty = 2,
+        abline.v = 0.5,
+        ylab.label = '',
+        xlab.label = 'AUROC',
+        legend = legend,
+        height = 8,
+        width = 12,
+        left.padding = 10,
+        ...
+        # This doesn't work right. How are the y-axis values ordered?
+        # yaxis.col = ifelse(segplot.data$significant, 'darkorange1', 'black')
+    )
+}
+
 #' Creates a correlation heatmap for the AS cohort
 #'
 #' @param biodb the data frame of the patients
@@ -12,45 +109,15 @@
 #' create.heatmap.AS(biodb,
 #'   filename = here('figures/corr_heatmap.tiff'))
 create.heatmap.AS <- function(biodb, ...) {
-    # variables to be used for heatmap:
-    variables <- c(
-        'Age',
-        'Weight',
-        'Height',
-        'BMI',
-        'ProstateVolume',
-        'HighestPIRADS',
-        'ADClesionSignal',
-        'RSIlesionSignal',
-        'PCA3',
-        'T2ERG',
-        'MiPSCancerRisk',
-        'MiPSHighGradeCancerRisk',
-        'PSAHyb',
-        'freePSA',
-        'PSADensity',
-        'p2PSA',
-        'PercentFreePSA',
-        'PHI',
-        'PHIDensity',
-        'SOCPSA',
-        'TNFaAverage',
-        'GeneticRiskScore',
-        'GlobalScreeningArray',
-        'GSAPositives',
-        'BRCAMutation',
-        "Mutation_BRCA1", "Mutation_BRCA2", "Mutation_ATM", "Mutation_MLH1", "Mutation_PMS2"
-    );
-
-    labels <- label.or.name(biodb[, variables])
+    labels <- label.or.name(biodb[, cor.variables])
 
     # Computing the Correlations for heatmap:
     heatmap.data <- vector(
         mode = "list",
-        length = length(variables)
+        length = length(cor.variables)
     );
 
-    numeric.biodb.heatmap.vars <- lapply(biodb[, variables], as.numeric);
+    numeric.biodb.heatmap.vars <- lapply(biodb[, cor.variables], as.numeric);
     target.corr.data <- unlist(lapply(numeric.biodb.heatmap.vars, cor, y = as.numeric(biodb$BiopsyUpgraded), method = "spearman", use = "complete.obs"))
 
     simple.data <- cor(as.data.frame(numeric.biodb.heatmap.vars), method = "spearman", use = "complete.obs")
@@ -92,6 +159,8 @@ create.heatmap.AS <- function(biodb, ...) {
             title = 'Test Methodology'
         )
     );
+
+
 
     chr.cov.colours <- c(
         rep('black',7),
@@ -155,9 +224,25 @@ create.heatmap.AS <- function(biodb, ...) {
         yaxis.lab = 'Biopsy Upgraded'
     )
 
+    bx.upgrade.barplot.data <- data.frame(
+        x = corr.heatmap$x.limits,
+        y = target.corr.data[corr.heatmap$x.limits]
+    )
+
+    max_cor <- max(abs(target.corr.data))
+    bx.ylim <- round(max_cor, digits = 1)
+
+    bx.upgrade.corr.barplot <- create.barplot(
+        formula = y ~ x,
+        data = bx.upgrade.barplot.data,
+#        yat = seq(-bx.ylim, bxy, by = 0.4),
+        ylimits = c(-bx.ylim, bx.ylim)
+    )
+
     create.multiplot(
-        plot.objects = list(corr.heatmap, bx.upgrade.corr),
-        panel.heights = c(0.05, 1),
+        plot.objects = list(corr.heatmap, bx.upgrade.corr.barplot),
+        # panel.heights = c(0.05, 1),
+        panel.heights = c(0.5, 1),
         y.relation = 'free',
         height = 18,
         width = 23,
@@ -165,13 +250,25 @@ create.heatmap.AS <- function(biodb, ...) {
         right.padding = 2,
         bottom.padding = 5,
         xlab.to.xaxis.padding = 18,
-        resolution = 800,
-        yat = seq(1, ncol(simple.data)),
-        xaxis.rot = 90,
-        yaxis.lab = list(
-            labels,
-            'Biopsy Upgraded'
+        legend = list(
+            right = list(
+                x = 0.10,
+                y = 0.50,
+                fun = legend.grob(sample.cov.legend)
+            )
         ),
+        ylab.label = list(
+            'Biopsy Upgraded\nCorrelations',
+            '',
+            ''
+        ),
+        # yat = c(
+        #    seq_along(corr.heatmap$y.scales$labels)),
+        xaxis.rot = 90,
+        # yaxis.lab = list(
+        #      corr.heatmap$y.scales$labels,
+        #      'Biopsy Upgraded'
+        #  ),
         ...
     )
 }

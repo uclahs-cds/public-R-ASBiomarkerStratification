@@ -92,6 +92,8 @@ demo.table <- tbl_summary(data = biodb[, c(demo.vars, 'BiopsyUpgraded')],
   label = RSIlesionPIRADS ~ 'RSI lesion PI-RADS') %>%
   add_p() 
 
+# demo.metadata <- demo.table$meta_data
+
 target.table <- tbl_summary(data = biodb[, c(target.vars, 'BiopsyUpgraded')],
   by = BiopsyUpgraded,
   missing = "no")
@@ -108,7 +110,9 @@ flextable::save_as_docx(as_flex_table(all.demo.table), path = here::here('euro_u
 ## Correlation heatmap
 ```{r}
 # create.heatmap.AS(biodb,filename = here('euro_urology/figures/corr_heatmap.tiff'))
-create.heatmap.AS(biodb, filename = here('euro_urology/figures/corr_multiplot.tiff'))
+devtools::load_all(".")
+create.heatmap.AS(biodb, filename = here('euro_urology/figures/corr_multiplot.tiff'), resolution = 300)
+create.forestplot(biodb, filename = here('euro_urology/figures/effect_forestplot.tiff'), resolution = 300)
 ```
 
 ## Models
