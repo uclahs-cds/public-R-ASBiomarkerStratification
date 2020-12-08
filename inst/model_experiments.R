@@ -1,5 +1,5 @@
 library(caret)
-library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.ASBiomarkerSynergy);
 library(rpart.plot);
 
 biodb <- default.load.data(onlyBiodb = TRUE);

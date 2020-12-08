@@ -1,12 +1,16 @@
 #' Creates a correlation heatmap for the AS cohort
 #'
-#' @param biodb
-#' @param ...
+#' @param biodb the data frame of the patients
+#' @param ... Additional arguments to pass to `BoutrosLab.plotting.general::create.heatmap`
 #'
-#' @return
+#' @return Output from `BoutrosLab.plotting.general::create.heatmap`
 #' @export
 #'
 #' @examples
+#' biodb <- default.load.data(onlyBiodb = TRUE)
+#' create.heatmap.AS(biodb)
+#' create.heatmap.AS(biodb,
+#'   filename = here('figures/corr_heatmap.tiff'))
 create.heatmap.AS <- function(biodb, ...) {
     # variables to be used for heatmap:
     variables <- c(
@@ -15,14 +19,9 @@ create.heatmap.AS <- function(biodb, ...) {
         'Height',
         'BMI',
         'ProstateVolume',
-        'MRIResult',
-        'MRILesions',
         'HighestPIRADS',
-        'BiopsyResult',
-        'ADCnormalSignal',
         'ADClesionSignal',
         'RSIlesionSignal',
-        'RSInormalSignal',
         'PCA3',
         'T2ERG',
         'MiPSCancerRisk',
@@ -37,7 +36,6 @@ create.heatmap.AS <- function(biodb, ...) {
         'SOCPSA',
         'TNFaAverage',
         'GeneticRiskScore',
-        'GeneticRiskCategory',
         'GlobalScreeningArray',
         'GSAPositives',
         'BRCAMutation',
@@ -52,28 +50,10 @@ create.heatmap.AS <- function(biodb, ...) {
         length = length(variables)
     );
 
-    for (i in 1:length(variables) ){
-        for (j in 1:length(variables)  ){
-            biodbA <- as.numeric(biodb[, variables[i] ]);
-            biodbB <- as.numeric(biodb[, variables[j] ]);
-            heatmap.data[[i]] <- c(
-                heatmap.data[[i]],
-                cor(
-                    biodbA,
-                    biodbB,
-                    method = "spearman",
-                    use = "complete.obs"
-                )
-            );
-        }
-    }
+    numeric.biodb.heatmap.vars <- lapply(biodb[, variables], as.numeric);
+    target.corr.data <- unlist(lapply(numeric.biodb.heatmap.vars, cor, y = as.numeric(biodb$BiopsyUpgraded), method = "spearman", use = "complete.obs"))
 
-    # Data for Heatmap:
-    simple.data <- as.data.frame(
-        do.call(cbind, heatmap.data)
-    );
-    colnames(simple.data) <- variables;
-    rownames(simple.data) <- variables;
+    simple.data <- cor(as.data.frame(numeric.biodb.heatmap.vars), method = "spearman", use = "complete.obs")
 
     # Scaling the colors:
     key.min = -1;
@@ -137,16 +117,16 @@ create.heatmap.AS <- function(biodb, ...) {
     );
 
     # Plotting Heatmap:
-    BoutrosLab.plotting.general::create.heatmap(
+    corr.heatmap <- BoutrosLab.plotting.general::create.heatmap(
         x = simple.data,
         xaxis.lab = labels,
         xaxis.cex = 2,
         yaxis.lab = labels,
         yaxis.cex = 2,
         colourkey.cex = 2,
-        covariates = sample.covariate,
-        covariates.top = top.covariate,
-        covariate.legend = sample.cov.legend,
+        # covariates = sample.covariate,
+        #covariates.top = top.covariate,
+        #covariate.legend = sample.cov.legend,
         legend.side = 'right',
         legend.title.cex = 2.2,
         legend.cex = 2,
@@ -156,14 +136,42 @@ create.heatmap.AS <- function(biodb, ...) {
         colourkey.labels.at = seq(-1, 1, 0.2),
         at = key.scale,
         axis.xlab.padding = 13,
-        #  clustering.method = 'none',
-        plot.dendrograms = 'right',
-        right.dendrogram.size = 5,
+        plot.dendrograms = 'none',
         height = 18,
         width = 23,
         left.padding = 20,
         bottom.padding = 3,
-        resolution = 1000,
-        ...
+        resolution = 200
     );
+
+    bx.upgrade.corr <- create.heatmap(
+        x = t(target.corr.data[corr.heatmap$x.limits]),
+        clustering.method = 'none',
+        at = key.scale,
+        print.colour.key = FALSE,
+        grid.row = TRUE,
+        grid.col = TRUE,
+        yaxis.tck = 0,
+        yaxis.lab = 'Biopsy Upgraded'
+    )
+
+    create.multiplot(
+        plot.objects = list(corr.heatmap, bx.upgrade.corr),
+        panel.heights = c(0.05, 1),
+        y.relation = 'free',
+        height = 18,
+        width = 23,
+        left.padding = 30,
+        right.padding = 2,
+        bottom.padding = 5,
+        xlab.to.xaxis.padding = 18,
+        resolution = 800,
+        yat = seq(1, ncol(simple.data)),
+        xaxis.rot = 90,
+        yaxis.lab = list(
+            labels,
+            'Biopsy Upgraded'
+        ),
+        ...
+    )
 }

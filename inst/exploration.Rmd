@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Load the data analysis package and the data
 ```{r}
-library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.ASBiomarkerSynergy);
 library(table1);
 #library(pander);
 library(knitr);

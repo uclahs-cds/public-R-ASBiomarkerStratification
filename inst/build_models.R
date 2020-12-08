@@ -1,4 +1,4 @@
-library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.ASBiomarkerSynergy);
 
 biodb <- default.load.data(onlyBiodb = TRUE);
 

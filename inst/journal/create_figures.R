@@ -1,5 +1,5 @@
 # Correlation heatmap
-library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.ASBiomarkerSynergy);
 library(here)
 
 biodb <- default.load.data(onlyBiodb = TRUE)

@@ -13,7 +13,7 @@ nocite: |
 ---
 
 ```{r setup, include=FALSE}
-library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.ASBiomarkerSynergy);
 library(BoutrosLab.plotting.general);
 library(kableExtra);
 library(gridExtra);

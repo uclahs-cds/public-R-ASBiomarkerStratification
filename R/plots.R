@@ -113,7 +113,7 @@ roc.pr.plot <- function(models.roc, ...) {
 
     auc.ci.text <- lapply(models.roc, function(m) {
         auc.ci <- ci(m$auc);
-        sprintf("%.3f (%.3f, %.3f) 95%% CI", auc.ci[2], auc.ci[1], auc.ci[3])
+        sprintf("%.2f (%.2f, %.2f) 95%% CI", auc.ci[2], auc.ci[1], auc.ci[3])
         });
 
     legend.text <- paste0(names(models.roc), ': AUC = ', auc.ci.text);

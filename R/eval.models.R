@@ -1,3 +1,9 @@
+#' Compute the cost of given predictions based on a cost matrix
+#'
+#' @param x
+#' @param lev
+#' @param cost.matrix
+#' @param threshold
 preds.cost <- function(x, lev = NULL, cost.matrix = matrix(c(0,1,1,0), byrow = TRUE, nrow = 2), threshold) {
     if(is.null(lev)) {
         lev <- levels(x$obs)
@@ -10,16 +16,20 @@ preds.cost <- function(x, lev = NULL, cost.matrix = matrix(c(0,1,1,0), byrow = T
     sum(conf.mat * cost.matrix)
 }
 
-#' Title
+#' Computes the cost for a given model's predictions at a given threshold for a specified cost matrix.
 #'
-#' @param model
-#' @param cost.matrix
-#' @param thresholds
+#' @param model The caret `train` class trained with `caret::trainControl(classProbs = TRUE, savePredictions = TRUE, ...)`
+#' @param cost.matrix The costs for each predictions with the costs corresponding to table(class_preds, truth) * cost.matrix.
+#' That is, `cost.matrix[1,2] = FN` and `cost.matrix[2,1] = FP`
+#' @param thresholds A vector of thresholds to compute the cost matrix for.
 #'
-#' @return
+#' @return A vector of the costs
 #' @export
 #'
 #' @examples
+#' # Twice as costly for a false-positive than false positive
+#' cost.matrix <- matrix(c(0,2,1,0), byrow = TRUE, nrow = 2)
+#' cost.threshold.train(model, thresholds = c(0.25, 0.5), cost.matrix = cost.matrix)
 cost.threshold.train <- function(model,
                               cost.matrix = matrix(c(0,1,1,0), byrow = TRUE, nrow = 2),
                               thresholds = 0.5) {
@@ -39,7 +49,7 @@ cost.threshold.train <- function(model,
     unlist(res)
 }
 
-#' Title
+#' Computes the optimal threshold based on a given cost matrix.
 #'
 #' @param model
 #' @param cost.matrix

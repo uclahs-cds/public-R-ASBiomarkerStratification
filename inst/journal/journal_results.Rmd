@@ -12,7 +12,7 @@ nocite: |
 ---
 
 ```{r setup, include=FALSE}
-library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.ASBiomarkerSynergy);
 library(survival);
 library(BoutrosLab.plotting.general);
 library(flextable);
@@ -107,9 +107,8 @@ flextable::save_as_docx(as_flex_table(all.demo.table), path = here::here('euro_u
 
 ## Correlation heatmap
 ```{r}
-create.heatmap.AS(biodb,
-                  filename = here('euro_urology/figures/corr_heatmap.tiff')
-                  )
+# create.heatmap.AS(biodb,filename = here('euro_urology/figures/corr_heatmap.tiff'))
+create.heatmap.AS(biodb, filename = here('euro_urology/figures/corr_multiplot.tiff'))
 ```
 
 ## Models
@@ -214,7 +213,8 @@ km.arguments <- list(
   key.groups.cex = 1.3,
   key.stats.cex = 1.3,
   key.stats.y.pos = 0.5,
-  return.statistics = FALSE
+  return.statistics = FALSE,
+  digits = 1
   );
 
 upgrade.surv.valid <- do.call(

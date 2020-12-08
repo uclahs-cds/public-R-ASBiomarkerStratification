@@ -1,4 +1,4 @@
-library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.ASBiomarkerSynergy);
 library(caret)
 library(pROC)
 library(rpart.plot)

@@ -1,4 +1,4 @@
-library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.ASBiomarkerSynergy);
 
 data <- default.load.data();
 

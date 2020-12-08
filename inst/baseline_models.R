@@ -1,4 +1,4 @@
-library(ProstateCancer.ASBiomarkerSynergy);
+library(BoutrosLab.ASBiomarkerSynergy);
 # Baseline models
 library(magrittr)
 library(knitr)
