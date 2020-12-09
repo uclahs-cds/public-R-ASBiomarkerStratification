@@ -112,7 +112,6 @@ flextable::save_as_docx(as_flex_table(all.demo.table), path = here::here('euro_u
 # create.heatmap.AS(biodb,filename = here('euro_urology/figures/corr_heatmap.tiff'))
 devtools::load_all(".")
 create.heatmap.AS(biodb, filename = here('euro_urology/figures/corr_multiplot.tiff'), resolution = 300)
-create.forestplot(biodb, filename = here('euro_urology/figures/effect_forestplot.tiff'), resolution = 300)
 ```
 
 ## Models

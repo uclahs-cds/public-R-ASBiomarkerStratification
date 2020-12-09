@@ -90,8 +90,6 @@ create.forestplot <- function(biodb, ...) {
         width = 12,
         left.padding = 10,
         ...
-        # This doesn't work right. How are the y-axis values ordered?
-        # yaxis.col = ifelse(segplot.data$significant, 'darkorange1', 'black')
     )
 }
 
@@ -121,6 +119,20 @@ create.heatmap.AS <- function(biodb, ...) {
     target.corr.data <- unlist(lapply(numeric.biodb.heatmap.vars, cor, y = as.numeric(biodb$BiopsyUpgraded), method = "spearman", use = "complete.obs"))
 
     simple.data <- cor(as.data.frame(numeric.biodb.heatmap.vars), method = "spearman", use = "complete.obs")
+
+    # Compute the univariate effect-sizes (AUROC)
+    uni.auc.ci <- lapply(biodb[, cor.variables], function(predictor) {
+        pROC::ci.auc(
+            roc(response = biodb$BiopsyUpgraded,
+                predictor= predictor,
+                plot = FALSE,
+                direction = '<',
+                levels = c('no', 'yes')))
+    })
+
+    labels <- label.or.name(biodb[, cor.variables])
+
+    forest.sig.colours <- c("grey", "darkorange1")
 
     # Scaling the colors:
     key.min = -1;
@@ -193,9 +205,6 @@ create.heatmap.AS <- function(biodb, ...) {
         yaxis.lab = labels,
         yaxis.cex = 2,
         colourkey.cex = 2,
-        # covariates = sample.covariate,
-        #covariates.top = top.covariate,
-        #covariate.legend = sample.cov.legend,
         legend.side = 'right',
         legend.title.cex = 2.2,
         legend.cex = 2,
@@ -206,6 +215,7 @@ create.heatmap.AS <- function(biodb, ...) {
         at = key.scale,
         axis.xlab.padding = 13,
         plot.dendrograms = 'none',
+        cluster.dimensions = 'both',
         height = 18,
         width = 23,
         left.padding = 20,
@@ -235,30 +245,65 @@ create.heatmap.AS <- function(biodb, ...) {
     bx.upgrade.corr.barplot <- create.barplot(
         formula = y ~ x,
         data = bx.upgrade.barplot.data,
-#        yat = seq(-bx.ylim, bxy, by = 0.4),
         ylimits = c(-bx.ylim, bx.ylim)
     )
 
+    segplot.data <- as.data.frame(do.call(rbind, uni.auc.ci))
+    colnames(segplot.data) <- c('min', 'point', 'max')
+    # Set the levels to the ordering from the correlation clusteirng
+    segplot.data$variable <- factor(cor.variables, levels = corr.heatmap$x.limits)
+    segplot.data$label <- labels
+    segplot.data$significant <- segplot.data$min > 0.5
+
+    forest.plot <- create.segplot(
+        formula = variable ~ min + max,
+        data = segplot.data,
+        xlimits = c(0, length(labels) + 0.5),
+        ylimits = c(0, 1),
+        plot.horizontal = FALSE,
+        level = segplot.data$significant,
+        col.regions = forest.sig.colours,
+        centers = segplot.data$point,
+        yat = seq(0, 1, by = 0.2),
+        xat = seq(1, nrow(segplot.data)),
+        xaxis.lab = levels(segplot.data$variable),
+        xaxis.rot = 90,
+        abline.col = "lightgrey",
+        abline.lty = 2.5,
+        abline.h = 0.5,
+        abline.lwd = 2,
+        segments.lwd = 6,
+        # Center size
+        symbol.cex = 2,
+        xlab.label = '',
+        ylab.label = 'AUROC',
+        height = 8,
+        width = 12,
+        left.padding = 10
+    )
+
     create.multiplot(
-        plot.objects = list(corr.heatmap, bx.upgrade.corr.barplot),
+        plot.objects = list(corr.heatmap, forest.plot),
         # panel.heights = c(0.05, 1),
-        panel.heights = c(0.5, 1),
+        panel.heights = c(0.25, 1),
         y.relation = 'free',
-        height = 18,
+        height = 25,
         width = 23,
         left.padding = 30,
         right.padding = 2,
         bottom.padding = 5,
         xlab.to.xaxis.padding = 18,
-        legend = list(
-            right = list(
-                x = 0.10,
-                y = 0.50,
-                fun = legend.grob(sample.cov.legend)
-            )
-        ),
+        # legend = list(
+        #     right = list(
+        #         x = 0.10,
+        #         y = 0.50,
+        #         fun = legend.grob(sample.cov.legend)
+        #     )
+        # ),
         ylab.label = list(
-            'Biopsy Upgraded\nCorrelations',
+            'AUROC',
+            '',
+            '',
             '',
             ''
         ),

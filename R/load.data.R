@@ -137,7 +137,7 @@ load.data.AS <- function(biomark.path,
   label(biodb$Height) <-"Height (cm)";
   label(biodb$ProstateVolume) <- "Prostate Volume (cm^3)";
   label(biodb$p2PSA) <- "[-2]proPSA";
-  label(biodb$freePSA) <- "free PSA";
+  label(biodb$freePSA) <- "Free PSA";
   label(biodb$MRIResult) <- 'MRI Result';
   label(biodb$MRILesions) <- 'MRI Lesions';
   label(biodb$HighestPIRADS) <- 'Highest PIRADS';
