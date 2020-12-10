@@ -78,10 +78,10 @@ gbm.seq.models <- lapply(seq_along(X), function(i) {
 })
 
 if(length(gbm.seq.models) == 4) {
-  names(gbm.seq.models) <- c('Demographics', 'Blood/Urine/Genetics', 'MRI Features', 'Post MRI + Biomarkers');
+  names(gbm.seq.models) <- c('Demographics', 'Blood/Urine/Genetics', 'MRI Features', 'Post MRI');
 }
 if(length(gbm.seq.models) == 6) {
-  names(gbm.seq.models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Post MRI + Biomarkers');
+  names(gbm.seq.models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Post MRI');
 }
 
 

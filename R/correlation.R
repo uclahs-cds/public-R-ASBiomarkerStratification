@@ -107,7 +107,11 @@ create.forestplot <- function(biodb, ...) {
 #' create.heatmap.AS(biodb,
 #'   filename = here('figures/corr_heatmap.tiff'))
 create.heatmap.AS <- function(biodb, ...) {
+    biomarkers <- load.biomarker.categories()
+    biomarkers$category.factor <- factor(biomarkers$category, levels = unique(biomarkers$category))
+
     labels <- label.or.name(biodb[, cor.variables])
+    names(labels) <- colnames(biodb[, cor.variables])
 
     # Computing the Correlations for heatmap:
     heatmap.data <- vector(
@@ -151,51 +155,6 @@ create.heatmap.AS <- function(biodb, ...) {
         )
     );
     key.scale = unique(key.scale);
-
-    sample.cov.legend <- list(
-        legend = list(
-            colours = c(
-                'black',
-                'dodgerblue',
-                'gold',
-                'firebrick3',
-                'darkgreen'
-            ),
-            labels = c(
-                'Patient Features',
-                'Imaging',
-                'Urine',
-                'Blood/Urine',
-                'Genetics'
-            ),
-            title = 'Test Methodology'
-        )
-    );
-
-
-
-    chr.cov.colours <- c(
-        rep('black',7),
-        rep('dodgerblue',8),
-        rep('gold',2),
-        rep('firebrick3', 11),
-        rep('darkgreen', 8));
-
-    top.covariate <- list(
-        rect = list(
-            col = 'white',
-            fill = chr.cov.colours,
-            lwd = 1.5
-        )
-    );
-
-    sample.covariate <- list(
-        rect = list(
-            col = 'white',
-            fill =  chr.cov.colours,
-            lwd = 1.5
-        )
-    );
 
     # Plotting Heatmap:
     corr.heatmap <- BoutrosLab.plotting.general::create.heatmap(
@@ -282,24 +241,33 @@ create.heatmap.AS <- function(biodb, ...) {
         left.padding = 10
     )
 
+    corr.legend <- legend.grob(
+        list(
+            legend = list(
+                colours = default.colours(nlevels(biomarkers$category.factor), palette.type = 'qual'),
+                labels = levels(biomarkers$category.factor),
+                title = 'Test Methodology',
+                border = 'black'
+            )
+        ),
+        title.just = 'left',
+        title.cex = 2,
+        label.cex = 1.75,
+    );
+
     create.multiplot(
         plot.objects = list(corr.heatmap, forest.plot),
         # panel.heights = c(0.05, 1),
         panel.heights = c(0.25, 1),
         y.relation = 'free',
-        height = 25,
-        width = 23,
+        height = 18,
+        width = 20,
         left.padding = 30,
         right.padding = 2,
         bottom.padding = 5,
         xlab.to.xaxis.padding = 18,
-        # legend = list(
-        #     right = list(
-        #         x = 0.10,
-        #         y = 0.50,
-        #         fun = legend.grob(sample.cov.legend)
-        #     )
-        # ),
+        legend = list(right = list(fun = corr.legend)),
+        print.new.legend = TRUE,
         ylab.label = list(
             'AUROC',
             '',
