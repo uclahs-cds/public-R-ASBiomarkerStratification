@@ -235,10 +235,12 @@ default.load.data <- function(onlyBiodb = FALSE) {
 #'
 #' @examples
 load.biomarker.categories <- function(file.name = 'biomarkers_categories.xlsx') {
-  xlsx::read.xlsx(
+  res <- xlsx::read.xlsx(
     here::here(paste0('data/', file.name)),
     sheetIndex = 1,
     header = TRUE,
     stringsAsFactors = FALSE
   )
+  rownames(res) <- res$variable
+  res
 }

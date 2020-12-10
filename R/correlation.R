@@ -164,12 +164,12 @@ create.heatmap.AS <- function(biodb, ...) {
         yaxis.lab = labels,
         yaxis.cex = 2,
         colourkey.cex = 2,
-        legend.side = 'right',
-        legend.title.cex = 2.2,
-        legend.cex = 2,
-        legend.title.just = 'left',
-        legend.between.row = 0.1,
-        legend.border.padding = 3,
+        # legend.side = 'right',
+        # legend.title.cex = 2.2,
+        # legend.cex = 2,
+        # legend.title.just = 'left',
+        # legend.between.row = 0.1,
+        # legend.border.padding = 3,
         colourkey.labels.at = seq(-1, 1, 0.2),
         at = key.scale,
         axis.xlab.padding = 13,
@@ -205,6 +205,22 @@ create.heatmap.AS <- function(biodb, ...) {
         formula = y ~ x,
         data = bx.upgrade.barplot.data,
         ylimits = c(-bx.ylim, bx.ylim)
+    )
+
+    # Covariate heatmap
+    meth.colours <- default.colours(nlevels(biomarkers$category.factor), palette.type = 'qual')
+    names(meth.colours) <- levels(biomarkers$category.factor)
+    meth.fill <- meth.colours[biomarkers$category]
+
+    cov.heatmap <- create.heatmap(
+        x = t(as.integer(biomarkers[corr.heatmap$x.limits, "category.factor"])),
+        clustering.method = 'none',
+        colour.scheme = default.colours(nlevels(biomarkers$category.factor), palette.type = 'qual'),
+        total.colours = nlevels(biomarkers$category.factor) + 1,
+        print.colour.key = FALSE,
+        grid.col = TRUE,
+        xaxis.tck = 0,
+        yaxis.tck = 0
     )
 
     segplot.data <- as.data.frame(do.call(rbind, uni.auc.ci))
@@ -244,6 +260,11 @@ create.heatmap.AS <- function(biodb, ...) {
     corr.legend <- legend.grob(
         list(
             legend = list(
+                colours = rev(forest.sig.colours),
+                labels = c('p < 0.05', 'p ≥ 0.05'),
+                title = 'Univariate Significance'
+            ),
+            legend = list(
                 colours = default.colours(nlevels(biomarkers$category.factor), palette.type = 'qual'),
                 labels = levels(biomarkers$category.factor),
                 title = 'Test Methodology',
@@ -256,9 +277,9 @@ create.heatmap.AS <- function(biodb, ...) {
     );
 
     create.multiplot(
-        plot.objects = list(corr.heatmap, forest.plot),
+        plot.objects = list(corr.heatmap, cov.heatmap, forest.plot),
         # panel.heights = c(0.05, 1),
-        panel.heights = c(0.25, 1),
+        panel.heights = c(0.25, 0.04, 1),
         y.relation = 'free',
         height = 18,
         width = 20,
@@ -268,6 +289,7 @@ create.heatmap.AS <- function(biodb, ...) {
         xlab.to.xaxis.padding = 18,
         legend = list(right = list(fun = corr.legend)),
         print.new.legend = TRUE,
+        y.spacing = c(0, 1, 0),
         ylab.label = list(
             'AUROC',
             '',
@@ -275,8 +297,8 @@ create.heatmap.AS <- function(biodb, ...) {
             '',
             ''
         ),
-        # yat = c(
-        #    seq_along(corr.heatmap$y.scales$labels)),
+        yaxis.tck = 0,
+        xaxis.tck = 0,
         xaxis.rot = 90,
         # yaxis.lab = list(
         #      corr.heatmap$y.scales$labels,
