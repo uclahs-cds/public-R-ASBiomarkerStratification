@@ -72,9 +72,9 @@ model.path <- here::here(paste0('models/sequential/', model.file));
 models <- lapply(model.path, readRDS);
 
 if(group.tests) {
-  names(models) <- c('Demographics', 'Blood, Urine, Genetics', 'MRI Features', 'Post MRI');
+  names(models) <- c('Demographics', 'Blood, Urine, Genetics', 'MRI Features', 'Volume Corrected');
 } else {
-  names(models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Post MRI');
+  names(models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Volume Corrected');
 }
 
 

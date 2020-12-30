@@ -175,6 +175,9 @@ load.data.AS <- function(biomark.path,
     (p2PSA / freePSA) * sqrt(PSAHyb)
   });
 
+  biodb$FollowUpTime <- biodb$DaysDxToLastReview
+  biodb$FollowUpTime[!is.na(biodb$DaysDxToUpgrade)] <- biodb$DaysDxToUpgrade
+
   biokey <- xlsx::read.xlsx(
     biomark.key.path,
     sheetIndex = 1,

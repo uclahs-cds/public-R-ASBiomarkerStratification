@@ -10,7 +10,6 @@ cor.variables <- c(
     'RSIlesionSignal',
     'PCA3',
     'T2ERG',
-    'MiPSCancerRisk',
     'MiPSHighGradeCancerRisk',
     'PSAHyb',
     'freePSA',
@@ -207,16 +206,18 @@ create.heatmap.AS <- function(biodb, ...) {
         ylimits = c(-bx.ylim, bx.ylim)
     )
 
+    biomarker.factors <- biomarkers[corr.heatmap$x.limits, "category.factor"]
+
     # Covariate heatmap
-    meth.colours <- default.colours(nlevels(biomarkers$category.factor), palette.type = 'qual')
-    names(meth.colours) <- levels(biomarkers$category.factor)
+    meth.colours <- default.colours(nlevels(biomarker.factors), palette.type = 'qual')
+    names(meth.colours) <- levels(biomarker.factors)
     meth.fill <- meth.colours[biomarkers$category]
 
     cov.heatmap <- create.heatmap(
-        x = t(as.integer(biomarkers[corr.heatmap$x.limits, "category.factor"])),
+        x = t(as.integer(biomarker.factors)),
         clustering.method = 'none',
-        colour.scheme = default.colours(nlevels(biomarkers$category.factor), palette.type = 'qual'),
-        total.colours = nlevels(biomarkers$category.factor) + 1,
+        colour.scheme = default.colours(nlevels(biomarker.factors), palette.type = 'qual'),
+        total.colours = nlevels(biomarker.factors) + 1,
         print.colour.key = FALSE,
         grid.col = TRUE,
         xaxis.tck = 0,

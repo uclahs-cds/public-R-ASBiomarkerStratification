@@ -61,6 +61,7 @@ label <- function(x) {
     else x
 }
 
+#'@export
 label.or.name <- function(x) {
     mc <- match.call()
     if(typeof(x) == 'list') {

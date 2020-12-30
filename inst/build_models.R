@@ -2,7 +2,7 @@ library(BoutrosLab.ASBiomarkerSynergy);
 
 biodb <- default.load.data(onlyBiodb = TRUE);
 
-seed <- 1313;
+seed <- 9999;
 
 train.control <- caret::trainControl(
     method = "repeatedcv",
@@ -14,9 +14,9 @@ metrics <- c(#'ROC-AUC'
              'PR-AUC'
              );
 targets <- c(
-    'BiopsyUpgraded',
+    'BiopsyUpgraded' #,
     #'Prostatectomy',
-    'ProgressedToTreatment'
+    # 'ProgressedToTreatment'
     );
 
 lapply(targets, function(tg) {
@@ -34,21 +34,22 @@ lapply(targets, function(tg) {
     );
 });
 
-lapply(targets, function(tg) {
-    lapply(metrics,
-              AS.models,
-              biodb = biodb,
-              target = tg,
-              train.control = train.control,
-              predict.missing = FALSE,
-              seed = seed,
-              models = c('gbm'),
-              rm.NoUpgradeAndProgressed = TRUE,
-              reduced.model = TRUE,
-              exclude.vars = 'RSIlesionSignal',
-              suffix = 'reduced_only_RSIlesionPIRADS'
-              );
-    });
+# lapply(targets, function(tg) {
+#     lapply(metrics,
+#               AS.models,
+#               biodb = biodb,
+#               target = tg,
+#               train.control = train.control,
+#               predict.missing = FALSE,
+#               seed = seed,
+#               models = c('gbm'),
+#               rm.NoUpgradeAndProgressed = TRUE,
+#               reduced.model = TRUE,
+#               exclude.vars = 'RSIlesionSignal',
+#               suffix = 'reduced_only_RSIlesionPIRADS'
+#               );
+#     });
+#
 
 lapply(targets, function(tg) {
     lapply(metrics,
@@ -65,21 +66,21 @@ lapply(targets, function(tg) {
            suffix = 'reduced_only_RSIlesionSignal'
     );
 });
-
-lapply(targets, function(tg) {
-    lapply(metrics,
-           AS.models,
-           biodb = biodb,
-           target = tg,
-           train.control = train.control,
-           predict.missing = FALSE,
-           seed = seed,
-           models = c('gbm'),
-           rm.NoUpgradeAndProgressed = TRUE,
-           reduced.model = FALSE,
-           suffix = 'everything'
-    );
-});
+#
+# lapply(targets, function(tg) {
+#     lapply(metrics,
+#            AS.models,
+#            biodb = biodb,
+#            target = tg,
+#            train.control = train.control,
+#            predict.missing = FALSE,
+#            seed = seed,
+#            models = c('gbm'),
+#            rm.NoUpgradeAndProgressed = TRUE,
+#            reduced.model = FALSE,
+#            suffix = 'everything'
+#     );
+# });
 
 # Baseline models
 # lapply(targets, function(tg) {
