@@ -27,9 +27,20 @@ cor.variables <- c(
     "Mutation_BRCA1", "Mutation_BRCA2", "Mutation_ATM", "Mutation_MLH1", "Mutation_PMS2"
 );
 
-create.forestplot <- function(biodb, ...) {
+
+#' Title
+#'
+#' @param biodb
+#' @param variables
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+create.forestplot <- function(biodb, variables, ...) {
     # Compute the univariate effect-sizes (AUROC)
-    uni.auc.ci <- lapply(biodb[, cor.variables], function(predictor) {
+    uni.auc.ci <- lapply(biodb[, variables], function(predictor) {
         pROC::ci.auc(
             roc(response = biodb$BiopsyUpgraded,
                 predictor= predictor,
@@ -38,7 +49,7 @@ create.forestplot <- function(biodb, ...) {
                 levels = c('no', 'yes')))
     })
 
-    labels <- label.or.name(biodb[, cor.variables])
+    labels <- label.or.name(biodb[, variables])
 
     segplot.data <- as.data.frame(do.call(rbind, uni.auc.ci))
     colnames(segplot.data) <- c('min', 'point', 'max')

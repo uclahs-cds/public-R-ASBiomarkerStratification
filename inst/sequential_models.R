@@ -22,11 +22,8 @@ biomarkers <- load.biomarker.categories()
 
 target <- 'BiopsyUpgraded'
 metric <- 'PR-AUC'
-seed <- 1313
+seed <- 9999
 missing.target <- is.na(biodb[, target]);
-
-# Only keep the patient that did not leave AS voluntarily if we have the rm.NoUpgradeAndProgressed flag
-valid.patients <- (! (biodb$NoUpgradeAndProgressed == 1) | is.na(biodb$NoUpgradeAndProgressed));
 
 useful.biomarkers <- biomarkers[biomarkers$clinically.useful == 1, ]
 
@@ -42,10 +39,10 @@ biocategories <- unique(biomarkers$category)
 X <- lapply(seq_along(biocategories), function(i) {
   bio.cats <- biocategories[1:i];
   bio.vars <- useful.biomarkers$variable[useful.biomarkers$category %in% bio.cats]
-  biodb[!missing.target & valid.patients, bio.vars, drop = FALSE]
+  biodb[!missing.target, bio.vars, drop = FALSE]
 })
 
-y.target <- biodb[!missing.target & valid.patients, target];
+y.target <- biodb[!missing.target, target];
 y <- y.target
 levels(y) <- c('no', 'yes');
 

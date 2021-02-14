@@ -30,7 +30,7 @@ AS.models <- function(
     predict.missing = FALSE,
     seed = NULL,
     rpart.cost = NULL,
-    rm.NoUpgradeAndProgressed = TRUE,
+    rm.NoUpgradeAndProgressed = FALSE,
     reduced.model = FALSE,
     baseline.model = FALSE,
     suffix = ''
