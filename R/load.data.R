@@ -176,7 +176,7 @@ load.data.AS <- function(biomark.path,
   });
 
   biodb$FollowUpTime <- biodb$DaysDxToLastReview
-  biodb$FollowUpTime[!is.na(biodb$DaysDxToUpgrade)] <- biodb$DaysDxToUpgrade
+  biodb$FollowUpTime[!is.na(biodb$DaysDxToUpgrade)] <- biodb$DaysDxToUpgrade[!is.na(biodb$DaysDxToUpgrade)]
 
   biokey <- xlsx::read.xlsx(
     biomark.key.path,
