@@ -1,4 +1,5 @@
 # variables to be used for heatmap
+#' @export
 cor.variables <- c(
     'Age',
     'Weight',
@@ -132,7 +133,7 @@ create.heatmap.AS <- function(biodb, ...) {
     numeric.biodb.heatmap.vars <- lapply(biodb[, cor.variables], as.numeric);
     target.corr.data <- unlist(lapply(numeric.biodb.heatmap.vars, cor, y = as.numeric(biodb$BiopsyUpgraded), method = "spearman", use = "complete.obs"))
 
-    simple.data <- cor(as.data.frame(numeric.biodb.heatmap.vars), method = "spearman", use = "complete.obs")
+    simple.data <- cor(as.data.frame(numeric.biodb.heatmap.vars), method = "spearman", use = "pairwise.complete.obs")
 
     # Compute the univariate effect-sizes (AUROC)
     uni.auc.ci <- lapply(biodb[, cor.variables], function(predictor) {
