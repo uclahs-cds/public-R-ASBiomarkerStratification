@@ -25,4 +25,4 @@ jobs:
       - name: CICD-base
         uses: docker://blcdsdockerregistry/cicd-base:latest
         env:
-          VALIDATE_R: false
+          VALIDATE_R: true
