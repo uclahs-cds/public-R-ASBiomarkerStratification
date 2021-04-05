@@ -55,7 +55,7 @@ label <- function(x) {
     x;
     }
 
-`%||%` <- function (x, y) {
+`%||%` <- function(x, y) {
     if (is.null(x)) y
     else x
 }

@@ -64,8 +64,8 @@ model.nice.names <- c(
 models <- lapply(targets, function(x) {
     model.id <- paste(x, metric, seed, sep = '_');
     model.id <- paste(model.id, model.names, sep = '_');
-  
-    model.files <- here(paste('models/gbm', model.id, 'model.RDS', sep = '_'));  
+
+    model.files <- here(paste('models/gbm', model.id, 'model.RDS', sep = '_'));
     names(model.files) <- model.nice.names;
     lapply(model.files, readRDS);
 })

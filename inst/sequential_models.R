@@ -100,12 +100,12 @@ seq.var.names <- lapply(seq.models, function(x) x$finalModel$var.names)
 all.var.names <- biomarkers.clinically.useful$variable
 
 summary.df <- summarize.seq.models(seq.models, seq.models.roc)
-metrics <- c("Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
-cols <- c("group", metrics)
+metrics <- c('Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
+cols <- c('group', metrics)
 
 thresholds.table <- summary.df[, cols]
 thresholds.table$group <- lapply(seq_along(seq.models), function(i) {
-  paste0(names(seq.models)[1:i], collapse = " +\n")
+  paste0(names(seq.models)[1:i], collapse = ' +\n')
 })
 
 # Create the dotmap
@@ -132,7 +132,7 @@ rownames(dotmap.bg.data.int) <- all.var.names
 bpg.dotmap <- create.dotmap(
   x = dotmap.data,
   spot.size.function = identity,
-  spot.colour.function = function(x) "black",
+  spot.colour.function = function(x) 'black',
   colour.scheme = default.colours(nlevels(var.categories), palette.type = 'qual'),
   total.colours = nlevels(var.categories) + 1,
   bg.alpha = 0.65,
@@ -165,13 +165,13 @@ metric.legend <- legend.grob(
   list(
     legend = list(
       colours = metric.colours,
-      title = "Metrics",
+      title = 'Metrics',
       labels = metrics,
       border = 'black'
     ),
     legend = list(
       colours = default.colours(nlevels(var.categories), palette.type = 'qual'),
-      title = "Test Methodology",
+      title = 'Test Methodology',
       labels = levels(var.categories),
       border = 'black'
     )
