@@ -111,6 +111,10 @@ load.data.AS <- function(biomark.path,
   # biodb$ProgressedToTreatment <- as.logical(biodb$ProgressedToTreatment)
   # biodb$BiopsyUpgraded <- as.logical(biodb$BiopsyUpgraded)
 
+  # Add MyProstateScore = MiPSHighGradeCancerRisk
+  biodb$MyProstateScore <- biodb$MiPSHighGradeCancerRisk;
+  biodb$MPSDensity <- biodb$MyProstateScore / biodb$ProstateVolume;
+
   # Update levels
   levels(biodb$Race) <- c('White', 'African-American', 'Asian');
   levels(biodb$Ethnicity) <- c('Non-Hispanic', 'Hispanic');
@@ -140,15 +144,17 @@ load.data.AS <- function(biomark.path,
   label(biodb$freePSA) <- "Free PSA";
   label(biodb$MRIResult) <- 'MRI Result';
   label(biodb$MRILesions) <- 'MRI Lesions';
-  label(biodb$HighestPIRADS) <- 'Highest PIRADS';
+  label(biodb$HighestPIRADS) <- 'PI-RADS';
   label(biodb$BiopsyResult) <- 'Biopsy Result';
   label(biodb$ADCnormalSignal) <- 'ADC normal Signal';
   label(biodb$ADClesionSignal) <- 'ADC lesion Signal';
   label(biodb$RSIlesionSignal) <- 'RSI lesion Signal';
   label(biodb$RSInormalSignal) <- 'RSI normal Signal';
-  label(biodb$RSIlesionPIRADS) <- 'RSI lesion PI-RADS'
+  label(biodb$RSIlesionPIRADS) <- 'PI-RADS'
   label(biodb$MiPSCancerRisk) <- 'MiPS Cancer Risk';
-  label(biodb$MiPSHighGradeCancerRisk) <- 'MiPS High Grade Risk';
+  label(biodb$MiPSHighGradeCancerRisk) <- 'MyProstateScore';
+  label(biodb$MyProstateScore) <- 'MyProstateScore';
+  label(biodb$MPSDensity) <- 'MPS Density';
   label(biodb$SOCPSA) <- 'PSA';
   label(biodb$PSAHyb) <- 'PSA Hybrid';
   label(biodb$PSADensity) <- 'PSA Density';
@@ -245,5 +251,5 @@ load.biomarker.categories <- function(file.name = 'biomarkers_categories.xlsx') 
     stringsAsFactors = FALSE
   )
   rownames(res) <- res$variable
-  res
+  res[order(res$order), ]
 }

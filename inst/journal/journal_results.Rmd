@@ -42,6 +42,8 @@ biodb.valid <- biodb[valid.patients, ];
 
 col.labels <- label.or.name(biodb)
 names(col.labels) <- colnames(biodb)
+
+seed <- 9999
 ```
 
 ## Demographcs
@@ -81,7 +83,7 @@ demo.vars <- c(
   "ProstateVolume",
   "PreviousISUP",
   "StudyHighestISUP",
-  "PCA3", "T2ERG", "MiPSCancerRisk",
+  "PCA3", "T2ERG", "MyProstateScore", "MPSDensity",
   "GeneticRiskScore",
   "TNFaAverage",
   "RSInormalSignal",
@@ -118,39 +120,13 @@ flextable::save_as_docx(as_flex_table(all.demo.table), path = here::here('euro_u
 
 ## Correlation heatmap
 ```{r}
+set.seed(seed)
 create.heatmap.AS(biodb, filename = here('euro_urology/figures/corr_multiplot.tiff'), resolution = 300)
 ```
 
 ## Univariate AUC
 ```{r}
-cor.variables <- c(
-    'Age',
-    'Weight',
-    'Height',
-    'BMI',
-    'ProstateVolume',
-    'HighestPIRADS',
-    'ADClesionSignal',
-    'RSIlesionSignal',
-    'PCA3',
-    'T2ERG',
-    'MiPSHighGradeCancerRisk',
-    'PSAHyb',
-    'freePSA',
-    'PSADensity',
-    'p2PSA',
-    'PercentFreePSA',
-    'PHI',
-    'PHIDensity',
-    'SOCPSA',
-    'TNFaAverage',
-    'GeneticRiskScore',
-    'GlobalScreeningArray',
-    'GSAPositives',
-    'BRCAMutation',
-    "Mutation_BRCA1", "Mutation_BRCA2", "Mutation_ATM", "Mutation_MLH1", "Mutation_PMS2"
-);
-
+set.seed(seed)
 uni.auc.ci <- lapply(biodb[, cor.variables], function(predictor) {
     pROC::ci.auc(
         roc(response = biodb$BiopsyUpgraded,
@@ -160,15 +136,22 @@ uni.auc.ci <- lapply(biodb[, cor.variables], function(predictor) {
             levels = c('no', 'yes')))
 })
 
-uni.auc.ci$RSIlesionSignal
-
+count <- 0
+for(i in names(uni.auc.ci)) {
+  conf_int <- uni.auc.ci[[i]]
+  if(conf_int[1] > 0.5) {
+    count <- count + 1
+    print(i)
+    print(round(conf_int[c(2,1,3)], 2))
+  }
+}
+print(count)
 # create.forestplot(biodb)
 ```
 
 ## Models
 
 ```{r, cache = TRUE}
-seed <- 9999
 targets <- c(
     'BiopsyUpgraded'#,
     #'Prostatectomy',

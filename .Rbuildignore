@@ -7,3 +7,4 @@
 ^data$
 ^DATA\.md$
 ^\.github$
+^no_commit$

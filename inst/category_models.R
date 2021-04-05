@@ -8,7 +8,6 @@
 library(BoutrosLab.ASBiomarkerSynergy);
 library(caret);
 library(pROC);
-library(PRROC);
 
 seed <- 9999;
 metric <- 'PR-AUC'
@@ -22,9 +21,10 @@ rownames(biomarkers) <- biomarkers$variable;
 biomarkers <- biomarkers[cor.variables,]
 
 # baseline.vars <- biomarkers$variable[biomarkers$category == 'Demographics']
-clinico.epi.vars <- biomarkers$variable[biomarkers$category %in% c('Demographics', 'Blood', 'Urine')]
-radiologic.vars <- biomarkers$variable[biomarkers$category %in% c('Volume Corrected', 'MRI Features')]
-molecular.vars <- biomarkers$variable[biomarkers$category == 'Genetics']
+clinico.epi.vars <- c('Age', 'BMI', 'ProstateVolume', 'PSADensity', 'PercentFreePSA') # biomarkers$variable[biomarkers$category %in% c('Demographics', 'Blood', 'Urine')]
+radiologic.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category == 'MRI Features'])
+molecular.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category == 'Genetics'])
+all.vars <- union(radiologic.vars, molecular.vars)
 
 paste0(clinico.epi.vars, collapse = ", ")
 paste0(radiologic.vars, collapse = ", ")
@@ -34,8 +34,6 @@ paste0(molecular.vars, collapse = ", ")
 length(clinico.epi.vars)
 length(radiologic.vars)
 length(molecular.vars)
-
-all.vars <- c(radiologic.vars, molecular.vars, clinico.epi.vars);
 
 if(train.model) {
   missing.target <- is.na(biodb[, target]);
@@ -148,10 +146,11 @@ if(train.model) {
 }
 
 
+set.seed(seed)
 models <- list(gbm.clinico.epi, gbm.radiologic, gbm.molecular, gbm.all)
 names(models) <- c('clinico-epidemiologic', 'radiologic', 'molecular', 'all')
 
-models.roc.old <- lapply(models, function(m) {
+models.roc <- lapply(models, function(m) {
   bestPreds <- with(m, merge(pred, bestTune));
   pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
 })
@@ -161,13 +160,13 @@ models.cvRoc <- lapply(models, function(m) {
   cvAUC::ci.cvAUC(predictions = bestPreds$yes, labels = bestPreds$obs, folds = bestPreds$Resample)
   })
 
-models.roc <- lapply(models, function(m) {
-  bestPreds <- with(m, merge(pred, bestTune))
-  bestPreds.meanYes <- aggregate(bestPreds$yes, by = list(bestPreds$rowIndex), FUN=mean)
-  pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
-
-  cvAUC::ci.cvAUC(predictions = bestPreds$yes, labels = bestPreds$obs, folds = bestPreds$Resample)
-})
+# models.roc <- lapply(models, function(m) {
+#   bestPreds <- with(m, merge(pred, bestTune))
+#   bestPreds.meanYes <- aggregate(bestPreds$yes, by = list(bestPreds$rowIndex), FUN=mean)
+#   pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
+#
+#   cvAUC::ci.cvAUC(predictions = bestPreds$yes, labels = bestPreds$obs, folds = bestPreds$Resample)
+# })
 
 #auc.ci <- lapply(models.roc, function(r) {
 #  as.numeric(pROC::ci.auc(r))
