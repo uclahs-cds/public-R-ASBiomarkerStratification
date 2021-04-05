@@ -5,21 +5,21 @@
 #' @param cost.matrix
 #' @param threshold
 preds.cost <- function(x, lev = NULL, cost.matrix = matrix(c(0,1,1,0), byrow = TRUE, nrow = 2), threshold) {
-    if(is.null(lev)) {
+    if (is.null(lev)) {
         lev <- levels(x$obs)
     }
     preds <- x[[lev[2]]]
     truth <- x$obs
-    class_preds <- as.factor(ifelse(preds > threshold, lev[2], lev[1]))
-    levels(class_preds) <- lev
-    conf.mat <- table(class_preds, truth)
+    class.preds <- as.factor(ifelse(preds > threshold, lev[2], lev[1]))
+    levels(class.preds) <- lev
+    conf.mat <- table(class.preds, truth)
     sum(conf.mat * cost.matrix)
 }
 
 #' Computes the cost for a given model's predictions at a given threshold for a specified cost matrix.
 #'
 #' @param model The caret `train` class trained with `caret::trainControl(classProbs = TRUE, savePredictions = TRUE, ...)`
-#' @param cost.matrix The costs for each predictions with the costs corresponding to table(class_preds, truth) * cost.matrix.
+#' @param cost.matrix The costs for each predictions with the costs corresponding to table(class.preds, truth) * cost.matrix.
 #' That is, `cost.matrix[1,2] = FN` and `cost.matrix[2,1] = FP`
 #' @param thresholds A vector of thresholds to compute the cost matrix for.
 #'
@@ -35,13 +35,13 @@ cost.threshold.train <- function(model,
                               thresholds = 0.5) {
     stopifnot(class(model) == 'train');
 
-    pred_best <- with(model,
+    pred.best <- with(model,
                       merge(pred, bestTune))
 
     res <- lapply(thresholds, function(threshold) {
-        grp_resample <- split(pred_best, pred_best$Resample)
+        grp.resample <- split(pred.best, pred.best$Resample)
         # Maybe add summary here?
-        mean(unlist(lapply(grp_resample, preds.cost, threshold = threshold, cost.matrix = cost.matrix)))
+        mean(unlist(lapply(grp.resample, preds.cost, threshold = threshold, cost.matrix = cost.matrix)))
     })
     # names(res) <- thresholds
     # If we are using summary
@@ -65,7 +65,7 @@ optimal.threshold.train <- function(model,
                                     thresholds = c(0.25, 0.5, 0.75),
                                     smooth = TRUE) {
     threshold.cost <- cost.threshold.train(model, thresholds = thresholds, cost.matrix = cost.matrix)
-    if(smooth) {
+    if (smooth) {
         threshold.cost <- as.vector(moving.avg(threshold.cost, order = max(1, round(thresholds / 20))))
     }
     thresholds[which.min(threshold.cost)]
@@ -86,19 +86,19 @@ flatten.ConfusionMatrix <- function(...) {
 #'
 #' @examples
 threshold.summary.stats <- function(model, threshold, per.fold = FALSE) {
-    pred_best <- with(model,
+    pred.best <- with(model,
                       merge(pred, bestTune))
-    pred_best$thres.preds <- as.factor(ifelse(pred_best[, 'yes'] > threshold, 'yes', 'no'))
-    if(per.fold) {
-        fold.split <- split(pred_best, pred_best$Resample)
+    pred.best$thres.preds <- as.factor(ifelse(pred.best[, 'yes'] > threshold, 'yes', 'no'))
+    if (per.fold) {
+        fold.split <- split(pred.best, pred.best$Resample)
         res <- lapply(fold.split, function(x) flatten.ConfusionMatrix(x$thres.preds, reference = x$obs, positive = 'yes', mode = 'everything'))
         do.call(rbind.data.frame, res)
     } else {
-        flatten.ConfusionMatrix(pred_best$thres.preds, reference = pred_best$obs, positive = 'yes', mode = 'everything')
+        flatten.ConfusionMatrix(pred.best$thres.preds, reference = pred.best$obs, positive = 'yes', mode = 'everything')
     }
 }
 
-#' Computes F_beta score
+#' Computes F.beta score
 #'
 #' @param precision
 #' @param recall
@@ -108,7 +108,7 @@ threshold.summary.stats <- function(model, threshold, per.fold = FALSE) {
 #' @export
 #'
 #' @examples
-F_beta <- function(precision, recall, beta = 1) {
+F.beta <- function(precision, recall, beta = 1) {
     unname(
         (1 + beta^2) * (precision * recall) / (beta^2 * precision + recall)
     )
@@ -120,8 +120,8 @@ squash.importance <- function(importance, FUN = 'sum') {
     df$row.names <- row.names(df)
     df$row.names <- gsub('(.*)\\..*', '\\1', df$row.names)
 
-    agg.df <- aggregate(df$Overall, by = list(vars = df$row.names), FUN=FUN)
-    res <-data.frame(Overall = agg.df[, 2])
+    agg.df <- aggregate(df$Overall, by = list(vars = df$row.names), FUN = FUN)
+    res <- data.frame(Overall = agg.df[, 2])
     rownames(res) <- agg.df[, 1]
     res
 }
@@ -138,7 +138,7 @@ squash.importance <- function(importance, FUN = 'sum') {
 #' @examples
 var.imp <- function(x, onlyImportance = TRUE, squash = TRUE) {
     stopifnot('train' == class(x));
-    if('gbm' == x$method) {
+    if ('gbm' == x$method) {
         gbm.sum <- gbm::summary.gbm(x$finalModel, plotit = FALSE);
         importance <- data.frame(Overall = gbm.sum[,2], row.names = gbm.sum[,1]);
         res <- list(
@@ -151,11 +151,11 @@ var.imp <- function(x, onlyImportance = TRUE, squash = TRUE) {
         res <- caret::varImp(x);
     }
     row.names(res$importance) <- gsub('(.*)\\.1', '\\1', row.names(res$importance));
-    if(squash) {
+    if (squash) {
         res$importance <- squash.importance(res$importance);
     }
-    res$importance$variable = row.names(res$importance);
-    if(onlyImportance) res <- res$importance;
+    res$importance$variable <- row.names(res$importance);
+    if (onlyImportance) res <- res$importance;
     res
 }
 
@@ -168,17 +168,17 @@ var.imp <- function(x, onlyImportance = TRUE, squash = TRUE) {
 #'
 #' @examples
 var.imp.combine <-  function(x, order = FALSE, rev.cols = FALSE) {
-    if(rev.cols) {
+    if (rev.cols) {
         x <- x[rev(names(x))];
         }
     res <- Reduce(function(...) merge(..., by = 'variable', all = TRUE), lapply(x, var.imp));
     rownames(res) <- res$variable;
 
-    if(!is.null(names(x))) {
+    if (!is.null(names(x))) {
         colnames(res) <- c('variable', names(x));
     }
 
-    if(order) {
+    if (order) {
         order.args <- as.list(res[, names(x)])
         order.args$decreasing <- TRUE
         res.order <- do.call('order', order.args)
@@ -199,7 +199,7 @@ var.imp.combine <-  function(x, order = FALSE, rev.cols = FALSE) {
 #' @examples
 compare.var.imp <- function(x, include.ranks = FALSE) {
     model.varImp <- lapply(x, function(x) var.imp(x)$importance)
-    if(is.null(names(x))) {
+    if (is.null(names(x))) {
         names(x) <- unlist(lapply(x, `[[`, 'method'));
     }
 
@@ -207,12 +207,12 @@ compare.var.imp <- function(x, include.ranks = FALSE) {
     all.varnames <- unique(gsub('(.*)\\.1', '\\1', all.varnames));
     var.importance <- data.frame(variable = all.varnames);
     rownames(var.importance) <- all.varnames;
-    for(model.name in names(model.varImp)) {
+    for (model.name in names(model.varImp)) {
         imp.df <- model.varImp[[model.name]];
         var.importance[[model.name]] <- NA;
         var.importance[rownames(imp.df), model.name] <- imp.df$Overall;
     }
-    if(include.ranks) {
+    if (include.ranks) {
         ranks <- as.data.frame(lapply(var.importance[, -1] * -1, rank));
         names(ranks) <- paste0(names(ranks), '.rank');
         ranks$mean.rank <- rowMeans(ranks);
@@ -232,7 +232,7 @@ compare.var.imp <- function(x, include.ranks = FALSE) {
 #'
 #' @examples
 summarize.models <- function(models, models.roc = NULL) {
-    if(is.null(models.roc)) {
+    if (is.null(models.roc)) {
         models.roc <- lapply(models, function(x) {
             lapply(x, function(m) {
                 bestPreds <- with(m, merge(pred, bestTune));
@@ -273,7 +273,7 @@ summarize.models <- function(models, models.roc = NULL) {
 #'
 #' @examples
 summarize.seq.models <- function(models, models.roc = NULL) {
-    if(is.null(models.roc)) {
+    if (is.null(models.roc)) {
         models.roc <- lapply(models, function(m) {
             bestPreds <- with(m, merge(pred, bestTune));
             pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));

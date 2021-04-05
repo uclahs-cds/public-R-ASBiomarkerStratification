@@ -5,7 +5,7 @@ factor.ISUP <- function(x) {
   }
 
 factor.Gleason <- function(x) {
-  factor(x, levels = c("0+0", "3+3", "3+4", "4+3", "4+4", "5+5"), ordered = TRUE)
+  factor(x, levels = c('0+0', '3+3', '3+4', '4+3', '4+4', '5+5'), ordered = TRUE)
 }
 
 factor.PIRADS <- function(x) {
@@ -13,29 +13,23 @@ factor.PIRADS <- function(x) {
 }
 
 mutation.dummy <- function(x) {
-  mutation1 <- as.integer(x["Mutation1"]);
-  mutation2 <- as.integer(x["Mutation.2"]);
-  if(is.na(mutation1) && is.na(mutation2)) {
+  mutation1 <- as.integer(x['Mutation1']);
+  mutation2 <- as.integer(x['Mutation.2']);
+  if (is.na(mutation1) && is.na(mutation2)) {
     # Missing value, make all dummy variables missing as well
-    res <- list(Mutation_BRCA1 = NA, Mutation_BRCA2 = NA, Mutation_ATM = NA, Mutation_MLH1 = NA, Mutation_PMS2 = NA, Germline_variants = NA);
+    res <- list(Mutation_BRCA1 = NA, Mutation_BRCA2 = NA, Mutation_ATM = NA, Mutation_MLH1 = NA, Mutation_PMS2 = NA, Germline.variants = NA);
   }
   else {
     res <- list(BRCA1 = 0, BRCA2 = 0, ATM = 0, MLH1 = 0, PMS2 = 0);
-    if(mutation1 > 0) res[mutation1] <- 1
-    if(mutation2 > 0) res[mutation2] <- 1
-    germline_variants <- paste0(names(res)[res > 0], collapse = " & ")
-    if(germline_variants == "") germline_variants <- 'None'
+    if (mutation1 > 0) res[mutation1] <- 1
+    if (mutation2 > 0) res[mutation2] <- 1
+    germline.variants <- paste0(names(res)[res > 0], collapse = ' & ')
+    if (germline.variants == '') germline.variants <- 'None'
     names(res) <- paste0('Mutation_', names(res))
-    res$Germline_variants <- germline_variants
+    res$Germline.variants <- germline.variants
     }
   res
   }
-
-# Project: Prostate Cancer Active Surveillance
-
-#######################################################
-# Put input data into objects:
-#######################################################
 
 #' Loads the data for the Active Surveillance project
 #'
@@ -65,7 +59,7 @@ load.data.AS <- function(biomark.path,
   Gleason.cols <- c('PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason');
   PIRADS.cols <- c('RSIlesionPIRADS', 'HighestPIRADS');
 
-  mutation.cols <- c("Mutation1", "Mutation.2");
+  mutation.cols <- c('Mutation1', 'Mutation.2');
 
   targets <- c('ProgressedToTreatment', 'BiopsyUpgraded', 'Prostatectomy');
 
@@ -88,8 +82,8 @@ load.data.AS <- function(biomark.path,
   # Remove the old mutation columns
   biodb[, mutation.cols] <- NULL
 
-  biodb$Germline_variants <- relevel(
-    x = as.factor(biodb$Germline_variant),
+  biodb$Germline.variants <- relevel(
+    x = as.factor(biodb$Germline.variants),
     ref = 'None')
 
   #mutation.combinations <- unique(biodb[, c('Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', 'Mutation_MLH1', 'Mutation_PMS2')])
@@ -105,7 +99,7 @@ load.data.AS <- function(biomark.path,
 
   # Add PSA and PHI Density
   biodb$PSADensity <- biodb$SOCPSA / biodb$ProstateVolume;
-  biodb$PHIDensity = biodb$PHI / biodb$ProstateVolume;
+  biodb$PHIDensity <- biodb$PHI / biodb$ProstateVolume;
 
   # TODO: Add all other binary variables as logical
   # biodb$ProgressedToTreatment <- as.logical(biodb$ProgressedToTreatment)
@@ -138,10 +132,10 @@ load.data.AS <- function(biomark.path,
   biodb$Hispanic <- as.factor(biodb$Ethnicity);
 
   label(biodb$Weight) <- 'Weight (kg)';
-  label(biodb$Height) <-"Height (cm)";
-  label(biodb$ProstateVolume) <- "Prostate Volume (cm^3)";
-  label(biodb$p2PSA) <- "[-2]proPSA";
-  label(biodb$freePSA) <- "Free PSA";
+  label(biodb$Height) <- 'Height (cm)';
+  label(biodb$ProstateVolume) <- 'Prostate Volume (cm^3)';
+  label(biodb$p2PSA) <- '[-2]proPSA';
+  label(biodb$freePSA) <- 'Free PSA';
   label(biodb$MRIResult) <- 'MRI Result';
   label(biodb$MRILesions) <- 'MRI Lesions';
   label(biodb$HighestPIRADS) <- 'PI-RADS';
@@ -171,7 +165,7 @@ load.data.AS <- function(biomark.path,
   label(biodb$Mutation_ATM) <- 'ATM';
   label(biodb$Mutation_MLH1) <- 'MLH1';
   label(biodb$Mutation_PMS2) <- 'PMS2';
-  label(biodb$Germline_variants) <- 'Deleterious germline variants';
+  label(biodb$Germline.variants) <- 'Deleterious germline variants';
   label(biodb$PreviousISUP) <- 'Previous ISUP';
   label(biodb$StudyHighestGleason) <- 'Study Highest Gleason';
   label(biodb$StudyHighestISUP) <- 'Study Highest ISUP';
@@ -209,7 +203,7 @@ load.data.AS <- function(biomark.path,
 
   bio.categories$Category <- as.factor(bio.categories$Category);
 
-  if(onlyBiodb) {
+  if (onlyBiodb) {
     biodb
     } else {
     list(
