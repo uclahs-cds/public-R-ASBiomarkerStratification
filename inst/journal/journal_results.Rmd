@@ -69,49 +69,49 @@ demo.vars <- c(
             );
 
 demo.vars <- c(
-  "Age",
-  "Race",
-  "Ethnicity",
-  "Weight",
-  "Height",
-  "BMI",
-  "SOCPSA",
-  "PSADensity", 
-  "freePSA", "p2PSA", "PercentFreePSA", "PHI", "PHIDensity",
-  "MRIResult", "MRILesions",
-  "BiopsyResult",
-  "ProstateVolume",
-  "PreviousISUP",
-  "StudyHighestISUP",
-  "PCA3", "T2ERG", "MyProstateScore", "MPSDensity",
-  "GeneticRiskScore",
-  "TNFaAverage",
-  "RSInormalSignal",
-  "RSIlesionSignal",
-  "ADCnormalSignal",
-  "ADClesionSignal",
-  "RSIlesionPIRADS",
-  "Germline_variants",
-  "FollowUpTime"
+  'Age',
+  'Race',
+  'Ethnicity',
+  'Weight',
+  'Height',
+  'BMI',
+  'SOCPSA',
+  'PSADensity',
+  'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI', 'PHIDensity',
+  'MRIResult', 'MRILesions',
+  'BiopsyResult',
+  'ProstateVolume',
+  'PreviousISUP',
+  'StudyHighestISUP',
+  'PCA3', 'T2ERG', 'MyProstateScore', 'MPSDensity',
+  'GeneticRiskScore',
+  'TNFaAverage',
+  'RSInormalSignal',
+  'RSIlesionSignal',
+  'ADCnormalSignal',
+  'ADClesionSignal',
+  'RSIlesionPIRADS',
+  'Germline_variants',
+  'FollowUpTime'
 )
 
-target.vars <- c("ProgressedToTreatment", "Prostatectomy")
+target.vars <- c('ProgressedToTreatment', 'Prostatectomy')
 
 demo.table <- tbl_summary(data = biodb[, c(demo.vars, 'BiopsyUpgraded')],
   by = BiopsyUpgraded,
-  missing = "no",
+  missing = 'no',
   label = RSIlesionPIRADS ~ 'RSI lesion PI-RADS') %>%
-  add_p() 
+  add_p()
 
 # demo.metadata <- demo.table$meta_data
 
 target.table <- tbl_summary(data = biodb[, c(target.vars, 'BiopsyUpgraded')],
   by = BiopsyUpgraded,
-  missing = "no")
+  missing = 'no')
   
 all.demo.table <- tbl_stack(list(demo.table, target.table)) %>%
   bold_labels() %>%
-  modify_spanning_header(c("stat_1", "stat_2") ~ "**Grade Group Upgrade**")
+  modify_spanning_header(c('stat_1', 'stat_2') ~ '**Grade Group Upgrade**')
 
 all.demo.table
 
@@ -130,19 +130,19 @@ set.seed(seed)
 uni.auc.ci <- lapply(biodb[, cor.variables], function(predictor) {
     pROC::ci.auc(
         roc(response = biodb$BiopsyUpgraded,
-            predictor= predictor,
+            predictor = predictor,
             plot = FALSE,
             direction = '<',
             levels = c('no', 'yes')))
 })
 
 count <- 0
-for(i in names(uni.auc.ci)) {
-  conf_int <- uni.auc.ci[[i]]
-  if(conf_int[1] > 0.5) {
+for (i in names(uni.auc.ci)) {
+  conf.int <- uni.auc.ci[[i]]
+  if (conf.int[1] > 0.5) {
     count <- count + 1
     print(i)
-    print(round(conf_int[c(2,1,3)], 2))
+    print(round(conf.int[c(2,1,3)], 2))
   }
 }
 print(count)
@@ -167,10 +167,9 @@ model.nice.names <- c(
   'CR + PI-RADS'
 )
 models <- lapply(targets, function(x) {
-    model.id <- paste(x, metric, seed, sep = "_");
-    model.id <- paste(model.id, model.names, sep = "_");
-  
-    model.files <- here(paste('models/gbm', model.id, 'model.RDS', sep = "_"));  
+    model.id <- paste(x, metric, seed, sep = '_');
+    model.id <- paste(model.id, model.names, sep = '_');
+    model.files <- here(paste('models/gbm', model.id, 'model.RDS', sep = '_'));
     names(model.files) <- model.nice.names;
     lapply(model.files, readRDS);
 })
@@ -220,11 +219,11 @@ confusionMatrix(bx.reduced.preds.factor, biodb.valid$BiopsyUpgraded)
 
 ```{r summary-table-bx}
 summary.df <- summarize.models(models['BiopsyUpgraded'], models.roc['BiopsyUpgraded'])
-cols <- c("model", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
+cols <- c('model', 'Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
 
 thresholds.table <- summary.df[, cols]
 # Break camel case into newlines
-# thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = "\n"), align = "c")
+# thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = '\n'), align = 'c')
 num.cols <- 2:length(cols)
 thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 2))
 
@@ -247,7 +246,7 @@ flextable(bx.upgrade.var.imp[order(bx.upgrade.var.imp[,2], decreasing = TRUE), ]
 ```{r}
 group.tests <- FALSE
 
-if(group.tests) {
+if (group.tests) {
   seq.model.index <- c(1,4,5,6);
 } else {
   seq.model.index <- 1:6
@@ -259,7 +258,7 @@ seq.model.path <- here::here(paste0('models/sequential/', seq.model.file));
 
 seq.models <- lapply(seq.model.path, readRDS);
 
-if(group.tests) {
+if (group.tests) {
   names(seq.models) <- c('Demographics', 'Blood, Urine, Genetics', 'MRI Features', 'Volume Corrected');
 } else {
   names(seq.models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Volume Corrected');
@@ -278,15 +277,15 @@ best.thres <- lapply(seq.models.roc, function(x) {
 
 ```{r}
 summary.df <- summarize.seq.models(seq.models, seq.models.roc)
-metrics <- c("Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
-cols <- c("group", metrics)
+metrics <- c('Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
+cols <- c('group', metrics)
 
 seq.var.names <- lapply(seq.models, function(x) x$finalModel$var.names)
 all.var.names <- unique(unlist(seq.var.names))
 
 thresholds.table <- summary.df[, cols]
 thresholds.table$group <- lapply(seq_along(seq.models), function(i) {
-  paste0(names(seq.models)[1:i], collapse = " +\n")
+  paste0(names(seq.models)[1:i], collapse = ' +\n')
 })
 
 thresholds.table[, 2:ncol(thresholds.table)] <- round(thresholds.table[, 2:ncol(thresholds.table)], digits = 2)
@@ -302,7 +301,7 @@ dotmap.data <- matrix(0, ncol = length(seq.models), nrow = length(all.var.names)
 colnames(dotmap.data) <- 1:length(seq.models)
 rownames(dotmap.data) <- all.var.names
 
-for(i in seq_along(seq.models)) {
+for (i in seq_along(seq.models)) {
   dotmap.data[seq.var.names[[i]], i] <- 1
 }
 
@@ -321,7 +320,7 @@ rownames(dotmap.bg.data.int) <- all.var.names
 bpg.dotmap <- create.dotmap(
   x = dotmap.data,
   spot.size.function = identity,
-  spot.colour.function = function(x) "black",
+  spot.colour.function = function(x) 'black',
   colour.scheme = default.colours(nlevels(var.categories), palette.type = 'qual'),
   total.colours = nlevels(var.categories) + 1,
   bg.alpha = 0.65,
@@ -331,7 +330,7 @@ bpg.dotmap <- create.dotmap(
 metric.scatterplot.data <- thresholds.table %>%
   dplyr::mutate(group = 1:length(seq.models)) %>%
   tidyr::gather(metric, value, -group)
-# 
+
 metric.colours <- c('dodgerblue', 'goldenrod1', 'darkorange1', 'seagreen2', 'orchid3')
 names(metric.colours) <- metrics
 
@@ -354,13 +353,13 @@ metric.legend <- legend.grob(
     list(
         legend = list(
             colours = metric.colours,
-            title = "Metrics",
+            title = 'Metrics',
             labels = metrics,
             border = 'black'
             ),
         legend = list(
             colours = default.colours(nlevels(var.categories), palette.type = 'qual'),
-            title = "Test Methodology",
+            title = 'Test Methodology',
             labels = levels(var.categories),
             border = 'black'
             )
@@ -380,7 +379,7 @@ create.multiplot(
   xat = seq_along(seq.models),
   xaxis.labels = seq_along(seq.models),
   xlab.label = 'Sequence Group',
-  
+
   ylab.label = list(
             'Metric Value',
             ''
@@ -470,46 +469,6 @@ do.call(
   )
 ```
 
-Cross-validated curves. Not really working as intended.
-```{r}
-cv.model.name <- 'CR + RSI lesion signal'
-cv.best.preds <- with(models$BiopsyUpgraded[[cv.model.name]], merge(pred, bestTune));
-cv.biodb.valid <- biodb.valid[cv.best.preds$rowIndex, ];
-  
-cv.upgrade.surv.valid <- do.call(
-    what = survival::Surv,
-    args = surv.format(cv.biodb.valid$DaysDxToUpgrade, cv.biodb.valid$DaysDxToLastReview)
-    );
-
-# cv.patient.groups <- as.factor(ifelse(cv.best.preds$yes > optimal.thresholds$BiopsyUpgraded[[cv.model.name]], 'yes', 'no'))
-cv.patient.groups <- as.factor(ifelse(cv.best.preds$yes > optimal.thresholds$BiopsyUpgraded[[cv.model.name]], 'yes', 'no'))
-levels(cv.patient.groups) <- c('No upgrade prediction', 'Predict upgrade');
-
-survdiff(cv.upgrade.surv.valid ~ cv.patient.groups)
-coxph.model <- coxph(cv.upgrade.surv.valid ~ cv.patient.groups)
-sum.coxph.model <- summary(coxph.model)
-
-cox.ci <- sum.coxph.model$conf.int[c(1, 3, 4)]
-do.call(sprintf, c("%.2f (%.2f, %.2f)", as.list(cox.ci)))
-round(sum.coxph.model$waldtest['pvalue'], 3)
-
-do.call(
-  what = BoutrosLab.plotting.survival::create.km.plot,
-  args = c(
-    km.arguments,
-    list(
-      main.cex = 1.6,
-      survival.object = cv.upgrade.surv.valid,
-      patient.groups = cv.patient.groups,
-      main = 'Overall Days-to-Upgrade from Diagnosis',
-      xlab.label = 'Days to upgrade since diagnosis',
-      ylab.label = 'Upgrade-free survival',
-      ph.assumption.check = "ignore"
-      )
-    )
-  )
-```
-
 ### TTE Analysis for Progression
 ```{r cutpoint-days-prog-bx, fig.cap = 'Days to progression from biopsy for the prediction groups', eval = FALSE}
 prog.gbm.preds <- ifelse(predict(models$ProgressedToTreatment$`CR + RSI lesion signal`, type = 'prob')[, 'yes'] > optimal.thresholds$ProgressedToTreatment$`CR + RSI lesion signal`, 1, 0)
@@ -537,127 +496,4 @@ do.call(
       )
     )
   )
-```
-
-Cross-validation results. Something seems off here.
-```{r, eval = FALSE}
-cv.model.name <- 'CR + RSI lesion signal'
-cv.best.preds <- with(models$ProgressedToTreatment[[cv.model.name]], merge(pred, bestTune));
-cv.biodb.valid <- biodb.valid[cv.best.preds$rowIndex, ];
-  
-progression.surv.dx.valid <- do.call(
-    what = survival::Surv,
-    args = surv.format(cv.biodb.valid$DaysDxToProgression, cv.biodb.valid$DaysDxToLastReview)
-    );
-
-cv.patient.groups <- as.factor(ifelse(cv.best.preds$yes > optimal.thresholds$ProgressedToTreatment[[cv.model.name]], 'yes', 'no'))
-levels(cv.patient.groups) <- c('No upgrade prediction', 'Predict upgrade');
-
-survdiff(progression.surv.dx.valid ~ cv.patient.groups)
-coxph.model <- coxph(progression.surv.dx.valid ~ cv.patient.groups)
-sum.coxph.model <- summary(coxph.model)
-
-cox.ci <- sum.coxph.model$conf.int[c(1, 3, 4)]
-do.call(sprintf, c("%.2f (%.2f, %.2f)", as.list(cox.ci)))
-sum.coxph.model$waldtest['pvalue']
-```
-
-## Variable Importance Plot
-```{r}
-# alt.model <- readRDS(here('models/gbm_BiopsyUpgraded_PR-AUC_9999_reduced_both_model.RDS'))
-#reduced.var.imp <- var.imp(alt.model)
-reduced.var.imp <- var.imp(models$BiopsyUpgraded$`CR + RSI lesion signal and PI-RADS`)
-reduced.var.imp <- reduced.var.imp[order(reduced.var.imp$Overall, decreasing = FALSE), ]
-reduced.var.imp$labels <- col.labels[reduced.var.imp$variable]
-reduced.var.imp$labels <- factor(reduced.var.imp$labels, levels = reduced.var.imp$labels)
-
-create.barplot(
-  labels ~ Overall,
-  data = reduced.var.imp,
-  plot.horizontal = TRUE,
-  ylab.label = NULL,
-  xlab.label = 'GBM Variable Importance',
-  width = 14,
-  height = 16,
-  resolution = 300,
-  ylab.axis.padding = 20,
-  filename = here::here('euro_urology/figures/variable_importance_without_mips.tiff')
-  )
-```
-
-## Cox PH
-First model all of the variables
-```{r}
-library(mice)
-# md.pattern(biodb)
-
-tte_vars <- c("Age", "BMI", "Ethnicity", "SOCPSA", "PercentFreePSA", 
-"PHI", "PCA3", "T2ERG", "MiPSHighGradeCancerRisk", "ProstateVolume",
-"GeneticRiskScore", "RSIlesionSignal","PHIDensity", "PSADensity")
-
-# Join the TTE variables and the time/status
-cox.biodb <- cbind(biodb[, tte_vars], as.data.frame(surv.format(biodb$DaysDxToUpgrade, biodb$DaysDxToLastReview)))
-
-#cor(cox.biodb[, c("SOCPSA", "PHI", "ProstateVolume", "PHIDensity", "PSADensity")], method = "spearman", use = "complete.obs")
-
-imp.biodb <- mice(cox.biodb)
-imp.biodb
-# no.asian.biodb <- biodb[biodb$Race != "Asian",]
-
-# upgrade.surv.no.asian <- do.call(
-#     what = survival::Surv,
-#     args = surv.format(no.asian.biodb$DaysDxToUpgrade, no.asian.biodb$DaysDxToLastReview)
-#     );
-
-upgrade.surv <- do.call(
-    what = survival::Surv,
-    args = surv.format(biodb$DaysDxToUpgrade, biodb$DaysDxToLastReview)
-    );
-
-cox_formula <- as.formula(paste0('upgrade.surv ~', paste0(tte_vars, collapse = " + ")))
-
-# Simple cox
-model <- coxph(cox_formula, data = biodb)
-summary(model)
-
-cox.mi <- with(imp.biodb, coxph(Surv(time, status) ~ Age + BMI + Ethnicity + PercentFreePSA + SOCPSA +
-    PHI + PCA3 + T2ERG + MiPSHighGradeCancerRisk + GeneticRiskScore + 
-    RSIlesionSignal + ProstateVolume + PHIDensity + PSADensity))
-
-summary(pool(cox.mi))
-
-
-```
-
-
-```{r}
-baseline_vars <- c("Age", "BMI", "Race", "Ethnicity", "SOCPSA", "PercentFreePSA", 
-"PHI", "PCA3", "T2ERG")
-
-model1_vars <-  c(baseline_vars, "RSIlesionPIRADS", "PSADensity")
-model2_vars <- c(baseline_vars, "MiPSHighGradeCancerRisk", 
-"GeneticRiskScore", "RSIlesionSignal", "PHIDensity")
-
-cox_formula1 <- as.formula(paste0('upgrade.surv.valid ~', paste0(model1_vars, collapse = " + ")))
-cox_formula2 <- as.formula(paste0('upgrade.surv.valid ~', paste0(model2_vars, collapse = " + ")))
-
-model1 <- coxph(cox_formula1, data = biodb)
-model2 <- coxph(cox_formula2, data = biodb)
-
-logLik(model1)
-logLik(model2)
-
-
-model2
-```
-### Coxnet
-```{r}
-library(glmnet)
-
-lapply(biodb[,tte_vars], function(x) sum(is.na(x)))
-
-cox_glmformula <- as.formula(paste0('upgrade.surv.valid ~', paste0(tte_vars, collapse = " + ")))
-x <- model.matrix.lm(cox_glmformula, data = biodb, na.action = "na.omit")
-y <- biodb$BiopsyUpgraded
-cv.fit <- cv.glmnet(x, upgrade.surv.valid, family = "cox")
 ```

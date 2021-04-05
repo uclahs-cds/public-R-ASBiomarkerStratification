@@ -26,16 +26,16 @@ radiologic.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category =
 molecular.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category == 'Genetics'])
 all.vars <- union(radiologic.vars, molecular.vars)
 
-paste0(clinico.epi.vars, collapse = ", ")
-paste0(radiologic.vars, collapse = ", ")
-paste0(molecular.vars, collapse = ", ")
+paste0(clinico.epi.vars, collapse = ', ')
+paste0(radiologic.vars, collapse = ', ')
+paste0(molecular.vars, collapse = ', ')
 
 
 length(clinico.epi.vars)
 length(radiologic.vars)
 length(molecular.vars)
 
-if(train.model) {
+if (train.model) {
   missing.target <- is.na(biodb[, target]);
   X.clinico.epi <- biodb[!missing.target, clinico.epi.vars]
   X.radiologic <- biodb[!missing.target, radiologic.vars]
@@ -160,42 +160,29 @@ models.cvRoc <- lapply(models, function(m) {
   cvAUC::ci.cvAUC(predictions = bestPreds$yes, labels = bestPreds$obs, folds = bestPreds$Resample)
   })
 
-# models.roc <- lapply(models, function(m) {
-#   bestPreds <- with(m, merge(pred, bestTune))
-#   bestPreds.meanYes <- aggregate(bestPreds$yes, by = list(bestPreds$rowIndex), FUN=mean)
-#   pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
-#
-#   cvAUC::ci.cvAUC(predictions = bestPreds$yes, labels = bestPreds$obs, folds = bestPreds$Resample)
-# })
-
-#auc.ci <- lapply(models.roc, function(r) {
-#  as.numeric(pROC::ci.auc(r))
-#  })
-
 auc.ci.format <- lapply(models.cvRoc, function(r) {
-  sprintf("%.2f (95%% CI: %.2f - %.2f)", r$cvAUC, r$ci[1], r$ci[2])
+  sprintf('%.2f (95%% CI: %.2f - %.2f)', r$cvAUC, r$ci[1], r$ci[2])
   })
 auc.ci.format
 
 models.pr <- lapply(models, function(m) {
   bestResults <- with(m, merge(results, bestTune));
-  round(bestResults[c("PR-AUC", "PR-AUCSD")], 2)
+  round(bestResults[c('PR-AUC', 'PR-AUCSD')], 2)
 })
 models.pr
 
 tiff(filename = here::here('euro_urology/figures/roc-pr_curves_alt.tiff'), width = 10, height = 8, res = 300, units = 'in')
-# par(cex = 2)
 roc.pr.plot(models.roc)
 dev.off()
 
-models.target <- list("BiopsyUpgraded" = models)
-models.roc.target <- list("BiopsyUpgraded" = models.roc)
+models.target <- list('BiopsyUpgraded' = models)
+models.roc.target <- list('BiopsyUpgraded' = models.roc)
 summary.df <- summarize.models(models.target, models.roc.target)
-cols <- c("model", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
+cols <- c('model', 'Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
 
 thresholds.table <- summary.df[, cols]
 # Break camel case into newlines
-# thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = "\n"), align = "c")
+# thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = '\n'), align = 'c')
 num.cols <- 2:length(cols)
 thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 2))
 

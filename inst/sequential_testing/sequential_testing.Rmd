@@ -59,7 +59,7 @@ seed <- 9999
 
 group.tests <- FALSE
 
-if(group.tests) {
+if (group.tests) {
   model.index <- c(1,4,5,6);
 } else {
   model.index <- 1:6
@@ -71,7 +71,7 @@ model.path <- here::here(paste0('models/sequential/', model.file));
 
 models <- lapply(model.path, readRDS);
 
-if(group.tests) {
+if (group.tests) {
   names(models) <- c('Demographics', 'Blood, Urine, Genetics', 'MRI Features', 'Volume Corrected');
 } else {
   names(models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Volume Corrected');
@@ -100,19 +100,19 @@ kable(
 
 ```{r summary-table}
 summary.df <- summarize.seq.models(models, models.roc)
-cols <- c("group", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
+cols <- c('group', 'threshold', 'Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
 
 thresholds.table <- summary.df[, cols]
 thresholds.table$group <- lapply(seq_along(models), function(i) {
-  paste0(names(models)[1:i], collapse = " +\n")
+  paste0(names(models)[1:i], collapse = ' +\n')
 })
 
-thresholds.table$group <- linebreak(thresholds.table$group, align = "l")
+thresholds.table$group <- linebreak(thresholds.table$group, align = 'l')
 
 kable(thresholds.table,
   digits = 2,
   row.names = FALSE,
-  caption = "Cross-validation summary statistics for sequential Biopsy Upgraded models",
+  caption = 'Cross-validation summary statistics for sequential Biopsy Upgraded models',
   escape = F) %>%
   kable_styling()
 ```
@@ -121,7 +121,7 @@ kable(thresholds.table,
 gbm.seq.var.imp <- merge(
   var.imp.combine(models),
   biomarkers
-)[, c("variable", "category", names(models))]
+)[, c('variable', 'category', names(models))]
 
 order.args <- as.list(gbm.seq.var.imp[, 3:ncol(gbm.seq.var.imp)])
 order.args$decreasing <- TRUE
@@ -132,9 +132,8 @@ gbm.seq.var.imp <- gbm.seq.var.imp[order.var.imp, ]
 kable(x = gbm.seq.var.imp,
       digits = 2,
       row.names = FALSE,
-      caption = "Sequential Variable importance for Biopsy Upgraded") %>%
+      caption = 'Sequential Variable importance for Biopsy Upgraded') %>%
   kable_styling()  %>%
-  column_spec(2, width_min = "6em", width = "6em") %>%
-  column_spec(4:8, width_min = "3em", width = "3em")
-  
+  column_spec(2, width_min = '6em', width = '6em') %>%
+  column_spec(4:8, width_min = '3em', width = '3em')
 ```

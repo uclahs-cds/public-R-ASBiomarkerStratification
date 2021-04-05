@@ -5,7 +5,7 @@ biodb <- default.load.data(onlyBiodb = TRUE);
 seed <- 9999;
 
 train.control <- caret::trainControl(
-    method = "repeatedcv",
+    method = 'repeatedcv',
     number = 10,
     repeats = 5
     );
@@ -85,16 +85,14 @@ lapply(targets, function(tg) {
 
 ## Checking if adding additional variables to RSI lesion signal / PIRADS makes a difference
 target <- 'BiopsyUpgraded'
-demo.vars <- biomarkers[biomarkers$category == "Demographics" & biomarkers$clinically.useful == 1, 'variable']
-only_rsi_vars <- c(demo.vars, 'RSIlesionPIRADS', 'RSIlesionSignal')
-
-additional_biomarkers <-
+demo.vars <- biomarkers[biomarkers$category == 'Demographics' & biomarkers$clinically.useful == 1, 'variable']
+only.rsi.vars <- c(demo.vars, 'RSIlesionPIRADS', 'RSIlesionSignal')
 
 missing.target <- is.na(biodb[, target]);
 y.target <- biodb[!missing.target, target];
 y <- y.target
 levels(y) <- c('no', 'yes');
-X <- biodb[!missing.target, only_rsi_vars];
+X <- biodb[!missing.target, only.rsi.vars];
 
 gbm.grid <- gbm.hyper.grid()
 

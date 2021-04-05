@@ -16,15 +16,14 @@ str.match <- function(x, pattern) {
 #' @export
 #'
 #' @examples
-#' camel.to.spaces(c("BiopsyUpgraded", "ProgressedToTreatment"))
-camel.to.spaces <- function(x, replace = " ") {
-    matches <- gsub("(?!^)([[:upper:]])", " \\1", x, perl = TRUE)
-    split.string <- strsplit(matches, " ")
+#' camel.to.spaces(c('BiopsyUpgraded', 'ProgressedToTreatment'))
+camel.to.spaces <- function(x, replace = ' ') {
+    matches <- gsub('(?!^)([[:upper:]])', ' \\1', x, perl = TRUE)
+    split.string <- strsplit(matches, ' ')
     unlist(lapply(split.string, paste0, collapse = replace))
 }
 
 # Moving average code from forecast
-#' Title
 #'
 #' @param x
 #' @param order
@@ -36,13 +35,13 @@ camel.to.spaces <- function(x, replace = " ") {
 #' @examples
 moving.avg <- function(x, order, center = TRUE) {
     if (abs(order - round(order)) > 1e-08) {
-        stop("order must be an integer")
+        stop('order must be an integer')
     }
-    if (order%%2 == 0 && centre) {
-        w <- c(0.5, rep(1, order - 1), 0.5)/order
+    if (order %% 2 == 0 && centre) {
+        w <- c(0.5, rep(1, order - 1), 0.5) / order
     }
     else {
-        w <- rep(1, order)/order
+        w <- rep(1, order) / order
     }
     return(stats::filter(x, w))
 }
@@ -64,7 +63,7 @@ label <- function(x) {
 #'@export
 label.or.name <- function(x) {
     mc <- match.call()
-    if(typeof(x) == 'list') {
+    if (typeof(x) == 'list') {
         res <- names(x)
         # Nulls are dropped
         labs <- lapply(x, label)

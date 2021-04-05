@@ -47,7 +47,7 @@ levels(y) <- c('no', 'yes');
 
 # Save the models to file
 # seq.id <- c('demographics', 'pre-MRI', 'MRI', 'Post-MRI');
-if(length(X) == 6) {
+if (length(X) == 6) {
   model.id <- paste('sequential6', target, metric, seed, sep = '_');
 } else {
   model.id <- paste('sequential4', target, metric, seed, sep = '_');
@@ -73,10 +73,10 @@ seq.models <- lapply(seq_along(X), function(i) {
   mod
 })
 
-if(length(seq.models) == 4) {
+if (length(seq.models) == 4) {
   names(seq.models) <- c('Demographics', 'Blood/Urine/Genetics', 'MRI Features', 'Volume Corrected');
 }
-if(length(seq.models) == 6) {
+if (length(seq.models) == 6) {
   names(seq.models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Volume Corrected');
 }
 
@@ -113,7 +113,7 @@ dotmap.data <- matrix(0, ncol = length(seq.models), nrow = length(all.var.names)
 colnames(dotmap.data) <- 1:length(seq.models)
 rownames(dotmap.data) <- all.var.names
 
-for(i in seq_along(seq.models)) {
+for (i in seq_along(seq.models)) {
   dotmap.data[seq.var.names[[i]], i] <- 1
 }
 
@@ -203,4 +203,3 @@ create.multiplot(
   resolution = 300,
   filename = here('euro_urology/figures/seq_dotmap.tiff')
 )
-

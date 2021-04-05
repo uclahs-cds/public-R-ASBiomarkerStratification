@@ -88,7 +88,7 @@ gleason.isup.table %>%
 ```
 
 ```{r biomarker-categories}
-kable(as.data$bio.categories[,1:2], caption = "Biomarkers categories") %>%
+kable(as.data$bio.categories[,1:2], caption = 'Biomarkers categories') %>%
   kable_styling() %>%
   collapse_rows(columns = 1)
 ```
@@ -179,16 +179,16 @@ do.call(gridExtra::grid.arrange, prog.plots);
 ```
 
 ```{r bx-biomarker-summary}
-tab.form <- "~ p2PSA +  freePSA + PSAHyb + PSADensity + SOCPSA + PHI + PHIDensity + ProstateVolume + TNFaAverage"
-t1.bx <- table1::table1(as.formula(paste(tab.form, 'BiopsyUpgraded', sep="|")), data = biodb);
-table1.to.kable(t1.bx, caption = "Biomarker summaries for biopsy upgraded.") %>%
+tab.form <- '~ p2PSA +  freePSA + PSAHyb + PSADensity + SOCPSA + PHI + PHIDensity + ProstateVolume + TNFaAverage'
+t1.bx <- table1::table1(as.formula(paste(tab.form, 'BiopsyUpgraded', sep='|')), data = biodb);
+table1.to.kable(t1.bx, caption = 'Biomarker summaries for biopsy upgraded.') %>%
   add_header_above(c(' ' = 1, 'Biopsy Upgraded' = 2, ' ' = 1))
 ```
 
 ```{r prog-biomarker-summary}
 # TODO: Update render.default to always include missing?
-t1 <- table1::table1(as.formula(paste(tab.form, 'ProgressedToTreatment', sep="|")), data = biodb);
-table1.to.kable(t1, caption = "Biomarker summaries for progressed to treatment.") %>%
+t1 <- table1::table1(as.formula(paste(tab.form, 'ProgressedToTreatment', sep='|')), data = biodb);
+table1.to.kable(t1, caption = 'Biomarker summaries for progressed to treatment.') %>%
   add_header_above(c(' ' = 1, 'Progressed To Treatment' = 2, ' ' = 1))
 ```
 
@@ -313,8 +313,8 @@ The variables in \@ref(tab:variable-set) were used as the initial set of variabl
 ```{r variable-set}
 var.names <- models$ProgressedToTreatment$gbm$finalModel$var.names;
 mid <- ceiling(length(var.names) / 2);
-# Add "" if variable lengths are not even
-var2 <- rep("", mid);
+# Add '' if variable lengths are not even
+var2 <- rep('', mid);
 var2[1:(mid - 1)] <- var.names[(mid + 1):length(var.names)];
 var.names.df <- data.frame(
   var1 = var.names[1:mid],
@@ -333,7 +333,7 @@ kable(
 ### ROC and PR Curves
 For each of the targets, `ProgressedToTreatment`, `BiopsyUpgraded`, and `Prostatectomy` we construct Receiver operating characteristic (ROC) and Precision-Recall curves.
 The sensitivity/recall, specificity, and precision are all computed from the cross-validation folds to give an estimate of out of sample performance.
-```{r roc-curves, out.width="90%", fig.cap="Cross-Validation ROC Curves for Progressed to Treatment and Biopsy Upgraded"}
+```{r roc-curves, out.width='90%', fig.cap='Cross-Validation ROC Curves for Progressed to Treatment and Biopsy Upgraded'}
 cex.main <- 1.2
 cex.title <- 1.4
 
@@ -345,17 +345,17 @@ models.roc <- lapply(models, function(mods) {
 })
 ```
 
-```{r prog-roc, out.width="90%", fig.cap="Cross-Validation ROC and Precision-Recall Curves for Progressed to Treatment. The optimal (Youden's J statistic) is indicated with a point on the ROC curve."}
+```{r prog-roc, out.width='90%', fig.cap='Cross-Validation ROC and Precision-Recall Curves for Progressed to Treatment. The optimal (Youden's J statistic) is indicated with a point on the ROC curve.'}
 roc.pr.plot(models.roc$ProgressedToTreatment, cex.main = cex.main)
 mtext('Progressed to Treatment Cross-Validation Curves', side = 3, line = -2, outer = TRUE, cex = cex.title);
 ```
 
-```{r bx-roc, out.width="90%", fig.cap="Cross-Validation ROC and Precision-Recall Curves for Biopsy Upgraded. The optimal (Youden's J statistic) is indicated with a point on the ROC curve."}
+```{r bx-roc, out.width='90%', fig.cap='Cross-Validation ROC and Precision-Recall Curves for Biopsy Upgraded. The optimal (Youden's J statistic) is indicated with a point on the ROC curve.'}
 roc.pr.plot(models.roc$BiopsyUpgraded, cex.main = cex.main)
 mtext('Biopsy Upgraded Cross-Validation Curves', side = 3, line = -2, outer = TRUE, cex = cex.title);
 ```
 
-```{r prostate-roc, out.width="90%", fig.cap="Cross-Validation ROC and Precision-Recall Curves for Prostatectomy. The optimal (Youden's J statistic) is indicated with a point on the ROC curve."}
+```{r prostate-roc, out.width='90%', fig.cap='Cross-Validation ROC and Precision-Recall Curves for Prostatectomy. The optimal (Youden's J statistic) is indicated with a point on the ROC curve.'}
 roc.pr.plot(models.roc$Prostatectomy, cex.main = cex.main)
 mtext('Prostatectomy Cross-Validation Curves', side = 3, line = -2, outer = TRUE, cex = cex.title);
 ```
@@ -367,9 +367,9 @@ mtext('Prostatectomy Cross-Validation Curves', side = 3, line = -2, outer = TRUE
 cost.matrix <- matrix(c(0,2,1,0), byrow = TRUE, nrow = 2)
 thresholds <- seq(.01, .99, length.out = 50)
 
-statistics <- c("prob_threshold", "Sensitivity", "Specificity", "Pos Pred Value", "Neg Pred Value", 
-"Precision", "Recall", "F1", "Prevalence", "Detection Rate", 
-"Detection Prevalence", "Balanced Accuracy", "Accuracy", "Kappa"
+statistics <- c('prob_threshold', 'Sensitivity', 'Specificity', 'Pos Pred Value', 'Neg Pred Value', 
+'Precision', 'Recall', 'F1', 'Prevalence', 'Detection Rate',
+'Detection Prevalence', 'Balanced Accuracy', 'Accuracy', 'Kappa'
 )
 
 optimal.thresholds <- lapply(models, function(mods) {
@@ -387,27 +387,27 @@ optimal.thresholds.youden <- lapply(models.roc, function(rocs) {
 
 thresholds.info.list <- lapply(names(optimal.thresholds), function(x) {
   target.list <- models[[x]]
-  
+
   res <- lapply(names(target.list), function(y) {
     m <- target.list[[y]]
     threshold <- optimal.thresholds[[x]][[y]]
     threshold.roc <- optimal.thresholds.youden[[x]][[y]]
-    
+
     thres.res <- colMeans(threshold.summary.stats(m, threshold), na.rm = TRUE);
     thres.res$model <- m$method;
     thres.res$method <- 'cost';
     thres.res$target <- x;
     thres.res$threshold <- threshold;
-    
+
     thres.res.roc <- colMeans(threshold.summary.stats(m, threshold.roc), na.rm = TRUE);
     thres.res.roc$model <- m$method;
     thres.res.roc$method <- 'roc';
     thres.res.roc$target <- x;
     thres.res.roc$threshold <- threshold.roc;
-    
+
     rbind(thres.res, thres.res.roc)
   })
-  
+
   do.call(rbind.data.frame, res)
 })
 
@@ -429,7 +429,7 @@ For each threshold the cost is computed for each of the folds in the 10-fold cro
 Then the optimal operating point is selected as the threshold with the minimum cost.
 
 We show how to find the optimal point for predicting whether a patient progressed to treatment.
-```{r, fig.cap="Optimal operating point for the Progressed to Treatment prediction models.", cache=TRUE}
+```{r, fig.cap='Optimal operating point for the Progressed to Treatment prediction models.', cache=TRUE}
 threshold.cost.gbm <- cost.threshold.train(models$ProgressedToTreatment$gbm, thresholds = thresholds, cost.matrix = cost.matrix)
 
 threshold.cost.rpart <- cost.threshold.train(models$ProgressedToTreatment$rpart, thresholds = thresholds, cost.matrix = cost.matrix)
@@ -439,9 +439,9 @@ threshold.cost.xgb <- cost.threshold.train(models$ProgressedToTreatment$xgb, thr
 n.models <- length(models$ProgressedToTreatment);
 
 threshold.plot.df <- rbind(
-  data.frame(threshold = thresholds, cost = threshold.cost.gbm, model = "gbm"),
-  data.frame(threshold = thresholds, cost = threshold.cost.rpart, model = "rpart"),
-  data.frame(threshold = thresholds, cost = threshold.cost.xgb, model = "xgb"))
+  data.frame(threshold = thresholds, cost = threshold.cost.gbm, model = 'gbm'),
+  data.frame(threshold = thresholds, cost = threshold.cost.rpart, model = 'rpart'),
+  data.frame(threshold = thresholds, cost = threshold.cost.xgb, model = 'xgb'))
 
 min.thresholds <- thresholds[c(which.min(threshold.cost.gbm), which.min(threshold.cost.rpart), which.min(threshold.cost.xgb))]
 xat <- c(0, sort(min.thresholds), 0.5, 1)
@@ -458,9 +458,9 @@ BoutrosLab.plotting.general::create.scatterplot(
   ylab.cex = 1.2,
   xlab.cex = 1.2,
   ylab.label = 'mean cost',
-  main = "Progressed to Treatment\nOptimal operating points",
+  main = 'Progressed to Treatment\nOptimal operating points',
   main.cex = 1.3,
-  type = "l",
+  type = 'l',
   lwd = 2,
   abline.v = min.thresholds,
   abline.col = default.colours(n.models),
@@ -488,14 +488,14 @@ In the cost-weighted method the threshold is optimized at 0 or 1 which results i
 Using the $J$ statistic prevents the models from predicting the same class. 
 We show summary statistics in Table \@ref(tab:threshold-results) for the optimal thresholds for both J statistic and cost-weighted methods.
 ```{r threshold-results, fig.cap='Summary statistics for the optimal operating points for each model'}
-cols <- c("target", "model", "method", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision"
-  #"Pos Pred Value", "Neg Pred Value",
-  ,"F1"
+cols <- c('target', 'model', 'method', 'threshold', 'Accuracy', 'Sensitivity', 'Specificity', 'Precision'
+  #'Pos Pred Value', 'Neg Pred Value',
+  ,'F1'
   )
 
 thresholds.table <- thresholds.info[, cols]
 # Break camel case into newlines
-thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = "\n"), align = "c")
+thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = '\n'), align = 'c')
 num.cols <- 4:length(cols)
 thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 2))
 
@@ -503,10 +503,10 @@ kable(
   thresholds.table,
   digits = 2,
   row.names = FALSE,
-  caption = "Summary statistics for the different operating points, targets and models. Bold is the optimal model with cut-point selected from J statistic.",
+  caption = 'Summary statistics for the different operating points, targets and models. Bold is the optimal model with cut-point selected from J statistic.',
   escape = F) %>%
   kable_styling() %>%
-  column_spec(1, width_min = "7em") %>%
+  column_spec(1, width_min = '7em') %>%
   collapse_rows(columns = 1:3) %>%
   row_spec(c(4, 10, 16), bold = TRUE)
 ```
@@ -603,15 +603,15 @@ kable(
 The GBM models perform much better than the rpart models.
 We include the rpart decision tree models as they are easy to interpret.
 
-```{r decision-tree-bx, fig.cap="Decision tree for Biopsy Upgraded prediction."}
+```{r decision-tree-bx, fig.cap='Decision tree for Biopsy Upgraded prediction.'}
 rpart.plot(models$BiopsyUpgraded$rpart$finalModel);
 ```
 
-```{r decision-tree-prog, fig.cap="Decision tree for Progressed to Treatment prediction."}
+```{r decision-tree-prog, fig.cap='Decision tree for Progressed to Treatment prediction.'}
 rpart.plot(models$ProgressedToTreatment$rpart$finalModel);
 ```
 
-```{r decision-tree-prostate, out.width="70%", fig.cap="Decision tree for Prostatectomy prediction."}
+```{r decision-tree-prostate, out.width='70%', fig.cap='Decision tree for Prostatectomy prediction.'}
 rpart.plot(models$Prostatectomy$rpart$finalModel);
 ```
 
@@ -642,7 +642,7 @@ utils::toLatex(utils::sessionInfo())
 
 # References
 
-<div id="refs"></div>
+<div id='refs'></div>
 
 \newpage
 
@@ -660,8 +660,8 @@ kable(
   col.names = c('Variable', 'Definition')
   ) %>%
   kable_styling(font_size = 9,
-                latex_options = c("repeat_header"),
-                repeat_header_continued = "\\textit{(Continued on Next Page...)}") %>%
+                latex_options = c('repeat_header'),
+                repeat_header_continued = '\\textit{(Continued on Next Page...)}') %>%
   column_spec(2, width = '11cm')
 ```
 

@@ -40,64 +40,33 @@ AS.models <- function(
     models <- match.arg(models, several.ok = TRUE);
     biomarkers <- load.biomarker.categories();
 
-    if(baseline.model) {
-        biokey.variables <- biomarkers$variable[biomarkers$clinically.useful == 1 & biomarkers$category == 'Demographics']
+    if (baseline.model) {
+        biokey.variables <- biomarkers$variable[biomarkers$clinically.useful == 1 & biomarkers$category == 'Demographics'];
     }
-    else if(reduced.model) {
+    else if (reduced.model) {
         biokey.variables <- biomarkers$variable[biomarkers$clinically.useful == 1];
     } else {
         biokey.variables <- biomarkers$variable;
-        #' biokey.variables <- c(
-        #'     'Age',
-        #'     'Race', # 'GeneticAncestry',
-        #'     'Ethnicity',
-        #'     'Weight',
-        #'     'Height',
-        #'     'BMI', 'MRIResult', 'MRILesions',
-        #'     'BiopsyResult',
-        #'     'ProstateVolume',
-        #'     # 'Observation',
-        #'     'PCA3',
-        #'     'T2ERG', 'MiPSCancerRisk', 'MiPSHighGradeCancerRisk',
-        #'     # 'PSAHyb', Use SOCPSA over hybrid
-        #'     'SOCPSA',
-        #'     'freePSA', 'p2PSA', 'PercentFreePSA', 'PHI',
-        #'     # 'PreviousGleason', 'StudyHighestGleason', 'RSIlesionGleason', # Only use the ISUP grade group over Gleason
-        #'     # 'StudyHighestISUP', 'HighestPIRADS',
-        #'     'PreviousISUP',
-        #'     'GeneticRiskScore',
-        #'     'TNFaAverage',
-        #'     #'GeneticRiskCategory', Don't need since genetic risk score is continuous version of this
-        #'     'GlobalScreeningArray', # This is just an indicator if any of the follow are > 0
-        #'     'GSAPositives', 'BRCAMutation',
-        #'     'Mutation_BRCA1', 'Mutation_BRCA2', 'Mutation_ATM', # 'Mutation_MLH1', 'Mutation_PMS2', Not enough data
-        #'     'RSInormalSignal',
-        #'     'RSIlesionSignal',
-        #'     'RSIlesionPIRADS',
-        #'     'ADCnormalSignal', 'ADClesionSignal',
-        #'     # 'RSIlesionPIRADS', 'RSIlesionCancer',  'RSIlesionUpgraded', 'RSIlesionISUP',
-        #'     'PSADensity', 'PHIDensity'
-        #'     );
     }
 
-    if('BiopsyUpgraded' == target) {
+    if ('BiopsyUpgraded' == target) {
         exclude.vars <- c(exclude.vars, 'BiopsyResult');
 
         # Change name to multiclass name
-        if(predict.missing && 'F' == metric) {
+        if (predict.missing && 'F' == metric) {
             metric <- 'Mean_F1'
         }
     }
 
     # Part of file name
     model.id <- paste(target, metric, seed, sep = '_');
-    if(!is.null(suffix)) {
+    if (!is.null(suffix)) {
         model.id <- paste(model.id, suffix, sep = '_');
     }
 
     biokey.variables <- setdiff(biokey.variables, exclude.vars);
 
-    if(!is.null(include.vars)) {
+    if (!is.null(include.vars)) {
         biokey.variables <- union(biokey.variables, include.vars)
     }
 
@@ -108,7 +77,7 @@ AS.models <- function(
         (! (biodb$NoUpgradeAndProgressed == 1) |
         is.na(biodb$NoUpgradeAndProgressed));
 
-    if(predict.missing) {
+    if (predict.missing) {
         X <- biodb[, biokey.variables];
         y.target <- as.character(biodb[, target]);
         y.target[missing.target] <- 'Missing';
@@ -140,7 +109,7 @@ AS.models <- function(
         subsample = 1
         );
 
-    if(is.null(train.control)) {
+    if (is.null(train.control)) {
         train.control <- trainControl(
             method = 'repeatedcv',
             number = 10,
@@ -164,7 +133,7 @@ AS.models <- function(
     X.ints <- X
     # biodb.ints[, ordered.cols] <- lapply(biodb.ints[, ordered.cols], function(x) as.numeric(x))
     # Convert ordered variable to numeric
-    if('PreviousISUP' %in% colnames(X.ints)) {
+    if ('PreviousISUP' %in% colnames(X.ints)) {
         X.ints$PreviousISUP <- as.numeric(as.character(X$PreviousISUP))
     }
 
@@ -174,9 +143,9 @@ AS.models <- function(
 
     print(paste('Fitting models for:', target, 'optimizing', metric));
 
-    if('xgb' %in% models) {
+    if ('xgb' %in% models) {
         print('Fitting XGB model...');
-        if(!is.null(seed)) set.seed(seed);
+        if (!is.null(seed)) set.seed(seed);
         xgb.fit <- caret::train(
             X.dummy.ints,
             y,
@@ -193,8 +162,8 @@ AS.models <- function(
         saveRDS(object = xgb.fit, file = here::here(paste0('models/', model.file)));
     }
 
-    if('rpart' %in% models) {
-        if(!is.null(rpart.cost)) {
+    if ('rpart' %in% models) {
+        if (!is.null(rpart.cost)) {
             print('Fitting rpart model with cost matrix...');
             print(rpart.cost)
         } else {
@@ -202,7 +171,7 @@ AS.models <- function(
         }
 
 
-        if(!is.null(seed)) set.seed(seed);
+        if (!is.null(seed)) set.seed(seed);
         rpart.fit <- caret::train(
             X,
             y,
@@ -219,8 +188,8 @@ AS.models <- function(
         saveRDS(object = rpart.fit, file = here::here(paste0('models/', model.file)));
     }
 
-    if('gbm' %in% models) {
-        if(!is.null(seed)) set.seed(seed);
+    if ('gbm' %in% models) {
+        if (!is.null(seed)) set.seed(seed);
 
         print('Fitting gbm model');
         gbm.fit <- caret::train(
@@ -241,7 +210,7 @@ AS.models <- function(
     }
 
 
-#' Title
+#' Custom summary for caret model
 #'
 #' @param data
 #' @param lev
@@ -251,8 +220,8 @@ AS.models <- function(
 #' @export
 #'
 #' @examples
-custom.summary <- function (data, lev = NULL, model = NULL) {
-    if(length(lev) == 2) {
+custom.summary <- function(data, lev = NULL, model = NULL) {
+    if (length(lev) == 2) {
         two.class.sum <- caret::twoClassSummary(data, lev, model);
         names(two.class.sum) <- c('ROC-AUC', 'Sens', 'Spec');
         pr.summary <- caret::prSummary(data, lev, model);
@@ -264,7 +233,7 @@ custom.summary <- function (data, lev = NULL, model = NULL) {
             # F2 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 2),
             # F3 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 3)
         )
-    } else if(length(lev) > 2) {
+    } else if (length(lev) > 2) {
         c(
             caret::defaultSummary(data, lev, model),
             caret::multiClassSummary(data, lev, model)

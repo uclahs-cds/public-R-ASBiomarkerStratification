@@ -10,12 +10,12 @@
 #'
 #' @examples
 demographics.boxplot <- function(biodb, y, x, cond = NULL, ...) {
-    box.formula <- paste(y, x, sep = " ~ ")
-    if(!is.null(cond)) {
-        box.formula <- paste(box.formula, cond, sep = " | ");
+    box.formula <- paste(y, x, sep = ' ~ ')
+    if (!is.null(cond)) {
+        box.formula <- paste(box.formula, cond, sep = ' | ');
         }
     ylab.label <- attr(biodb[, y], 'label');
-    if(is.null(ylab.label)) {
+    if (is.null(ylab.label)) {
         ylab.label <- y;
         }
     biodb[, cond] <- as.factor(biodb[, cond]);
@@ -41,7 +41,7 @@ demographics.boxplot <- function(biodb, y, x, cond = NULL, ...) {
 #'
 #' @examples
 roc.pr.plot <- function(models.roc, ...) {
-    opar <- par(pty="s", mfrow=c(1,2), mar = 0.1 + c(8, 6, 4, 2), cex = 1.3, cex.axis = 1.1, cex.lab = 1.5)
+    opar <- par(pty = 's', mfrow = c(1,2), mar = 0.1 + c(8, 6, 4, 2), cex = 1.3, cex.axis = 1.1, cex.lab = 1.5)
     on.exit(par(opar))
 
     models.n <- length(models.roc);
@@ -59,15 +59,15 @@ roc.pr.plot <- function(models.roc, ...) {
         print.thres = TRUE,
         # print.thres.adj=c(1, -.6),
         #print.thres.cex=.75,
-        print.thres.pattern = "",
-        print.thres.col= BoutrosLab.plotting.general::default.colours(models.n)[1],
+        print.thres.pattern = '',
+        print.thres.col = BoutrosLab.plotting.general::default.colours(models.n)[1],
         cex.axis = par('cex.axis'),
         cex.lab = par('cex.lab'),
         #cex = par('cex'),
         # print.auc=TRUE,
         ...
     )
-    for(i in 2:models.n) {
+    for (i in 2:models.n) {
         plot(
             models.roc[[i]],
             las = 1,
@@ -76,8 +76,8 @@ roc.pr.plot <- function(models.roc, ...) {
             xlim = c(1, 0),
             print.thres = TRUE,
             # print.thres.cex=.75,
-            print.thres.pattern = '', # "%.2f",
-            print.thres.col= BoutrosLab.plotting.general::default.colours(models.n)[i],
+            print.thres.pattern = '', # '%.2f',
+            print.thres.col = BoutrosLab.plotting.general::default.colours(models.n)[i],
             cex.axis = par('cex.axis'),
             cex.lab = par('cex.lab'),
             # cex = par('cex'),
@@ -90,18 +90,18 @@ roc.pr.plot <- function(models.roc, ...) {
     # Plot PR Curves
     # Plot the Precision-Recall curve
     plot(precision ~ recall,
-         coords(models.roc[[1]], "all", ret = c("recall", "precision"), transpose = FALSE),
-         type="l", las = 1, col = BoutrosLab.plotting.general::default.colours(models.n)[1], lwd = 2, main = 'Precision-Recall Curve', ylim = c(0, 1),
+         coords(models.roc[[1]], 'all', ret = c('recall', 'precision'), transpose = FALSE),
+         type = 'l', las = 1, col = BoutrosLab.plotting.general::default.colours(models.n)[1], lwd = 2, main = 'Precision-Recall Curve', ylim = c(0, 1),
          ylab = 'Precision',
          xlab = 'Recall',
          cex.axis = par('cex.axis'),
          cex.lab = par('cex.lab'),
          cex = par('cex'), ...);
 
-    for(i in 2:models.n) {
+    for (i in 2:models.n) {
         lines(precision ~ recall,
-              coords(models.roc[[i]], "all", ret = c("recall", "precision"), transpose = FALSE),
-              type="l", las = 1, col = BoutrosLab.plotting.general::default.colours(models.n)[i], lwd = 2,
+              coords(models.roc[[i]], 'all', ret = c('recall', 'precision'), transpose = FALSE),
+              type = 'l', las = 1, col = BoutrosLab.plotting.general::default.colours(models.n)[i], lwd = 2,
               ylab = 'Precision',
               xlab = 'Recall',
               cex.axis = par('cex.axis'),
@@ -113,16 +113,16 @@ roc.pr.plot <- function(models.roc, ...) {
 
     auc.ci.text <- lapply(models.roc, function(m) {
         auc.ci <- ci(m$auc);
-        sprintf("%.2f (%.2f, %.2f) 95%% CI", auc.ci[2], auc.ci[1], auc.ci[3])
+        sprintf('%.2f (%.2f, %.2f) 95%% CI', auc.ci[2], auc.ci[1], auc.ci[3])
         });
 
     legend.text <- paste0(names(models.roc), ': AUC = ', auc.ci.text);
 
-    legend(-1.8, -0.5, legend.text, cex = 1.1, col = BoutrosLab.plotting.general::default.colours(models.n), lwd = c(2, 2), inset = 0.02, xpd="NA");
+    legend(-1.8, -0.5, legend.text, cex = 1.1, col = BoutrosLab.plotting.general::default.colours(models.n), lwd = c(2, 2), inset = 0.02, xpd = 'NA');
 }
 
 roc.pr.multiple.plot <- function(models.roc, ...) {
-    opar <- par(pty="s", mfrow=c(1,2), mar = 0.1 + c(8, 6, 4, 2), cex = 1.3, cex.axis = 1.1, cex.lab = 1.5)
+    opar <- par(pty = 's', mfrow = c(1,2), mar = 0.1 + c(8, 6, 4, 2), cex = 1.3, cex.axis = 1.1, cex.lab = 1.5)
     on.exit(par(opar))
 
     models.n <- length(models.roc);
@@ -140,15 +140,15 @@ roc.pr.multiple.plot <- function(models.roc, ...) {
         print.thres = TRUE,
         # print.thres.adj=c(1, -.6),
         #print.thres.cex=.75,
-        print.thres.pattern = "",
-        print.thres.col= BoutrosLab.plotting.general::default.colours(models.n)[1],
+        print.thres.pattern = '',
+        print.thres.col = BoutrosLab.plotting.general::default.colours(models.n)[1],
         cex.axis = par('cex.axis'),
         cex.lab = par('cex.lab'),
         #cex = par('cex'),
         # print.auc=TRUE,
         ...
     )
-    for(i in 2:models.n) {
+    for (i in 2:models.n) {
         plot(
             models.roc[[i]],
             las = 1,
@@ -157,8 +157,8 @@ roc.pr.multiple.plot <- function(models.roc, ...) {
             xlim = c(1, 0),
             print.thres = TRUE,
             # print.thres.cex=.75,
-            print.thres.pattern = '', # "%.2f",
-            print.thres.col= BoutrosLab.plotting.general::default.colours(models.n)[i],
+            print.thres.pattern = '', # '%.2f',
+            print.thres.col = BoutrosLab.plotting.general::default.colours(models.n)[i],
             cex.axis = par('cex.axis'),
             cex.lab = par('cex.lab'),
             # cex = par('cex'),
@@ -171,18 +171,18 @@ roc.pr.multiple.plot <- function(models.roc, ...) {
     # Plot PR Curves
     # Plot the Precision-Recall curve
     plot(precision ~ recall,
-         coords(models.roc[[1]], "all", ret = c("recall", "precision"), transpose = FALSE),
-         type="l", las = 1, col = BoutrosLab.plotting.general::default.colours(models.n)[1], lwd = 2, main = 'Precision-Recall Curve', ylim = c(0, 1),
+         coords(models.roc[[1]], 'all', ret = c('recall', 'precision'), transpose = FALSE),
+         type = 'l', las = 1, col = BoutrosLab.plotting.general::default.colours(models.n)[1], lwd = 2, main = 'Precision-Recall Curve', ylim = c(0, 1),
          ylab = 'Precision',
          xlab = 'Recall',
          cex.axis = par('cex.axis'),
          cex.lab = par('cex.lab'),
          cex = par('cex'), ...);
 
-    for(i in 2:models.n) {
+    for (i in 2:models.n) {
         lines(precision ~ recall,
-              coords(models.roc[[i]], "all", ret = c("recall", "precision"), transpose = FALSE),
-              type="l", las = 1, col = BoutrosLab.plotting.general::default.colours(models.n)[i], lwd = 2,
+              coords(models.roc[[i]], 'all', ret = c('recall', 'precision'), transpose = FALSE),
+              type = 'l', las = 1, col = BoutrosLab.plotting.general::default.colours(models.n)[i], lwd = 2,
               ylab = 'Precision',
               xlab = 'Recall',
               cex.axis = par('cex.axis'),
@@ -194,10 +194,10 @@ roc.pr.multiple.plot <- function(models.roc, ...) {
 
     auc.ci.text <- lapply(models.roc, function(m) {
         auc.ci <- ci(m$auc);
-        sprintf("%.2f (%.2f, %.2f) 95%% CI", auc.ci[2], auc.ci[1], auc.ci[3])
+        sprintf('%.2f (%.2f, %.2f) 95%% CI', auc.ci[2], auc.ci[1], auc.ci[3])
     });
 
     legend.text <- paste0(names(models.roc), ': AUC = ', auc.ci.text);
 
-    legend(-1.8, -0.5, legend.text, cex = 1.1, col = BoutrosLab.plotting.general::default.colours(models.n), lwd = c(2, 2), inset = 0.02, xpd="NA");
+    legend(-1.8, -0.5, legend.text, cex = 1.1, col = BoutrosLab.plotting.general::default.colours(models.n), lwd = c(2, 2), inset = 0.02, xpd = 'NA');
 }

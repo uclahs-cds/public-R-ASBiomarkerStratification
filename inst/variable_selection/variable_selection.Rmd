@@ -62,10 +62,10 @@ model.nice.names <- c(
   'Only RSI lesion PI-RADS'
 )
 models <- lapply(targets, function(x) {
-    model.id <- paste(x, metric, seed, sep = "_");
-    model.id <- paste(model.id, model.names, sep = "_");
+    model.id <- paste(x, metric, seed, sep = '_');
+    model.id <- paste(model.id, model.names, sep = '_');
   
-    model.files <- here(paste('models/gbm', model.id, 'model.RDS', sep = "_"));  
+    model.files <- here(paste('models/gbm', model.id, 'model.RDS', sep = '_'));  
     names(model.files) <- model.nice.names;
     lapply(model.files, readRDS);
 })
@@ -80,7 +80,7 @@ models.roc <- lapply(models, function(x) {
 ```
 
 ```{r prediction-variables}
-var.names <- models$BiopsyUpgraded[["Full Model"]]$finalModel$var.name
+var.names <- models$BiopsyUpgraded[['Full Model']]$finalModel$var.name
 
 kable(
   var.names,
@@ -91,7 +91,7 @@ kable(
 ```
 
 ```{r prediction-variables-reduced}
-var.names <- models$BiopsyUpgraded[["Both RSI Signal and PI-RADS"]]$finalModel$var.name
+var.names <- models$BiopsyUpgraded[['Both RSI Signal and PI-RADS']]$finalModel$var.name
 
 kable(
   var.names,
@@ -103,21 +103,21 @@ kable(
 
 ```{r}
 summary.df <- summarize.models(models, models.roc)
-cols <- c("target", "model", "threshold", "Accuracy", "Sensitivity", "Specificity", "Precision", "F1")
+cols <- c('target', 'model', 'threshold', 'Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
 
 thresholds.table <- summary.df[, cols]
 # Break camel case into newlines
-thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = "\n"), align = "c")
+thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = '\n'), align = 'c')
 num.cols <- 4:length(cols)
 thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 2))
 
 kable(thresholds.table,
   digits = 2,
   row.names = FALSE,
-  caption = "Cross-validation summary statistics for the different targets and models comparing RSI lesion signal and RSI lesion PI-RADS",
+  caption = 'Cross-validation summary statistics for the different targets and models comparing RSI lesion signal and RSI lesion PI-RADS',
   escape = F) %>%
   kable_styling() %>%
-  column_spec(1:2, width_min = "7em", width = "7em") %>%
+  column_spec(1:2, width_min = '7em', width = '7em') %>%
   collapse_rows(columns = 1:2)
 ```
 
@@ -127,7 +127,7 @@ bx.upgrade.var.imp <- var.imp.combine(models$BiopsyUpgraded)
 kable(x = bx.upgrade.var.imp[order(bx.upgrade.var.imp[,2], decreasing = TRUE), ],
       digits = 2,
       row.names = FALSE,
-      caption = "Variable importance for Biopsy Upgraded") %>%
+      caption = 'Variable importance for Biopsy Upgraded') %>%
   kable_styling() %>%
-  column_spec(2:5, width_min = "5em", width = "5em")
+  column_spec(2:5, width_min = '5em', width = '5em')
 ```
