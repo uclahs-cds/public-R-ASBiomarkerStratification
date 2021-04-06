@@ -24,7 +24,7 @@ col.labels <- label.or.name(biodb)
 names(col.labels) <- colnames(biodb)
 
 train.model <- TRUE
-if(train.model) {
+if (train.model) {
   dir.create(here::here('models/sequential/'), showWarnings = FALSE, recursive = TRUE);
 
   X <- lapply(seq_along(biocategories), function(i) {

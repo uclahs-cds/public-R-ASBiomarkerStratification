@@ -62,7 +62,7 @@ label.or.name <- function(x) {
         res
     } else {
         lab <- label(x)
-        if(is.null(lab)) mc$x
+        if (is.null(lab)) mc$x
         else lab
     }
 }

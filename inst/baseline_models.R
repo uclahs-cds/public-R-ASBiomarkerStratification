@@ -17,7 +17,7 @@ model.nice.names <- c(
 
 set.seed(seed);
 train.model <- FALSE
-if(train.model) {
+if (train.model) {
   biodb <- default.load.data(onlyBiodb = TRUE);
 
   # Baseline models
@@ -121,4 +121,3 @@ thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x)
     autofit())
 
 save_as_docx(baseline.table, path = here('results/tables/baseline_table.docx'))
-
