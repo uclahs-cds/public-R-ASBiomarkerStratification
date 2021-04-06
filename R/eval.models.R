@@ -98,22 +98,6 @@ threshold.summary.stats <- function(model, threshold, per.fold = FALSE) {
     }
 }
 
-#' Computes F.beta score
-#'
-#' @param precision
-#' @param recall
-#' @param beta
-#'
-#' @return
-#' @export
-#'
-#' @examples
-F.beta <- function(precision, recall, beta = 1) {
-    unname(
-        (1 + beta^2) * (precision * recall) / (beta^2 * precision + recall)
-    )
-}
-
 # Combines the importance score of dummy variables into one
 squash.importance <- function(importance, FUN = 'sum') {
     df <- importance

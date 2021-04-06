@@ -235,12 +235,6 @@ thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x)
 save_as_docx(upgrade.table, path = here('euro_urology/tables/upgrade_table.docx'))
 ```
 
-```{r variable-importance}
-bx.upgrade.var.imp <- var.imp.combine(models$BiopsyUpgraded, order = TRUE)
-
-flextable(bx.upgrade.var.imp[order(bx.upgrade.var.imp[,2], decreasing = TRUE), ], )
-```
-
 ## Sequential Models
 
 ```{r}

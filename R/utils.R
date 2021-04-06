@@ -55,11 +55,6 @@ label <- function(x) {
     x;
     }
 
-`%||%` <- function(x, y) {
-    if (is.null(x)) y
-    else x
-}
-
 #'@export
 label.or.name <- function(x) {
     mc <- match.call()
@@ -71,6 +66,8 @@ label.or.name <- function(x) {
         res[cond] <- unlist(labs)
         res
     } else {
-        label(x) %||% mc$x
+        lab <- label(x)
+        if(is.null(lab)) mc$x
+        else lab
     }
 }
