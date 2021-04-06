@@ -50,11 +50,6 @@ label <- function(x) {
     attr(x, 'label');
     }
 
-`label<-` <- function(x, value) {
-    attr(x, 'label') <- value;
-    x;
-    }
-
 #'@export
 label.or.name <- function(x) {
     mc <- match.call()

@@ -131,45 +131,45 @@ load.data.AS <- function(biomark.path,
   # Rename Ethnicity to Hispanic
   biodb$Hispanic <- as.factor(biodb$Ethnicity);
 
-  label(biodb$Weight) <- 'Weight (kg)';
-  label(biodb$Height) <- 'Height (cm)';
-  label(biodb$ProstateVolume) <- 'Prostate Volume (cm^3)';
-  label(biodb$p2PSA) <- '[-2]proPSA';
-  label(biodb$freePSA) <- 'Free PSA';
-  label(biodb$MRIResult) <- 'MRI Result';
-  label(biodb$MRILesions) <- 'MRI Lesions';
-  label(biodb$HighestPIRADS) <- 'PI-RADS';
-  label(biodb$BiopsyResult) <- 'Biopsy Result';
-  label(biodb$ADCnormalSignal) <- 'ADC normal Signal';
-  label(biodb$ADClesionSignal) <- 'ADC lesion Signal';
-  label(biodb$RSIlesionSignal) <- 'RSI lesion Signal';
-  label(biodb$RSInormalSignal) <- 'RSI normal Signal';
-  label(biodb$RSIlesionPIRADS) <- 'PI-RADS'
-  label(biodb$MiPSCancerRisk) <- 'MiPS Cancer Risk';
-  label(biodb$MiPSHighGradeCancerRisk) <- 'MyProstateScore';
-  label(biodb$MyProstateScore) <- 'MyProstateScore';
-  label(biodb$MPSDensity) <- 'MPS Density';
-  label(biodb$SOCPSA) <- 'PSA';
-  label(biodb$PSAHyb) <- 'PSA Hybrid';
-  label(biodb$PSADensity) <- 'PSA Density';
-  label(biodb$PercentFreePSA) <- '% Free PSA';
-  label(biodb$PHIDensity) <- 'PHI Density';
-  label(biodb$TNFaAverage) <- 'TNFa';
-  label(biodb$GeneticRiskScore) <- 'Genetic Risk Score';
-  label(biodb$GeneticRiskCategory) <- 'Genetic Risk Category';
-  label(biodb$GlobalScreeningArray) <- 'Global Screening Array';
-  label(biodb$GSAPositives) <- 'GSA Positives';
-  label(biodb$BRCAMutation) <- 'BRCA Mutation';
-  label(biodb$Mutation_BRCA1) <- 'BRCA1';
-  label(biodb$Mutation_BRCA2) <- 'BRCA2';
-  label(biodb$Mutation_ATM) <- 'ATM';
-  label(biodb$Mutation_MLH1) <- 'MLH1';
-  label(biodb$Mutation_PMS2) <- 'PMS2';
-  label(biodb$Germline.variants) <- 'Deleterious germline variants';
-  label(biodb$PreviousISUP) <- 'Previous ISUP';
-  label(biodb$StudyHighestGleason) <- 'Study Highest Gleason';
-  label(biodb$StudyHighestISUP) <- 'Study Highest ISUP';
-  label(biodb$ProgressedToTreatment) <- 'Progressed to Treatment';
+  attr(biodb$Weight, 'label') <- 'Weight (kg)';
+  attr(biodb$Height, 'label') <- 'Height (cm)';
+  attr(biodb$ProstateVolume, 'label') <- 'Prostate Volume (cm^3)';
+  attr(biodb$p2PSA, 'label') <- '[-2]proPSA';
+  attr(biodb$freePSA, 'label') <- 'Free PSA';
+  attr(biodb$MRIResult, 'label') <- 'MRI Result';
+  attr(biodb$MRILesions, 'label') <- 'MRI Lesions';
+  attr(biodb$HighestPIRADS, 'label') <- 'PI-RADS';
+  attr(biodb$BiopsyResult, 'label') <- 'Biopsy Result';
+  attr(biodb$ADCnormalSignal, 'label') <- 'ADC normal Signal';
+  attr(biodb$ADClesionSignal, 'label') <- 'ADC lesion Signal';
+  attr(biodb$RSIlesionSignal, 'label') <- 'RSI lesion Signal';
+  attr(biodb$RSInormalSignal, 'label') <- 'RSI normal Signal';
+  attr(biodb$RSIlesionPIRADS, 'label') <- 'PI-RADS'
+  attr(biodb$MiPSCancerRisk, 'label') <- 'MiPS Cancer Risk';
+  attr(biodb$MiPSHighGradeCancerRisk, 'label') <- 'MyProstateScore';
+  attr(biodb$MyProstateScore, 'label') <- 'MyProstateScore';
+  attr(biodb$MPSDensity, 'label') <- 'MPS Density';
+  attr(biodb$SOCPSA, 'label') <- 'PSA';
+  attr(biodb$PSAHyb, 'label') <- 'PSA Hybrid';
+  attr(biodb$PSADensity, 'label') <- 'PSA Density';
+  attr(biodb$PercentFreePSA, 'label') <- '% Free PSA';
+  attr(biodb$PHIDensity, 'label') <- 'PHI Density';
+  attr(biodb$TNFaAverage, 'label') <- 'TNFa';
+  attr(biodb$GeneticRiskScore, 'label') <- 'Genetic Risk Score';
+  attr(biodb$GeneticRiskCategory, 'label') <- 'Genetic Risk Category';
+  attr(biodb$GlobalScreeningArray, 'label') <- 'Global Screening Array';
+  attr(biodb$GSAPositives, 'label') <- 'GSA Positives';
+  attr(biodb$BRCAMutation, 'label') <- 'BRCA Mutation';
+  attr(biodb$Mutation_BRCA1, 'label') <- 'BRCA1';
+  attr(biodb$Mutation_BRCA2, 'label') <- 'BRCA2';
+  attr(biodb$Mutation_ATM, 'label') <- 'ATM';
+  attr(biodb$Mutation_MLH1, 'label') <- 'MLH1';
+  attr(biodb$Mutation_PMS2, 'label') <- 'PMS2';
+  attr(biodb$Germline.variants, 'label') <- 'Deleterious germline variants';
+  attr(biodb$PreviousISUP, 'label') <- 'Previous ISUP';
+  attr(biodb$StudyHighestGleason, 'label') <- 'Study Highest Gleason';
+  attr(biodb$StudyHighestISUP, 'label') <- 'Study Highest ISUP';
+  attr(biodb$ProgressedToTreatment, 'label') <- 'Progressed to Treatment';
 
   biodb$PHI.computed <- with(biodb, {
     (p2PSA / freePSA) * sqrt(PSAHyb)

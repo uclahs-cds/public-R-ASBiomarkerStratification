@@ -3,19 +3,91 @@ library(BoutrosLab.ASBiomarkerSynergy);
 library(magrittr)
 library(knitr)
 library(kableExtra)
-seed <- 1313;
-targets <- c(
-  'BiopsyUpgraded',
-  'Prostatectomy',
-  'ProgressedToTreatment');
+seed <- 9999;
+targets <- 'BiopsyUpgraded';
 metric <- 'PR-AUC';
 method <- 'gbm';
-model.names <- c('baseline', 'baseline_RSIlesionSignal', 'baseline_RSIlesionPIRADS');
+model.names <- c('baseline', 'baseline_RSIlesionSignal', 'baseline_RSIlesionPIRADS', 'baseline_both');
 model.nice.names <- c(
   'Baseline',
-  'Baseline + RSI lesion Signal',
-  'Baseline + RSI lesion PI-RADS'
+  'Baseline + RSI',
+  'Baseline + PI-RADS',
+  'Baseline + RSI + PI-RADS'
 )
+
+set.seed(seed);
+train.model <- FALSE
+if(train.model) {
+  biodb <- default.load.data(onlyBiodb = TRUE);
+
+  # Baseline models
+  lapply(targets, function(tg) {
+    lapply(metric,
+           AS.models,
+           biodb = biodb,
+           target = tg,
+           train.control = AS.train.control,
+           predict.missing = FALSE,
+           seed = seed,
+           models = c('gbm'),
+           rm.NoUpgradeAndProgressed = FALSE,
+           baseline.model = TRUE,
+           suffix = 'baseline'
+    );
+  });
+
+  # Baseline + RSI lesion signal
+  lapply(targets, function(tg) {
+    lapply(metric,
+           AS.models,
+           biodb = biodb,
+           target = tg,
+           train.control = AS.train.control,
+           predict.missing = FALSE,
+           seed = seed,
+           models = c('gbm'),
+           rm.NoUpgradeAndProgressed = FALSE,
+           baseline.model = TRUE,
+           include.vars = 'RSIlesionSignal',
+           suffix = 'baseline_RSIlesionSignal'
+    );
+  });
+
+  # Baseline + RSI PI-RADS
+  lapply(targets, function(tg) {
+    lapply(metric,
+           AS.models,
+           biodb = biodb,
+           target = tg,
+           train.control = AS.train.control,
+           predict.missing = FALSE,
+           seed = seed,
+           models = c('gbm'),
+           rm.NoUpgradeAndProgressed = FALSE,
+           baseline.model = TRUE,
+           include.vars = 'RSIlesionPIRADS',
+           suffix = 'baseline_RSIlesionPIRADS'
+    );
+  });
+
+  # Baseline + RSI + PI-RADS
+  lapply(targets, function(tg) {
+    lapply(metric,
+           AS.models,
+           biodb = biodb,
+           target = tg,
+           train.control = AS.train.control,
+           predict.missing = FALSE,
+           seed = seed,
+           models = c('gbm'),
+           rm.NoUpgradeAndProgressed = FALSE,
+           baseline.model = TRUE,
+           include.vars = c('RSIlesionSignal', 'RSIlesionSignal'),
+           suffix = 'baseline_both'
+    );
+  });
+}
+
 models <- lapply(targets, function(x) {
   model.id <- paste(x, metric, seed, sep = '_');
   model.id <- paste(model.id, model.names, sep = '_');
@@ -35,28 +107,18 @@ models.roc <- lapply(models, function(x) {
 
 summary.df <- summarize.models(models, models.roc)
 
-cols <- c('target', 'model', 'threshold', 'Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
+cols <- c('model', 'Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
 
 thresholds.table <- summary.df[, cols]
 # Break camel case into newlines
-thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = '\n'), align = 'c')
-num.cols <- 4:length(cols)
+# thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = '\n'), align = 'c')
+num.cols <- 2:length(cols)
 thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 2))
 
-kable(thresholds.table,
-      digits = 2,
-      row.names = FALSE,
-      caption = 'Cross-validation summary statistics for the different targets and models comparing RSI lesion signal and RSI lesion PI-RADS',
-      escape = F) %>%
-  kable_styling() %>%
-  column_spec(1:2, width_min = '7em', width = '7em') %>%
-  collapse_rows(columns = 1:2)
+(baseline.table <- flextable(thresholds.table) %>%
+    add_footer_lines('Baseline = Age, BMI, Prostate Volume, PSA Density and %Free PSA. Models comparison between the full model, and clinically relevant models with RSI lesion signal and PI-RADS. Including RSI lesion signal improves the model greatly while adding RSI PI-RADS does not have much effect if RSI lesion signal is in the model. All of the statistics are over the cross-validation 10-folds and 5 repetitions. The optimal threshold is selected based on maximum sensitivity + specificity – 1).Baseline = Age, BMI, Prostate Volume, PSA Density and %Free PSA. Models comparison between the full model, and clinically relevant models with RSI lesion signal and PI-RADS. Including RSI lesion signal improves the model greatly while adding RSI PI-RADS does not have much effect if RSI lesion signal is in the model. All of the statistics are over the cross-validation 10-folds and 5 repetitions. The optimal threshold is selected based on maximum sensitivity + specificity – 1)') %>%
+    set_caption('Predictive Models for Prostate Cancer Upgrading on Active Surveillance to compare RSI lesion signal versus RSI PI-RADS classification.') %>%
+    autofit())
 
-bx.upgrade.var.imp <- var.imp.combine(models$BiopsyUpgraded)
+save_as_docx(baseline.table, path = here('results/tables/baseline_table.docx'))
 
-kable(x = bx.upgrade.var.imp[order(bx.upgrade.var.imp[,2], decreasing = TRUE), ],
-      digits = 2,
-      row.names = FALSE,
-      caption = 'Variable importance for Biopsy Upgraded') %>%
-  kable_styling() %>%
-  column_spec(2:5, width_min = '5em', width = '5em')

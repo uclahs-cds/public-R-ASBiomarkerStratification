@@ -3,19 +3,9 @@ library(caret)
 library(pROC)
 library(rpart.plot)
 
-train.control <- trainControl(
-  method = 'repeatedcv',
-  number = 10,
-  repeats = 5,
-  classProbs = TRUE,
-  savePredictions = T,
-  summaryFunction = custom.summary
-)
-
 gbm.grid <- gbm.hyper.grid()
 
 biodb <- default.load.data(onlyBiodb = TRUE);
-# roc.res <- roc(biodb$BiopsyUpgraded, predictor = biodb$RSIlesionSignal, algorithm = 0)
 
 # Biomarkers and categories
 biomarkers <- load.biomarker.categories()
@@ -33,52 +23,55 @@ biocategories <- unique(biomarkers$category)
 col.labels <- label.or.name(biodb)
 names(col.labels) <- colnames(biodb)
 
-X <- lapply(seq_along(biocategories), function(i) {
-  bio.cats <- biocategories[1:i];
-  print(bio.cats);
-  bio.vars <- biomarkers.clinically.useful$variable[biomarkers.clinically.useful$category %in% bio.cats]
-  print(bio.vars);
-  biodb[!missing.target, bio.vars, drop = FALSE]
-})
+train.model <- TRUE
+if(train.model) {
+  dir.create(here::here('models/sequential/'), showWarnings = FALSE, recursive = TRUE);
 
-y.target <- biodb[!missing.target, target];
-y <- y.target
-levels(y) <- c('no', 'yes');
+  X <- lapply(seq_along(biocategories), function(i) {
+    bio.cats <- biocategories[1:i];
+    bio.vars <- biomarkers.clinically.useful$variable[biomarkers.clinically.useful$category %in% bio.cats]
+    biodb[!missing.target, bio.vars, drop = FALSE]
+  })
 
-# Save the models to file
-# seq.id <- c('demographics', 'pre-MRI', 'MRI', 'Post-MRI');
-if (length(X) == 6) {
-  model.id <- paste('sequential6', target, metric, seed, sep = '_');
-} else {
-  model.id <- paste('sequential4', target, metric, seed, sep = '_');
-}
+  y.target <- biodb[!missing.target, target];
+  y <- y.target
+  levels(y) <- c('no', 'yes');
 
-model.file <- paste(model.id, 1:length(X), 'model.RDS', sep = '_');
+  # Save the models to file
+  # seq.id <- c('demographics', 'pre-MRI', 'MRI', 'Post-MRI');
+  if (length(X) == 6) {
+    model.id <- paste('sequential6', target, metric, seed, sep = '_');
+  } else {
+    model.id <- paste('sequential4', target, metric, seed, sep = '_');
+  }
 
-seq.models <- lapply(seq_along(X), function(i) {
-  x <- X[[i]];
-  save.file <- model.file[[i]];
-  set.seed(seed);
-  mod <- caret::train(
-    x,
-    y,
-    method = 'gbm',
-    metric = 'PR-AUC',
-    trControl = train.control,
-    tuneGrid = gbm.grid,
-    verbose = FALSE
-  );
+  model.file <- paste(model.id, 1:length(X), 'model.RDS', sep = '_');
 
-  saveRDS(object = mod, file = here::here(paste0('models/sequential/', save.file)));
-  mod
-})
+  seq.models <- lapply(seq_along(X), function(i) {
+    x <- X[[i]];
+    save.file <- model.file[[i]];
+    set.seed(seed);
+    mod <- caret::train(
+      x,
+      y,
+      method = 'gbm',
+      metric = 'PR-AUC',
+      trControl = AS.train.control,
+      tuneGrid = gbm.grid,
+      verbose = FALSE
+    );
 
-if (length(seq.models) == 4) {
-  names(seq.models) <- c('Demographics', 'Blood/Urine/Genetics', 'MRI Features', 'Volume Corrected');
-}
-if (length(seq.models) == 6) {
-  names(seq.models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Volume Corrected');
-}
+    saveRDS(object = mod, file = here::here(paste0('models/sequential/', save.file)));
+    mod
+  })
+
+  if (length(seq.models) == 4) {
+    names(seq.models) <- c('Demographics', 'Blood/Urine/Genetics', 'MRI Features', 'Volume Corrected');
+  }
+  if (length(seq.models) == 6) {
+    names(seq.models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Volume Corrected');
+  }
+  }
 
 # Load instead of training
 seq.model.id <- paste('sequential6', 'BiopsyUpgraded', metric, seed, sep = '_');
@@ -201,5 +194,5 @@ create.multiplot(
   height = 12,
   width = 16,
   resolution = 300,
-  filename = here('euro_urology/figures/seq_dotmap.tiff')
+  filename = here('results/figures/seq_dotmap.tiff')
 )

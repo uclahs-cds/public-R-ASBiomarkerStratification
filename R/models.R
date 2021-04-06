@@ -243,7 +243,7 @@ custom.summary <- function(data, lev = NULL, model = NULL) {
 }
 
 
-#' Title
+#' GBM hyper parameter grid
 #'
 #' @return
 #' @export
@@ -255,3 +255,13 @@ gbm.hyper.grid <- function() {
                 shrinkage = c(0.001, 0.01, 0.1),
                 n.minobsinnode = 10)
     }
+
+#' @export
+AS.train.control <- caret::trainControl(
+    method = 'repeatedcv',
+    number = 10,
+    repeats = 5,
+    classProbs = TRUE,
+    savePredictions = T,
+    summaryFunction = custom.summary
+)

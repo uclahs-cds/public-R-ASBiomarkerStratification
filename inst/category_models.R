@@ -35,7 +35,9 @@ length(clinico.epi.vars)
 length(radiologic.vars)
 length(molecular.vars)
 
+train.model <- TRUE
 if (train.model) {
+  dir.create(here::here('models'), showWarnings = FALSE, recursive = TRUE);
   missing.target <- is.na(biodb[, target]);
   X.clinico.epi <- biodb[!missing.target, clinico.epi.vars]
   X.radiologic <- biodb[!missing.target, radiologic.vars]
@@ -171,7 +173,7 @@ models.pr <- lapply(models, function(m) {
 })
 models.pr
 
-tiff(filename = here::here('euro_urology/figures/roc-pr_curves_alt.tiff'), width = 10, height = 8, res = 300, units = 'in')
+tiff(filename = here::here('results/figures/roc-pr_curves_alt.tiff'), width = 10, height = 8, res = 300, units = 'in')
 roc.pr.plot(models.roc)
 dev.off()
 
@@ -188,4 +190,4 @@ thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x)
 
 (upgrade.table <- flextable::autofit(flextable::flextable(thresholds.table)))
 
-flextable::save_as_docx(upgrade.table, path = here::here('euro_urology/tables/biomarker_table.docx'))
+flextable::save_as_docx(upgrade.table, path = here::here('results/tables/biomarker_table.docx'))
