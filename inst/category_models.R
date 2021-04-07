@@ -10,9 +10,8 @@ library(caret);
 library(pROC);
 
 seed <- 9999;
-metric <- 'PR-AUC'
-target <- 'BiopsyUpgraded'
-train.model <- FALSE
+metric <- 'PR-AUC';
+target <- 'BiopsyUpgraded';
 
 as.data <- default.load.data();
 biodb <- as.data$biodb;
@@ -21,21 +20,12 @@ rownames(biomarkers) <- biomarkers$variable;
 biomarkers <- biomarkers[cor.variables,]
 
 # baseline.vars <- biomarkers$variable[biomarkers$category == 'Demographics']
-clinico.epi.vars <- c('Age', 'BMI', 'ProstateVolume', 'PSADensity', 'PercentFreePSA') # biomarkers$variable[biomarkers$category %in% c('Demographics', 'Blood', 'Urine')]
-radiologic.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category == 'MRI Features'])
-molecular.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category == 'Genetics'])
-all.vars <- union(radiologic.vars, molecular.vars)
+clinico.epi.vars <- c('Age', 'BMI', 'ProstateVolume', 'PSADensity', 'PercentFreePSA');
+radiologic.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category == 'MRI Features']);
+molecular.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category == 'Genetics']);
+all.vars <- union(radiologic.vars, molecular.vars);
 
-paste0(clinico.epi.vars, collapse = ', ')
-paste0(radiologic.vars, collapse = ', ')
-paste0(molecular.vars, collapse = ', ')
-
-
-length(clinico.epi.vars)
-length(radiologic.vars)
-length(molecular.vars)
-
-train.model <- TRUE
+train.model <- TRUE;
 if (train.model) {
   dir.create(here::here('models'), showWarnings = FALSE, recursive = TRUE);
   missing.target <- is.na(biodb[, target]);
@@ -45,15 +35,6 @@ if (train.model) {
   X <- biodb[!missing.target, all.vars];
 
   y <- biodb[!missing.target, target];
-
-  train.control <- trainControl(
-    method = 'repeatedcv',
-    number = 10,
-    repeats = 5,
-    classProbs = TRUE,
-    savePredictions = T,
-    summaryFunction = custom.summary
-  )
 
   set.seed(seed);
 
@@ -65,7 +46,7 @@ if (train.model) {
     y,
     method = 'gbm',
     metric = metric,
-    trControl = train.control,
+    trControl = AS.train.control,
     tuneGrid = gbm.grid,
     verbose = FALSE
   )
@@ -83,7 +64,7 @@ if (train.model) {
     y,
     method = 'gbm',
     metric = metric,
-    trControl = train.control,
+    trControl = AS.train.control,
     tuneGrid = gbm.grid,
     verbose = FALSE
   )
@@ -100,7 +81,7 @@ if (train.model) {
     y,
     method = 'gbm',
     metric = metric,
-    trControl = train.control,
+    trControl = AS.train.control,
     tuneGrid = gbm.grid,
     verbose = FALSE
   )
@@ -108,7 +89,6 @@ if (train.model) {
 
   model.id <- paste(target, metric, seed, sep = '_');
   model.file <- paste('gbm', model.id, 'molecular_model.RDS', sep = '_');
-  # print(paste0('Saving file to: ',  here::here(paste0('models/', model.file))));
   saveRDS(object = gbm.molecular, file = here::here(paste0('models/', model.file)));
 
   print('Fitting gbm model for all features');
@@ -125,9 +105,8 @@ if (train.model) {
 
   model.id <- paste(target, metric, seed, sep = '_');
   model.file <- paste('gbm', model.id, 'combine_model.RDS', sep = '_');
-  # print(paste0('Saving file to: ',  here::here(paste0('models/', model.file))));
   saveRDS(object = gbm.all, file = here::here(paste0('models/', model.file)));
-} else {
+  } else {
   model.id <- paste(target, metric, seed, sep = '_');
 
   # Clinico
@@ -145,26 +124,27 @@ if (train.model) {
   # All variables model
   model.file <- paste('gbm', model.id, 'combine_model.RDS', sep = '_');
   gbm.all <- readRDS(file = here::here(paste0('models/', model.file)));
-}
+  }
 
 
-set.seed(seed)
-models <- list(gbm.clinico.epi, gbm.radiologic, gbm.molecular, gbm.all)
-names(models) <- c('clinico-epidemiologic', 'radiologic', 'molecular', 'all')
+set.seed(seed);
+models <- list(gbm.clinico.epi, gbm.radiologic, gbm.molecular, gbm.all);
+names(models) <- c('clinico-epidemiologic', 'radiologic', 'molecular', 'all');
 
 models.roc <- lapply(models, function(m) {
   bestPreds <- with(m, merge(pred, bestTune));
   pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
-})
+  });
 
 models.cvRoc <- lapply(models, function(m) {
-  bestPreds <- with(m, merge(pred, bestTune))
-  cvAUC::ci.cvAUC(predictions = bestPreds$yes, labels = bestPreds$obs, folds = bestPreds$Resample)
-  })
+  bestPreds <- with(m, merge(pred, bestTune));
+  cvAUC::ci.cvAUC(predictions = bestPreds$yes, labels = bestPreds$obs, folds = bestPreds$Resample);
+  });
 
 auc.ci.format <- lapply(models.cvRoc, function(r) {
-  sprintf('%.2f (95%% CI: %.2f - %.2f)', r$cvAUC, r$ci[1], r$ci[2])
-  })
+  sprintf('%.2f (95%% CI: %.2f - %.2f)', r$cvAUC, r$ci[1], r$ci[2]);
+  });
+
 auc.ci.format
 
 models.pr <- lapply(models, function(m) {
@@ -173,21 +153,20 @@ models.pr <- lapply(models, function(m) {
 })
 models.pr
 
+# Save the ROC/PR Curves
 tiff(filename = here::here('results/figures/roc-pr_curves_alt.tiff'), width = 10, height = 8, res = 300, units = 'in')
 roc.pr.plot(models.roc)
 dev.off()
 
-models.target <- list('BiopsyUpgraded' = models)
-models.roc.target <- list('BiopsyUpgraded' = models.roc)
-summary.df <- summarize.models(models.target, models.roc.target)
-cols <- c('model', 'Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
+models.target <- list('BiopsyUpgraded' = models);
+models.roc.target <- list('BiopsyUpgraded' = models.roc);
+summary.df <- summarize.models(models.target, models.roc.target);
+cols <- c('model', 'Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1');
 
-thresholds.table <- summary.df[, cols]
-# Break camel case into newlines
-# thresholds.table$target <- kableExtra::linebreak(camel.to.spaces(thresholds.table$target, replace = '\n'), align = 'c')
-num.cols <- 2:length(cols)
-thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 2))
+thresholds.table <- summary.df[, cols];
+num.cols <- 2:length(cols);
+thresholds.table[, num.cols] <- lapply(thresholds.table[, num.cols], function(x) round(as.numeric(x), 2));
 
-(upgrade.table <- flextable::autofit(flextable::flextable(thresholds.table)))
-
+# Print and save the results table
+(upgrade.table <- flextable::autofit(flextable::flextable(thresholds.table)));
 flextable::save_as_docx(upgrade.table, path = here::here('results/tables/biomarker_table.docx'))

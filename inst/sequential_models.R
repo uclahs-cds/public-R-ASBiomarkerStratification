@@ -1,49 +1,48 @@
 library(BoutrosLab.ASBiomarkerSynergy);
-library(caret)
-library(pROC)
-library(rpart.plot)
+library(caret);
+library(pROC);
+library(rpart.plot);
 
-gbm.grid <- gbm.hyper.grid()
+gbm.grid <- gbm.hyper.grid();
 
 biodb <- default.load.data(onlyBiodb = TRUE);
 
 # Biomarkers and categories
-biomarkers <- load.biomarker.categories()
+biomarkers <- load.biomarker.categories();
 
-target <- 'BiopsyUpgraded'
-metric <- 'PR-AUC'
-seed <- 9999
+target <- 'BiopsyUpgraded';
+metric <- 'PR-AUC';
+seed <- 9999;
 missing.target <- is.na(biodb[, target]);
 
 biomarkers.clinically.useful <- biomarkers[biomarkers$clinically.useful == 1, ];
 
 # Separate blood, urine, genetics
-biocategories <- unique(biomarkers$category)
+biocategories <- unique(biomarkers$category);
 
-col.labels <- label.or.name(biodb)
-names(col.labels) <- colnames(biodb)
+col.labels <- label.or.name(biodb);
+names(col.labels) <- colnames(biodb);
 
-train.model <- TRUE
+train.model <- TRUE;
 if (train.model) {
   dir.create(here::here('models/sequential/'), showWarnings = FALSE, recursive = TRUE);
 
   X <- lapply(seq_along(biocategories), function(i) {
     bio.cats <- biocategories[1:i];
     bio.vars <- biomarkers.clinically.useful$variable[biomarkers.clinically.useful$category %in% bio.cats]
-    biodb[!missing.target, bio.vars, drop = FALSE]
-  })
+    biodb[!missing.target, bio.vars, drop = FALSE];
+    });
 
   y.target <- biodb[!missing.target, target];
-  y <- y.target
+  y <- y.target;
   levels(y) <- c('no', 'yes');
 
   # Save the models to file
-  # seq.id <- c('demographics', 'pre-MRI', 'MRI', 'Post-MRI');
   if (length(X) == 6) {
     model.id <- paste('sequential6', target, metric, seed, sep = '_');
-  } else {
+    } else {
     model.id <- paste('sequential4', target, metric, seed, sep = '_');
-  }
+    }
 
   model.file <- paste(model.id, 1:length(X), 'model.RDS', sep = '_');
 
@@ -59,18 +58,18 @@ if (train.model) {
       trControl = AS.train.control,
       tuneGrid = gbm.grid,
       verbose = FALSE
-    );
+      );
 
     saveRDS(object = mod, file = here::here(paste0('models/sequential/', save.file)));
-    mod
-  })
+    mod;
+    })
 
   if (length(seq.models) == 4) {
     names(seq.models) <- c('Demographics', 'Blood/Urine/Genetics', 'MRI Features', 'Volume Corrected');
-  }
+    }
   if (length(seq.models) == 6) {
     names(seq.models) <- c('Demographics', 'Blood', 'Urine', 'Genetics', 'MRI Features', 'Volume Corrected');
-  }
+    }
   }
 
 # Load instead of training
@@ -83,44 +82,52 @@ seq.models <- lapply(seq.model.path, readRDS);
 seq.models.roc <- lapply(seq.models, function(m) {
   bestPreds <- with(m, merge(pred, bestTune));
   pROC::roc(predictor = bestPreds$yes, response = bestPreds$obs, direction = '<', levels = c('no', 'yes'));
-})
+  });
 
 best.thres <- lapply(seq.models.roc, function(x) {
   as.numeric(coords(x, 'best', transpose = TRUE)[1])
-})
+  });
 
-seq.var.names <- lapply(seq.models, function(x) x$finalModel$var.names)
-all.var.names <- biomarkers.clinically.useful$variable
+seq.var.names <- lapply(seq.models, function(x) x$finalModel$var.names);
+all.var.names <- biomarkers.clinically.useful$variable;
 
-summary.df <- summarize.seq.models(seq.models, seq.models.roc)
-metrics <- c('Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1')
-cols <- c('group', metrics)
+summary.df <- summarize.seq.models(seq.models, seq.models.roc);
+metrics <- c('Accuracy', 'Sensitivity', 'Specificity', 'Precision', 'F1');
+cols <- c('group', metrics);
 
-thresholds.table <- summary.df[, cols]
+thresholds.table <- summary.df[, cols];
 thresholds.table$group <- lapply(seq_along(seq.models), function(i) {
-  paste0(names(seq.models)[1:i], collapse = ' +\n')
-})
+  paste0(names(seq.models)[1:i], collapse = ' +\n');
+  });
 
 # Create the dotmap
-dotmap.data <- matrix(0, ncol = length(seq.models), nrow = length(all.var.names))
-colnames(dotmap.data) <- 1:length(seq.models)
-rownames(dotmap.data) <- all.var.names
+dotmap.data <- matrix(0, ncol = length(seq.models), nrow = length(all.var.names));
+colnames(dotmap.data) <- 1:length(seq.models);
+rownames(dotmap.data) <- all.var.names;
 
 for (i in seq_along(seq.models)) {
-  dotmap.data[seq.var.names[[i]], i] <- 1
-}
+  dotmap.data[seq.var.names[[i]], i] <- 1;
+  }
 
-rownames(dotmap.data) <- col.labels[all.var.names]
+rownames(dotmap.data) <- col.labels[all.var.names];
 
-var.categories <- factor(biomarkers.clinically.useful$category, levels = unique(biomarkers.clinically.useful$category))
+var.categories <- factor(
+  x = biomarkers.clinically.useful$category,
+  levels = unique(biomarkers.clinically.useful$category)
+  );
 
-dotmap.bg.data <- as.data.frame(matrix(rep(var.categories, 6), nrow = length(biomarkers.clinically.useful$category), ncol = 6))
+dotmap.bg.data <- as.data.frame(
+  x = matrix(
+    data = rep(var.categories, 6),
+    nrow = length(biomarkers.clinically.useful$category),
+    ncol = 6)
+  );
 
-dotmap.bg.data <- lapply(dotmap.bg.data, factor, levels = unique(biomarkers.clinically.useful$category))
-dotmap.bg.data.int <- data.frame(lapply(dotmap.bg.data, as.numeric))
+dotmap.bg.data <- lapply(dotmap.bg.data, factor, levels = unique(biomarkers.clinically.useful$category));
+dotmap.bg.data.int <- data.frame(lapply(dotmap.bg.data, as.numeric));
 
-colnames(dotmap.bg.data.int) <- 1:length(seq.models)
-rownames(dotmap.bg.data.int) <- all.var.names
+colnames(dotmap.bg.data.int) <- 1:length(seq.models);
+rownames(dotmap.bg.data.int) <- all.var.names;
 
 bpg.dotmap <- create.dotmap(
   x = dotmap.data,
@@ -130,14 +137,14 @@ bpg.dotmap <- create.dotmap(
   total.colours = nlevels(var.categories) + 1,
   bg.alpha = 0.65,
   bg.data = dotmap.bg.data.int
-)
+  );
 
 metric.scatterplot.data <- thresholds.table %>%
   dplyr::mutate(group = 1:length(seq.models)) %>%
-  tidyr::gather(metric, value, -group)
-#
-metric.colours <- c('dodgerblue', 'goldenrod1', 'darkorange1', 'seagreen2', 'orchid3')
-names(metric.colours) <- metrics
+  tidyr::gather(metric, value, -group);
+
+metric.colours <- c('dodgerblue', 'goldenrod1', 'darkorange1', 'seagreen2', 'orchid3');
+names(metric.colours) <- metrics;
 
 metric.scatterplot <- create.scatterplot(
   formula = value ~ group,
@@ -152,7 +159,7 @@ metric.scatterplot <- create.scatterplot(
   xgrid.at = 0,
   cex = 2,
   lwd = 4
-)
+  );
 
 metric.legend <- legend.grob(
   list(
@@ -167,12 +174,12 @@ metric.legend <- legend.grob(
       title = 'Test Methodology',
       labels = levels(var.categories),
       border = 'black'
-    )
-  ),
-  title.cex = 2,
-  label.cex = 2,
-  title.just = 'left'
-);
+      )
+    ),
+    title.cex = 2,
+    label.cex = 2,
+    title.just = 'left'
+  );
 
 create.multiplot(
   plot.objects = list(bpg.dotmap, metric.scatterplot),
@@ -184,7 +191,6 @@ create.multiplot(
   xat = seq_along(seq.models),
   xaxis.labels = seq_along(seq.models),
   xlab.label = 'Sequence Group',
-
   ylab.label = list(
     'Metric Value',
     ''
@@ -195,4 +201,4 @@ create.multiplot(
   width = 16,
   resolution = 300,
   filename = here('results/figures/seq_dotmap.tiff')
-)
+  )
