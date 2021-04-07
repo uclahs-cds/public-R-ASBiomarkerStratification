@@ -1,54 +1,3 @@
-#' Compute the cost of given predictions based on a cost matrix
-#'
-#' @param x
-#' @param lev
-#' @param cost.matrix
-#' @param threshold
-preds.cost <- function(x, lev = NULL, cost.matrix = matrix(c(0,1,1,0), byrow = TRUE, nrow = 2), threshold) {
-    if (is.null(lev)) {
-        lev <- levels(x$obs)
-    }
-    preds <- x[[lev[2]]]
-    truth <- x$obs
-    class.preds <- as.factor(ifelse(preds > threshold, lev[2], lev[1]))
-    levels(class.preds) <- lev
-    conf.mat <- table(class.preds, truth)
-    sum(conf.mat * cost.matrix)
-}
-
-#' Computes the cost for a given model's predictions at a given threshold for a specified cost matrix.
-#'
-#' @param model The caret `train` class trained with `caret::trainControl(classProbs = TRUE, savePredictions = TRUE, ...)`
-#' @param cost.matrix The costs for each predictions with the costs corresponding to table(class.preds, truth) * cost.matrix.
-#' That is, `cost.matrix[1,2] = FN` and `cost.matrix[2,1] = FP`
-#' @param thresholds A vector of thresholds to compute the cost matrix for.
-#'
-#' @return A vector of the costs
-#' @export
-#'
-#' @examples
-#' # Twice as costly for a false-positive than false positive
-#' cost.matrix <- matrix(c(0,2,1,0), byrow = TRUE, nrow = 2)
-#' cost.threshold.train(model, thresholds = c(0.25, 0.5), cost.matrix = cost.matrix)
-cost.threshold.train <- function(model,
-                              cost.matrix = matrix(c(0,1,1,0), byrow = TRUE, nrow = 2),
-                              thresholds = 0.5) {
-    stopifnot(class(model) == 'train');
-
-    pred.best <- with(model,
-                      merge(pred, bestTune))
-
-    res <- lapply(thresholds, function(threshold) {
-        grp.resample <- split(pred.best, pred.best$Resample)
-        # Maybe add summary here?
-        mean(unlist(lapply(grp.resample, preds.cost, threshold = threshold, cost.matrix = cost.matrix)))
-    })
-    # names(res) <- thresholds
-    # If we are using summary
-    # t(do.call(cbind, res))
-    unlist(res)
-}
-
 #' Computes the optimal threshold based on a given cost matrix.
 #'
 #' @param model
@@ -58,8 +7,6 @@ cost.threshold.train <- function(model,
 #'
 #' @return
 #' @export
-#'
-#' @examples
 optimal.threshold.train <- function(model,
                                     cost.matrix = matrix(c(0,1,1,0), byrow = TRUE, nrow = 2),
                                     thresholds = c(0.25, 0.5, 0.75),
@@ -83,8 +30,6 @@ flatten.ConfusionMatrix <- function(...) {
 #'
 #' @return
 #' @export
-#'
-#' @examples
 threshold.summary.stats <- function(model, threshold, per.fold = FALSE) {
     pred.best <- with(model,
                       merge(pred, bestTune))
@@ -118,8 +63,6 @@ squash.importance <- function(importance, FUN = 'sum') {
 #'
 #' @return
 #' @export
-#'
-#' @examples
 var.imp <- function(x, onlyImportance = TRUE, squash = TRUE) {
     stopifnot('train' == class(x));
     if ('gbm' == x$method) {
@@ -149,8 +92,6 @@ var.imp <- function(x, onlyImportance = TRUE, squash = TRUE) {
 #'
 #' @return
 #' @export
-#'
-#' @examples
 var.imp.combine <-  function(x, order = FALSE, rev.cols = FALSE) {
     if (rev.cols) {
         x <- x[rev(names(x))];
@@ -179,8 +120,6 @@ var.imp.combine <-  function(x, order = FALSE, rev.cols = FALSE) {
 #'
 #' @return
 #' @export
-#'
-#' @examples
 compare.var.imp <- function(x, include.ranks = FALSE) {
     model.varImp <- lapply(x, function(x) var.imp(x)$importance)
     if (is.null(names(x))) {
@@ -213,8 +152,6 @@ compare.var.imp <- function(x, include.ranks = FALSE) {
 #'
 #' @return
 #' @export
-#'
-#' @examples
 summarize.models <- function(models, models.roc = NULL) {
     if (is.null(models.roc)) {
         models.roc <- lapply(models, function(x) {
@@ -247,15 +184,13 @@ summarize.models <- function(models, models.roc = NULL) {
     do.call(rbind.data.frame, thresholds.info.list);
 }
 
-#' Title
+#' Summarize the sequence models
 #'
 #' @param models
 #' @param models.roc
 #'
 #' @return
 #' @export
-#'
-#' @examples
 summarize.seq.models <- function(models, models.roc = NULL) {
     if (is.null(models.roc)) {
         models.roc <- lapply(models, function(m) {

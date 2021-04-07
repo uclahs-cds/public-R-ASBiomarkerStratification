@@ -1,4 +1,4 @@
-#' Models for Progressed to Treatment
+#' Models for AS endpoints
 #'
 #' @param biodb
 #' @param train.control
@@ -129,9 +129,7 @@ AS.models <- function(
 
     # XGB needs numeric input.
     # Convert ordered factors to numeric
-    # ordered.cols <- unlist(lapply(biodb, is.ordered))
     X.ints <- X
-    # biodb.ints[, ordered.cols] <- lapply(biodb.ints[, ordered.cols], function(x) as.numeric(x))
     # Convert ordered variable to numeric
     if ('PreviousISUP' %in% colnames(X.ints)) {
         X.ints$PreviousISUP <- as.numeric(as.character(X$PreviousISUP))
@@ -207,7 +205,7 @@ AS.models <- function(
         # print(paste0('Saving file to: ',  here::here(paste0('models/', model.file))));
         saveRDS(object = gbm.fit, file = here::here(paste0('models/', model.file)));
     }
-    }
+}
 
 
 #' Custom summary for caret model
@@ -229,9 +227,7 @@ custom.summary <- function(data, lev = NULL, model = NULL) {
         c(
             caret::defaultSummary(data, lev, model),
             two.class.sum,
-            pr.summary#,
-            # F2 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 2),
-            # F3 = F_beta(precision = pr.summary['Precision'], recall = pr.summary['Recall'], beta = 3)
+            pr.summary
         )
     } else if (length(lev) > 2) {
         c(
@@ -256,6 +252,7 @@ gbm.hyper.grid <- function() {
                 n.minobsinnode = 10)
     }
 
+#' Caret train control settings
 #' @export
 AS.train.control <- caret::trainControl(
     method = 'repeatedcv',

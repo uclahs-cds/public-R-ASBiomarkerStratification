@@ -5,7 +5,6 @@ str.match <- function(x, pattern) {
     regmatches(x, regexec(pattern, x));
 }
 
-
 #' Convert camel case to string with spaces. Note does not work with multiple capitals
 #' Idea from: https://stackoverflow.com/a/8407047/1351718
 #'
@@ -50,7 +49,20 @@ label <- function(x) {
     attr(x, 'label');
     }
 
-#'@export
+#' Get the label or the name of a variable or data frame. If x is a data frame, then return the label or column name.
+#'
+#' @param x the variable or data frame we want to get either the label or name from.
+#'
+#' @export
+#' @examples
+#' x <- data.frame(x = 1:4, y = 5:8)
+#' attr(x$x, 'label') <- 'Label 1'
+#' label.or.name(x$x)
+#' #> "Label 1"
+#' label.or.name(x$y)
+#' #> x$y
+#' label.or.name(x)
+#' #> "Label 1" "y"
 label.or.name <- function(x) {
     mc <- match.call()
     if (typeof(x) == 'list') {
