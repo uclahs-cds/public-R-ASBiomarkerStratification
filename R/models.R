@@ -42,33 +42,34 @@ AS.models <- function(
 
     if (baseline.model) {
         biokey.variables <- biomarkers$variable[biomarkers$clinically.useful == 1 & biomarkers$category == 'Demographics'];
-    }
+        }
     else if (reduced.model) {
         biokey.variables <- biomarkers$variable[biomarkers$clinically.useful == 1];
-    } else {
+        }
+    else {
         biokey.variables <- biomarkers$variable;
-    }
+        }
 
     if ('BiopsyUpgraded' == target) {
         exclude.vars <- c(exclude.vars, 'BiopsyResult');
 
         # Change name to multiclass name
         if (predict.missing && 'F' == metric) {
-            metric <- 'Mean_F1'
+            metric <- 'Mean_F1';
+            }
         }
-    }
 
     # Part of file name
     model.id <- paste(target, metric, seed, sep = '_');
     if (!is.null(suffix)) {
         model.id <- paste(model.id, suffix, sep = '_');
-    }
+        }
 
     biokey.variables <- setdiff(biokey.variables, exclude.vars);
 
     if (!is.null(include.vars)) {
         biokey.variables <- union(biokey.variables, include.vars)
-    }
+        }
 
     missing.target <- is.na(biodb[, target]);
 
@@ -85,7 +86,8 @@ AS.models <- function(
 
         y <- y.target;
         levels(y) <- c('no', 'yes', 'Missing');
-    } else {
+        }
+    else {
         # Variable we want to predict
         y.target <- biodb[!missing.target & valid.patients, target];
         y <- y.target
@@ -95,9 +97,9 @@ AS.models <- function(
 
         # Drop the missing target values
         X <- biodb[!missing.target & valid.patients, biokey.variables]
-    }
+        }
 
-    gbm.grid <- gbm.hyper.grid()
+    gbm.grid <- gbm.hyper.grid();
 
     xgb.grid <- expand.grid(
         nrounds = seq(from = 200, to = 1000, by = 50),
@@ -121,23 +123,24 @@ AS.models <- function(
             # Don't seem to be enough of a class imbalance to make a difference
             # sampling = 'up'
             )
-        } else {
-            train.control$savePredictions <- TRUE
-            train.control$classProbs <- TRUE
-            train.control$summaryFunction <- custom.summary
+        }
+    else {
+        train.control$savePredictions <- TRUE;
+        train.control$classProbs <- TRUE;
+        train.control$summaryFunction <- custom.summary;
         }
 
     # XGB needs numeric input.
     # Convert ordered factors to numeric
-    X.ints <- X
+    X.ints <- X;
     # Convert ordered variable to numeric
     if ('PreviousISUP' %in% colnames(X.ints)) {
-        X.ints$PreviousISUP <- as.numeric(as.character(X$PreviousISUP))
-    }
+        X.ints$PreviousISUP <- as.numeric(as.character(X$PreviousISUP));
+        }
 
     # Convert to dummy variables
-    dummy.formula <- paste0('~ ', paste0(biokey.variables, collapse = ' + '))
-    X.dummy.ints <- predict(caret::dummyVars(dummy.formula, data = X.ints, fullRank = TRUE), newdata = X.ints)
+    dummy.formula <- paste0('~ ', paste0(biokey.variables, collapse = ' + '));
+    X.dummy.ints <- predict(caret::dummyVars(dummy.formula, data = X.ints, fullRank = TRUE), newdata = X.ints);
 
     print(paste('Fitting models for:', target, 'optimizing', metric));
 
@@ -151,7 +154,7 @@ AS.models <- function(
             tuneGrid = xgb.grid,
             metric = metric,
             method = 'xgbTree'
-        )
+        );
 
         print('Completed fitting XGB model...');
 
@@ -164,9 +167,10 @@ AS.models <- function(
         if (!is.null(rpart.cost)) {
             print('Fitting rpart model with cost matrix...');
             print(rpart.cost)
-        } else {
+            }
+        else {
             print('Fitting rpart model ...');
-        }
+            }
 
 
         if (!is.null(seed)) set.seed(seed);
@@ -178,11 +182,10 @@ AS.models <- function(
             trControl = train.control,
             tuneLength = 30,
             parms = list(loss = rpart.cost)
-        )
+            );
         print('Completed fitting rpart model...');
 
         model.file <- paste('rpart', model.id, 'model.RDS', sep = '_');
-        # print(paste0('Saving file to: ',  here::here(paste0('models/', model.file))));
         saveRDS(object = rpart.fit, file = here::here(paste0('models/', model.file)));
     }
 
@@ -198,7 +201,7 @@ AS.models <- function(
             trControl = train.control,
             tuneGrid = gbm.grid,
             verbose = FALSE
-        )
+            );
         print('Completed fitting gbm model...');
 
         model.file <- paste('gbm', model.id, 'model.RDS', sep = '_');
@@ -229,14 +232,14 @@ custom.summary <- function(data, lev = NULL, model = NULL) {
             two.class.sum,
             pr.summary
         )
-    } else if (length(lev) > 2) {
+        }
+    else if (length(lev) > 2) {
         c(
             caret::defaultSummary(data, lev, model),
             caret::multiClassSummary(data, lev, model)
         )
+        }
     }
-
-}
 
 
 #' GBM hyper parameter grid
@@ -261,4 +264,4 @@ AS.train.control <- caret::trainControl(
     classProbs = TRUE,
     savePredictions = T,
     summaryFunction = custom.summary
-)
+    );

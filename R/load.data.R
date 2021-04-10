@@ -1,16 +1,16 @@
 factor.ISUP <- function(x) {
-  x <- as.factor(x)
+  x <- as.factor(x);
   levels(x) <- c('No cancer', 'Low', 'Intermediate favorable', 'Intermediate unfavorable', 'High', 'Very High');
-  x
+  x;
   }
 
 factor.Gleason <- function(x) {
-  factor(x, levels = c('0+0', '3+3', '3+4', '4+3', '4+4', '5+5'), ordered = TRUE)
-}
+  factor(x, levels = c('0+0', '3+3', '3+4', '4+3', '4+4', '5+5'), ordered = TRUE);
+  }
 
 factor.PIRADS <- function(x) {
-  factor(x, levels = 0:5, ordered = TRUE)
-}
+  factor(x, levels = 0:5, ordered = TRUE);
+  }
 
 mutation.dummy <- function(x) {
   mutation1 <- as.integer(x['Mutation1']);
@@ -18,7 +18,7 @@ mutation.dummy <- function(x) {
   if (is.na(mutation1) && is.na(mutation2)) {
     # Missing value, make all dummy variables missing as well
     res <- list(Mutation_BRCA1 = NA, Mutation_BRCA2 = NA, Mutation_ATM = NA, Mutation_MLH1 = NA, Mutation_PMS2 = NA, Germline.variants = NA);
-  }
+    }
   else {
     res <- list(BRCA1 = 0, BRCA2 = 0, ATM = 0, MLH1 = 0, PMS2 = 0);
     if (mutation1 > 0) res[mutation1] <- 1
@@ -101,10 +101,6 @@ load.data.AS <- function(biomark.path,
   biodb$PSADensity <- biodb$SOCPSA / biodb$ProstateVolume;
   biodb$PHIDensity <- biodb$PHI / biodb$ProstateVolume;
 
-  # TODO: Add all other binary variables as logical
-  # biodb$ProgressedToTreatment <- as.logical(biodb$ProgressedToTreatment)
-  # biodb$BiopsyUpgraded <- as.logical(biodb$BiopsyUpgraded)
-
   # Add MyProstateScore = MiPSHighGradeCancerRisk
   biodb$MyProstateScore <- biodb$MiPSHighGradeCancerRisk;
   biodb$MPSDensity <- biodb$MyProstateScore / biodb$ProstateVolume;
@@ -175,8 +171,8 @@ load.data.AS <- function(biomark.path,
     (p2PSA / freePSA) * sqrt(PSAHyb)
   });
 
-  biodb$FollowUpTime <- biodb$DaysDxToLastReview
-  biodb$FollowUpTime[!is.na(biodb$DaysDxToUpgrade)] <- biodb$DaysDxToUpgrade[!is.na(biodb$DaysDxToUpgrade)]
+  biodb$FollowUpTime <- biodb$DaysDxToLastReview;
+  biodb$FollowUpTime[!is.na(biodb$DaysDxToUpgrade)] <- biodb$DaysDxToUpgrade[!is.na(biodb$DaysDxToUpgrade)];
 
   biokey <- xlsx::read.xlsx(
     biomark.key.path,
@@ -185,7 +181,7 @@ load.data.AS <- function(biomark.path,
     stringsAsFactors = FALSE
     );
 
-  biokey <- biokey[!is.na(biokey$Column.ID), ]
+  biokey <- biokey[!is.na(biokey$Column.ID), ];
 
   biokey.gen <- xlsx::read.xlsx(
     genetics.path,
@@ -205,7 +201,8 @@ load.data.AS <- function(biomark.path,
 
   if (onlyBiodb) {
     biodb
-    } else {
+    }
+  else {
     list(
       biodb = biodb,
       biokey = biokey,
@@ -243,7 +240,7 @@ load.biomarker.categories <- function(file.name = 'biomarkers_categories.xlsx') 
     sheetIndex = 1,
     header = TRUE,
     stringsAsFactors = FALSE
-  )
-  rownames(res) <- res$variable
-  res[order(res$order), ]
-}
+    );
+  rownames(res) <- res$variable;
+  res[order(res$order), ];
+  }
