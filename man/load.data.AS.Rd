@@ -5,13 +5,17 @@
 \title{Loads the data for the Active Surveillance project}
 \usage{
 load.data.AS(
-  biomark.path = NULL,
-  biomark.key.path = NULL,
-  genetics.path = NULL
+  biomark.path,
+  biomark.key.path,
+  genetics.path,
+  biomark.categories.path,
+  onlyBiodb = FALSE
 )
 }
 \arguments{
 \item{biomark.key.path}{path to the Biomarkers key xlsx file}
+
+\item{onlyBiodb}{boolean indicating if we should only return the biodb (main data)}
 
 \item{biomark.pathBiomarkers}{xlsx file}
 

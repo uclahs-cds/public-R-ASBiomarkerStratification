@@ -56,6 +56,6 @@ po/*~
 *.tex
 *.pdf
 euro_urology/
-models/
+models*/
 no_commit/
 results/
