@@ -25,7 +25,7 @@ radiologic.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category =
 molecular.vars <- c(clinico.epi.vars, biomarkers$variable[biomarkers$category == 'Genetics']);
 all.vars <- union(radiologic.vars, molecular.vars);
 
-train.model <- TRUE;
+train.model <- FALSE;
 if (train.model) {
   dir.create(here::here('models'), showWarnings = FALSE, recursive = TRUE);
   missing.target <- is.na(biodb[, target]);
@@ -100,7 +100,7 @@ if (train.model) {
     trControl = train.control,
     tuneGrid = gbm.grid,
     verbose = FALSE
-  )
+    );
   print('Completed fitting gbm model...');
 
   model.id <- paste(target, metric, seed, sep = '_');
