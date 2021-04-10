@@ -3,7 +3,7 @@
 #' @param pattern regular expression with groups
 str.match <- function(x, pattern) {
     regmatches(x, regexec(pattern, x));
-}
+  }
 
 #' Convert camel case to string with spaces. Note does not work with multiple capitals
 #' Idea from: https://stackoverflow.com/a/8407047/1351718
@@ -17,10 +17,10 @@ str.match <- function(x, pattern) {
 #' @examples
 #' camel.to.spaces(c('BiopsyUpgraded', 'ProgressedToTreatment'))
 camel.to.spaces <- function(x, replace = ' ') {
-    matches <- gsub('(?!^)([[:upper:]])', ' \\1', x, perl = TRUE)
-    split.string <- strsplit(matches, ' ')
-    unlist(lapply(split.string, paste0, collapse = replace))
-}
+    matches <- gsub('(?!^)([[:upper:]])', ' \\1', x, perl = TRUE);
+    split.string <- strsplit(matches, ' ');
+    unlist(lapply(split.string, paste0, collapse = replace));
+  }
 
 # Moving average code from forecast
 #'
@@ -35,15 +35,15 @@ camel.to.spaces <- function(x, replace = ' ') {
 moving.avg <- function(x, order, center = TRUE) {
     if (abs(order - round(order)) > 1e-08) {
         stop('order must be an integer')
-    }
+        };
     if (order %% 2 == 0 && centre) {
         w <- c(0.5, rep(1, order - 1), 0.5) / order
-    }
+        };
     else {
         w <- rep(1, order) / order
+        };
+    return(stats::filter(x, w));
     }
-    return(stats::filter(x, w))
-}
 
 label <- function(x) {
     attr(x, 'label');
@@ -72,9 +72,10 @@ label.or.name <- function(x) {
         cond <- ! unlist(lapply(labs, is.null))
         res[cond] <- unlist(labs)
         res
-    } else {
+        }
+    else {
         lab <- label(x)
         if (is.null(lab)) mc$x
         else lab
+        }
     }
-}
