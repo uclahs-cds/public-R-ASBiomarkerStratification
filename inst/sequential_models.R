@@ -129,6 +129,7 @@ dotmap.bg.data.int <- data.frame(lapply(dotmap.bg.data, as.numeric));
 colnames(dotmap.bg.data.int) <- 1:length(seq.models);
 rownames(dotmap.bg.data.int) <- all.var.names;
 
+# Sequential dotmap colored by category
 bpg.dotmap <- create.dotmap(
   x = dotmap.data,
   spot.size.function = identity,
@@ -146,6 +147,7 @@ metric.scatterplot.data <- thresholds.table %>%
 metric.colours <- c('dodgerblue', 'goldenrod1', 'darkorange1', 'seagreen2', 'orchid3');
 names(metric.colours) <- metrics;
 
+# Create the scatter plot of the metrics
 metric.scatterplot <- create.scatterplot(
   formula = value ~ group,
   data = metric.scatterplot.data,
@@ -161,6 +163,7 @@ metric.scatterplot <- create.scatterplot(
   lwd = 4
   );
 
+# Create the legend
 metric.legend <- legend.grob(
   list(
     legend = list(
